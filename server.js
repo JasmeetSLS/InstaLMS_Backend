@@ -73,17 +73,72 @@ initDB();
 
 // ============= CATEGORY APIs =============
 
-// Add category
-app.post('/api/categories', async (req, res) => {
+app.post('/api/categories', upload.single('icon'), async (req, res) => {
     try {
         const { name } = req.body;
         if (!name) return res.status(400).json({ error: 'Category name required' });
         
+        // Check if category exists
         const [existing] = await pool.query('SELECT id FROM categories WHERE name = ?', [name]);
         if (existing.length > 0) return res.status(409).json({ error: 'Category exists' });
         
-        const [result] = await pool.query('INSERT INTO categories (name) VALUES (?)', [name]);
+        // Get icon URL if uploaded
+        let iconUrl = null;
+        if (req.file) {
+            iconUrl = `/uploads/${req.file.filename}`;
+        }
+        
+        // Insert category with icon
+        const [result] = await pool.query(
+            'INSERT INTO categories (name, icon_url) VALUES (?, ?)',
+            [name, iconUrl]
+        );
+        
         const [category] = await pool.query('SELECT * FROM categories WHERE id = ?', [result.insertId]);
+        
+        res.json({ success: true, data: category[0] });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Update category with icon
+app.put('/api/categories/:id', upload.single('icon'), async (req, res) => {
+    try {
+        const { name } = req.body;
+        const { id } = req.params;
+        
+        if (!name) return res.status(400).json({ error: 'Category name required' });
+        
+        // Check if category exists
+        const [existing] = await pool.query('SELECT id, icon_url FROM categories WHERE id = ?', [id]);
+        if (existing.length === 0) return res.status(404).json({ error: 'Category not found' });
+        
+        // Check for duplicate name
+        const [duplicate] = await pool.query(
+            'SELECT id FROM categories WHERE name = ? AND id != ?',
+            [name, id]
+        );
+        if (duplicate.length > 0) return res.status(409).json({ error: 'Category name already exists' });
+        
+        // Delete old icon if new one uploaded
+        let iconUrl = existing[0].icon_url;
+        if (req.file) {
+            // Delete old icon file
+            if (iconUrl) {
+                const oldPath = path.join(__dirname, iconUrl);
+                fs.unlink(oldPath, () => {});
+            }
+            iconUrl = `/uploads/${req.file.filename}`;
+        }
+        
+        // Update category
+        await pool.query(
+            'UPDATE categories SET name = ?, icon_url = ? WHERE id = ?',
+            [name, iconUrl, id]
+        );
+        
+        const [category] = await pool.query('SELECT * FROM categories WHERE id = ?', [id]);
         
         res.json({ success: true, data: category[0] });
     } catch (error) {
@@ -97,6 +152,34 @@ app.get('/api/categories', async (req, res) => {
         const [categories] = await pool.query('SELECT * FROM categories ORDER BY id');
         res.json(categories);
     } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete category
+app.delete('/api/categories/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Get icon URL to delete file
+        const [category] = await pool.query('SELECT icon_url FROM categories WHERE id = ?', [id]);
+        
+        // Delete icon file if exists
+        if (category.length > 0 && category[0].icon_url) {
+            const filePath = path.join(__dirname, category[0].icon_url);
+            fs.unlink(filePath, () => {});
+        }
+        
+        // Delete category (posts will be deleted automatically due to CASCADE)
+        const [result] = await pool.query('DELETE FROM categories WHERE id = ?', [id]);
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Category not found' });
+        }
+        
+        res.json({ success: true, message: 'Category deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting category:', error);
         res.status(500).json({ error: error.message });
     }
 });
