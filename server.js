@@ -41,6 +41,7 @@ const initDB = async () => {
         CREATE TABLE IF NOT EXISTS categories (
             id INT PRIMARY KEY AUTO_INCREMENT,
             name VARCHAR(100) UNIQUE NOT NULL,
+            icon_url varchar(500) DEFAULT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     `);
