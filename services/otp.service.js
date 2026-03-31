@@ -15,11 +15,6 @@ exports.saveOTP = async (userId, otp) => {
             [userId, otp]
         );
         
-        // Log OTP to console for testing
-        console.log('=========================================');
-        console.log(`📧 OTP for user ID ${userId}: ${otp}`);
-        console.log('=========================================');
-        
         return true;
     } catch (error) {
         console.error('Save OTP error:', error);

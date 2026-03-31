@@ -1,8 +1,8 @@
 const { pool } = require('../../config/db');
 
- exports.register = async (req, res) => {
+exports.register = async (req, res) => {
     try {
-        const { email, employee_id, name } = req.body;
+        const { email, employee_id, name, role } = req.body;
 
         // Validate required fields
         if (!email || !employee_id || !name) {
@@ -46,10 +46,10 @@ const { pool } = require('../../config/db');
                 }
             }
 
-            // Insert new user (status is 'active' by default)
+            // Insert new user with default role 'user'
             const [result] = await connection.query(
-                'INSERT INTO users (email, employee_id, name, status) VALUES (?, ?, ?, "active")',
-                [email, employee_id, name]
+                'INSERT INTO users (email, employee_id, name, status, role) VALUES (?, ?, ?, "active", ?)',
+                [email, employee_id, name, role]
             );
 
             res.status(201).json({
@@ -59,7 +59,8 @@ const { pool } = require('../../config/db');
                     user_id: result.insertId,
                     email: email,
                     employee_id: employee_id,
-                    name: name
+                    name: name,
+                    role: role
                 }
             });
 

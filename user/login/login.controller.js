@@ -99,7 +99,8 @@ exports.verifyOTPLogin = async (req, res) => {
                     u.email, 
                     u.employee_id, 
                     u.name, 
-                    u.status 
+                    u.status,
+                    u.role 
                  FROM users u 
                  WHERE u.email = ?`,
                 [email]
@@ -132,21 +133,23 @@ exports.verifyOTPLogin = async (req, res) => {
                 });
             }
 
-            // Generate JWT token with ONLY user ID
-        const tokenPayload = {
-    userId: user.id,
-    email: user.email,
-    name: user.name,
-    employee_id: user.employee_id
-};
+            // Generate JWT token with user info and isAdmin flag
+            const tokenPayload = {
+                userId: user.id,
+                email: user.email,
+                name: user.name,
+                employee_id: user.employee_id,
+                role: user.role,
+                isAdmin: false // User is not admin
+            };
 
             const token = JWTUtils.generateToken(tokenPayload);
 
-           res.json({
-    success: true,
-    message: 'Login successful',
-    token: token
-});
+            res.json({
+                success: true,
+                message: 'Login successful',
+                token: token
+            });
 
         } finally {
             connection.release();

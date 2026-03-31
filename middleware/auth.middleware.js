@@ -17,6 +17,22 @@ const authenticateToken = (req, res, next) => {
   }
 };
 
+const requireAdmin = (req, res, next) => {
+  if (!req.user.isAdmin) {
+    return res.status(403).json({ success: false, error: 'Admin access required' });
+  }
+  next();
+};
+
+const requireUser = (req, res, next) => {
+  if (req.user.isAdmin) {
+    return res.status(403).json({ success: false, error: 'User access required' });
+  }
+  next();
+};
+
 module.exports = {
-  authenticateToken
+  authenticateToken,
+  requireAdmin,
+  requireUser
 };

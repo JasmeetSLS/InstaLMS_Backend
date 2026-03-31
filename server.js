@@ -4,10 +4,11 @@ const dotenv = require('dotenv');
 
 // Import routes
 const registerRoutes = require('./user/register/register.routes');
-const loginRoutes = require('./user/login/login.routes');
+const userLoginRoutes = require('./user/login/login.routes');
+const adminLoginRoutes = require('./admin/login/login.routes'); // Add this
 
-// Import middleware
-const { authenticateToken } = require('./middleware/auth.middleware');
+const { authenticateToken, requireAdmin, requireUser } = require('./middleware/auth.middleware');
+
 
 // Import database
 const { pool } = require('./config/db');
@@ -26,7 +27,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/user/register', registerRoutes);
-app.use('/api/user/login', loginRoutes);
+app.use('/api/user/login', userLoginRoutes);
+app.use('/api/admin', adminLoginRoutes); // Add admin routes
 
 // Test route
 app.get('/api/health', (req, res) => {
@@ -34,15 +36,6 @@ app.get('/api/health', (req, res) => {
         status: 'OK', 
         message: 'Server is running',
         timestamp: new Date().toISOString()
-    });
-});
-
-// Protected route example
-app.get('/api/protected', authenticateToken, (req, res) => {
-    res.json({ 
-        success: true, 
-        message: 'Access granted to protected route',
-        user: req.user 
     });
 });
 
