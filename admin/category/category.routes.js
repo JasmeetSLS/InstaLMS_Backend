@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const categoryController = require('./category.controller');
+const upload = require('../../middleware/upload.middleware');
 
-// Category routes - specific routes MUST come before parameterized routes
 router.get('/categories', categoryController.getAllCategories);
-router.post('/categories', categoryController.createCategory);
 router.get('/categories/:id', categoryController.getCategoryById);
-router.put('/categories/:id', categoryController.updateCategory);
+router.post('/categories', upload.single('icon'), categoryController.createCategory);
+router.put('/categories/:id', upload.single('icon'), categoryController.updateCategory);
 router.put('/categories/:id/status', categoryController.updateCategoryStatus);
 router.delete('/categories/:id', categoryController.deleteCategory);
 

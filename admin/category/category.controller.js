@@ -1,38 +1,13 @@
 const { pool } = require('../../config/db');
+const fs = require('fs');
 
 // Get all categories
 exports.getAllCategories = async (req, res) => {
     try {
-        const connection = await pool.getConnection();
-        
-        try {
-            const [categories] = await connection.query(
-                `SELECT 
-                    id, 
-                    name, 
-                    icon_url, 
-                    status, 
-                    created_at,
-                    updated_at 
-                 FROM categories 
-                 ORDER BY created_at DESC`
-            );
-
-            res.json({
-                success: true,
-                data: categories
-            });
-
-        } finally {
-            connection.release();
-        }
-
+        const [categories] = await pool.query('SELECT * FROM categories ORDER BY created_at DESC');
+        res.json({ success: true, data: categories });
     } catch (error) {
-        console.error('Get all categories error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Internal server error'
-        });
+        res.status(500).json({ error: error.message });
     }
 };
 
@@ -40,121 +15,54 @@ exports.getAllCategories = async (req, res) => {
 exports.getCategoryById = async (req, res) => {
     try {
         const { id } = req.params;
-
-        const connection = await pool.getConnection();
-
-        try {
-            const [categories] = await connection.query(
-                `SELECT 
-                    id, 
-                    name, 
-                    icon_url, 
-                    status, 
-                    created_at,
-                    updated_at 
-                 FROM categories 
-                 WHERE id = ?`,
-                [id]
-            );
-
-            if (categories.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    error: 'Category not found'
-                });
-            }
-
-            res.json({
-                success: true,
-                data: categories[0]
-            });
-
-        } finally {
-            connection.release();
+        const [category] = await pool.query('SELECT * FROM categories WHERE id = ?', [id]);
+        
+        if (category.length === 0) {
+            return res.status(404).json({ error: 'Category not found' });
         }
-
+        
+        res.json({ success: true, data: category[0] });
     } catch (error) {
-        console.error('Get category by ID error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Internal server error'
-        });
+        res.status(500).json({ error: error.message });
     }
 };
 
-// Create new category
+// Create category
 exports.createCategory = async (req, res) => {
     try {
-        const { name, icon_url, status } = req.body;
-
-        // Validate required fields
-        if (!name) {
-            return res.status(400).json({
-                success: false,
-                error: 'Category name is required'
-            });
-        }
-
-        // Validate status if provided
-        if (status && !['active', 'inactive'].includes(status)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Status must be either "active" or "inactive"'
-            });
-        }
-
-        const connection = await pool.getConnection();
-
-        try {
-            // Check if category already exists
-            const [existing] = await connection.query(
-                'SELECT id FROM categories WHERE name = ?',
-                [name]
-            );
-
-            if (existing.length > 0) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Category with this name already exists'
-                });
+        const { name } = req.body;
+        
+        if (!name) return res.status(400).json({ error: 'Category name required' });
+        
+        // Check if category exists
+        const [existing] = await pool.query('SELECT id FROM categories WHERE name = ?', [name]);
+        if (existing.length > 0) {
+            if (req.file && fs.existsSync(req.file.path)) {
+                fs.unlinkSync(req.file.path);
             }
-
-            // Insert new category
-            const [result] = await connection.query(
-                'INSERT INTO categories (name, icon_url, status) VALUES (?, ?, ?)',
-                [name, icon_url || null, status || 'active']
-            );
-
-            // Fetch the created category
-            const [newCategory] = await connection.query(
-                'SELECT id, name, icon_url, status, created_at, updated_at FROM categories WHERE id = ?',
-                [result.insertId]
-            );
-
-            res.status(201).json({
-                success: true,
-                message: 'Category created successfully',
-                data: newCategory[0]
-            });
-
-        } finally {
-            connection.release();
+            return res.status(409).json({ error: 'Category exists' });
         }
-
+        
+        // Get icon filename if uploaded
+        let iconUrl = null;
+        if (req.file) {
+            iconUrl = req.file.filename;
+        }
+        
+        // Insert category
+        const [result] = await pool.query(
+            'INSERT INTO categories (name, icon_url, status) VALUES (?, ?, "active")',
+            [name, iconUrl]
+        );
+        
+        const [category] = await pool.query('SELECT * FROM categories WHERE id = ?', [result.insertId]);
+        
+        res.json({ success: true, data: category[0] });
     } catch (error) {
-        console.error('Create category error:', error);
-        
-        if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(400).json({
-                success: false,
-                error: 'Category with this name already exists'
-            });
+        if (req.file && fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
         }
-        
-        res.status(500).json({
-            success: false,
-            error: error.message || 'Internal server error'
-        });
+        res.status(500).json({ error: error.message });
     }
 };
 
@@ -162,108 +70,67 @@ exports.createCategory = async (req, res) => {
 exports.updateCategory = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, icon_url, status } = req.body;
-
-        if (!name && !icon_url && !status) {
-            return res.status(400).json({
-                success: false,
-                error: 'At least one field (name, icon_url, status) is required to update'
-            });
-        }
-
-        // Validate status if provided
-        if (status && !['active', 'inactive'].includes(status)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Status must be either "active" or "inactive"'
-            });
-        }
-
-        const connection = await pool.getConnection();
-
-        try {
-            // Check if category exists
-            const [existing] = await connection.query(
-                'SELECT id FROM categories WHERE id = ?',
-                [id]
-            );
-
-            if (existing.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    error: 'Category not found'
-                });
+        const { name } = req.body;
+        
+        // Check if category exists
+        const [existing] = await pool.query('SELECT icon_url FROM categories WHERE id = ?', [id]);
+        if (existing.length === 0) {
+            if (req.file && fs.existsSync(req.file.path)) {
+                fs.unlinkSync(req.file.path);
             }
-
-            // Check if new name conflicts with existing category
-            if (name) {
-                const [nameConflict] = await connection.query(
-                    'SELECT id FROM categories WHERE name = ? AND id != ?',
-                    [name, id]
-                );
-                
-                if (nameConflict.length > 0) {
-                    return res.status(400).json({
-                        success: false,
-                        error: 'Another category with this name already exists'
-                    });
+            return res.status(404).json({ error: 'Category not found' });
+        }
+        
+        // Check name duplicate
+        if (name) {
+            const [duplicate] = await pool.query(
+                'SELECT id FROM categories WHERE name = ? AND id != ?',
+                [name, id]
+            );
+            if (duplicate.length > 0) {
+                if (req.file && fs.existsSync(req.file.path)) {
+                    fs.unlinkSync(req.file.path);
                 }
+                return res.status(409).json({ error: 'Category name already exists' });
             }
-
-            // Build update query dynamically
-            const updates = [];
-            const values = [];
-            
-            if (name) {
-                updates.push('name = ?');
-                values.push(name);
-            }
-            if (icon_url !== undefined) {
-                updates.push('icon_url = ?');
-                values.push(icon_url);
-            }
-            if (status) {
-                updates.push('status = ?');
-                values.push(status);
-            }
-            
-            values.push(id);
-            
-            await connection.query(
-                `UPDATE categories SET ${updates.join(', ')} WHERE id = ?`,
-                values
-            );
-
-            // Fetch updated category
-            const [updatedCategory] = await connection.query(
-                'SELECT id, name, icon_url, status, created_at, updated_at FROM categories WHERE id = ?',
-                [id]
-            );
-
-            res.json({
-                success: true,
-                message: 'Category updated successfully',
-                data: updatedCategory[0]
-            });
-
-        } finally {
-            connection.release();
         }
-
+        
+        // Update icon
+        let iconUrl = existing[0].icon_url;
+        if (req.file) {
+            // Delete old icon
+            if (existing[0].icon_url && fs.existsSync(`uploads/${existing[0].icon_url}`)) {
+                fs.unlinkSync(`uploads/${existing[0].icon_url}`);
+            }
+            iconUrl = req.file.filename;
+        }
+        
+        // Build update query
+        let updateQuery = 'UPDATE categories SET ';
+        const values = [];
+        
+        if (name) {
+            updateQuery += 'name = ?, ';
+            values.push(name);
+        }
+        if (req.file) {
+            updateQuery += 'icon_url = ?, ';
+            values.push(iconUrl);
+        }
+        
+        updateQuery = updateQuery.slice(0, -2) + ' WHERE id = ?';
+        values.push(id);
+        
+        await pool.query(updateQuery, values);
+        
+        const [category] = await pool.query('SELECT * FROM categories WHERE id = ?', [id]);
+        
+        res.json({ success: true, data: category[0] });
     } catch (error) {
-        console.error('Update category error:', error);
-        
-        if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(400).json({
-                success: false,
-                error: 'Category with this name already exists'
-            });
+        if (req.file && fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
         }
-        
-        res.status(500).json({
-            success: false,
-            error: error.message || 'Internal server error'
-        });
+        res.status(500).json({ error: error.message });
     }
 };
 
@@ -271,86 +138,44 @@ exports.updateCategory = async (req, res) => {
 exports.deleteCategory = async (req, res) => {
     try {
         const { id } = req.params;
-
-        const connection = await pool.getConnection();
-
-        try {
-            // Check if category exists
-            const [categories] = await connection.query(
-                'SELECT id, name FROM categories WHERE id = ?',
-                [id]
-            );
-
-            if (categories.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    error: 'Category not found'
-                });
-            }
-
-            // Delete category
-            await connection.query('DELETE FROM categories WHERE id = ?', [id]);
-
-            res.json({
-                success: true,
-                message: `Category "${categories[0].name}" deleted successfully`
-            });
-
-        } finally {
-            connection.release();
+        
+        const [existing] = await pool.query('SELECT name, icon_url FROM categories WHERE id = ?', [id]);
+        if (existing.length === 0) return res.status(404).json({ error: 'Category not found' });
+        
+        // Delete icon file
+        if (existing[0].icon_url && fs.existsSync(`uploads/${existing[0].icon_url}`)) {
+            fs.unlinkSync(`uploads/${existing[0].icon_url}`);
         }
-
+        
+        await pool.query('DELETE FROM categories WHERE id = ?', [id]);
+        
+        res.json({ success: true, message: 'Category deleted successfully' });
     } catch (error) {
-        console.error('Delete category error:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message || 'Internal server error'
-        });
+        res.status(500).json({ error: error.message });
     }
 };
 
-// Update category status (activate/deactivate)
+// Update category status
 exports.updateCategoryStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
-
-        if (!status || !['active', 'inactive'].includes(status)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Valid status (active/inactive) is required'
-            });
+        
+        if (!status) return res.status(400).json({ error: 'Status required' });
+        
+        const [result] = await pool.query(
+            'UPDATE categories SET status = ? WHERE id = ?',
+            [status, id]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Category not found' });
         }
-
-        const connection = await pool.getConnection();
-
-        try {
-            const [result] = await connection.query(
-                'UPDATE categories SET status = ? WHERE id = ?',
-                [status, id]
-            );
-
-            if (result.affectedRows === 0) {
-                return res.status(404).json({
-                    success: false,
-                    error: 'Category not found'
-                });
-            }
-
-            res.json({
-                success: true,
-                message: `Category status updated to ${status}`
-            });
-
-        } finally {
-            connection.release();
-        }
-
+        
+        const [category] = await pool.query('SELECT * FROM categories WHERE id = ?', [id]);
+        
+        res.json({ success: true, data: category[0] });
     } catch (error) {
-        console.error('Update category status error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Internal server error'
-        });
+        res.status(500).json({ error: error.message });
     }
 };

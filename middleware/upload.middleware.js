@@ -1,26 +1,34 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
-// Configure multer for file upload
+// Create uploads folder if it doesn't exist
+const uploadDir = 'uploads';
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configure multer storage
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'uploads/');
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'users-' + uniqueSuffix + path.extname(file.originalname));
+        // Use file- prefix for all files
+        cb(null, 'file-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
 
-// File filter to accept only Excel files
+// File filter for images (for categories)
 const fileFilter = (req, file, cb) => {
-    const allowedExtensions = ['.xlsx', '.xls', '.csv'];
-    const ext = path.extname(file.originalname).toLowerCase();
+    // Accept images
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     
-    if (allowedExtensions.includes(ext)) {
+    if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new Error('Only Excel files (.xlsx, .xls, .csv) are allowed'), false);
+        cb(new Error('Only image files are allowed'), false);
     }
 };
 
