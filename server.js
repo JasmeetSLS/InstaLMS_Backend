@@ -7,6 +7,7 @@ const registerRoutes = require('./user/register/register.routes');
 const userLoginRoutes = require('./user/login/login.routes');
 const adminLoginRoutes = require('./admin/login/login.routes'); // Add this
 const adminUserRoutes = require('./admin/user/user.routes');
+const adminCategoryRoutes = require('./admin/category/category.routes');
 
 const { authenticateToken, requireAdmin, requireUser } = require('./middleware/auth.middleware');
 
@@ -26,11 +27,14 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
+// User Routes
 app.use('/api/user/register', registerRoutes);
 app.use('/api/user/login', userLoginRoutes);
+
+//Admin Routes
 app.use('/api/admin', adminLoginRoutes); // Add admin routes
 app.use('/api/admin', authenticateToken, requireAdmin, adminUserRoutes);
+app.use('/api/admin' ,authenticateToken, requireAdmin, adminCategoryRoutes);
 
 // Test route
 app.get('/api/health', (req, res) => {
