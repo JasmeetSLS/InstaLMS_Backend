@@ -23,7 +23,7 @@ const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, 'uploads/'),
     filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
 });
-const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
+const upload = multer({ storage, limits: { fileSize: 1024 * 1024 * 1024 } });
 
 // Replace the MySQL connection pool section with:
 const pool = mysql.createPool({
