@@ -6,6 +6,7 @@ const dotenv = require('dotenv');
 const registerRoutes = require('./user/register/register.routes');
 const userLoginRoutes = require('./user/login/login.routes');
 const adminLoginRoutes = require('./admin/login/login.routes'); // Add this
+const adminUserRoutes = require('./admin/user/user.routes');
 
 const { authenticateToken, requireAdmin, requireUser } = require('./middleware/auth.middleware');
 
@@ -29,6 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/user/register', registerRoutes);
 app.use('/api/user/login', userLoginRoutes);
 app.use('/api/admin', adminLoginRoutes); // Add admin routes
+app.use('/api/admin', authenticateToken, requireAdmin, adminUserRoutes);
 
 // Test route
 app.get('/api/health', (req, res) => {
