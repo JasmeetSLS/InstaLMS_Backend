@@ -86,6 +86,32 @@ const initDB = async () => {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )
+            
+    `);
+
+        await pool.query(`
+        CREATE TABLE IF NOT EXISTS post_media (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            post_id INT NOT NULL,
+            media_type ENUM('image', 'video', 'gif') NOT NULL,
+            media_url VARCHAR(500) NOT NULL,
+            FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+        )
+    `);
+     await pool.query(`
+        CREATE TABLE IF NOT EXISTS post_shares (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            post_id INT NOT NULL,
+            shared_by INT NOT NULL,
+            shared_to INT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+            FOREIGN KEY (shared_by) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (shared_to) REFERENCES users(id) ON DELETE CASCADE,
+            INDEX idx_shared_to (shared_to),
+            INDEX idx_post_id (post_id),
+            INDEX idx_shared_by (shared_by)
+        )
     `);
     
     console.log('✅ Database tables ready');
@@ -299,16 +325,13 @@ app.get('/api/categories', async (req, res) => {
 
 // ============= POST APIs =============
 
-// Create post with multiple media files
+// Updated POST API to handle YouTube URLs along with file uploads
 app.post('/api/posts', verifyToken, upload.array('media', 10), async (req, res) => {
     try {
-        const { category_id, title, content, hashtags } = req.body;
+        const { category_id, title, content, hashtags, youtube_urls } = req.body;
         
         if (!category_id || !title) {
             return res.status(400).json({ error: 'Category and title required' });
-        }
-        if (!req.files || req.files.length === 0) {
-            return res.status(400).json({ error: 'At least one media file required' });
         }
         
         // Start transaction
@@ -323,22 +346,44 @@ app.post('/api/posts', verifyToken, upload.array('media', 10), async (req, res) 
             );
             
             const postId = postResult.insertId;
-            
-            // Insert media files
             const mediaValues = [];
-            req.files.forEach(file => {
-                let mediaType = 'image';
-                if (file.mimetype === 'image/gif') mediaType = 'gif';
-                else if (file.mimetype.startsWith('video/')) mediaType = 'video';
-                
-                const mediaUrl = `/uploads/${file.filename}`;
-                mediaValues.push([postId, mediaType, mediaUrl]);
-            });
             
-            await connection.query(
-                'INSERT INTO post_media (post_id, media_type, media_url) VALUES ?',
-                [mediaValues]
-            );
+            // Process uploaded files (images/videos/gifs)
+            if (req.files && req.files.length > 0) {
+                req.files.forEach(file => {
+                    let mediaType = 'image';
+                    if (file.mimetype === 'image/gif') mediaType = 'gif';
+                    else if (file.mimetype.startsWith('video/')) mediaType = 'video';
+                    
+                    const mediaUrl = `/uploads/${file.filename}`;
+                    mediaValues.push([postId, mediaType, mediaUrl]);
+                });
+            }
+            
+            // Process YouTube URLs (can be multiple)
+            if (youtube_urls) {
+                let urls = [];
+                // Handle both string and array formats
+                if (typeof youtube_urls === 'string') {
+                    urls = youtube_urls.split(',').map(url => url.trim());
+                } else if (Array.isArray(youtube_urls)) {
+                    urls = youtube_urls;
+                }
+                
+                for (const youtubeUrl of urls) {
+                    if (youtubeUrl && youtubeUrl.includes('youtube.com') || youtubeUrl.includes('youtu.be')) {
+                        mediaValues.push([postId, 'youtube', youtubeUrl]);
+                    }
+                }
+            }
+            
+            // Insert all media (files + YouTube URLs)
+            if (mediaValues.length > 0) {
+                await connection.query(
+                    'INSERT INTO post_media (post_id, media_type, media_url) VALUES ?',
+                    [mediaValues]
+                );
+            }
             
             await connection.commit();
             connection.release();
@@ -346,7 +391,7 @@ app.post('/api/posts', verifyToken, upload.array('media', 10), async (req, res) 
             res.json({ 
                 success: true, 
                 postId, 
-                mediaCount: req.files.length,
+                mediaCount: mediaValues.length,
                 message: 'Post created successfully'
             });
             
@@ -357,27 +402,25 @@ app.post('/api/posts', verifyToken, upload.array('media', 10), async (req, res) 
         }
         
     } catch (error) {
+        console.error('Error creating post:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// server.js - Fixed get posts by category with media
-app.get('/api/posts/category/:categoryId', async (req, res) => {
+// Updated GET posts API to handle YouTube media type
+app.get('/api/posts', async (req, res) => {
     try {
-        // First query: Get posts for this category
         const [posts] = await pool.query(`
             SELECT p.*, c.name as category_name
             FROM posts p
             INNER JOIN categories c ON p.category_id = c.id
-            WHERE p.category_id = ?
             ORDER BY p.created_at DESC
-        `, [req.params.categoryId]);
+        `);
         
         if (posts.length === 0) {
             return res.json([]);
         }
         
-        // Second query: Get all media for these posts
         const postIds = posts.map(post => post.id);
         const [media] = await pool.query(`
             SELECT post_id, media_type, media_url
@@ -393,12 +436,64 @@ app.get('/api/posts/category/:categoryId', async (req, res) => {
                 mediaByPost[m.post_id] = [];
             }
             mediaByPost[m.post_id].push({
+                type: m.media_type,  // Can be 'image', 'video', 'gif', or 'youtube'
+                url: m.media_url
+            });
+        });
+        
+        const result = posts.map(post => ({
+            id: post.id,
+            category_id: post.category_id,
+            category_name: post.category_name,
+            title: post.title,
+            content: post.content,
+            hashtags: post.hashtags,
+            created_at: post.created_at,
+            updated_at: post.updated_at,
+            media: mediaByPost[post.id] || []
+        }));
+        
+        res.json(result);
+    } catch (error) {
+        console.error('Error fetching posts:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Updated GET posts by category API
+app.get('/api/posts/category/:categoryId', async (req, res) => {
+    try {
+        const [posts] = await pool.query(`
+            SELECT p.*, c.name as category_name
+            FROM posts p
+            INNER JOIN categories c ON p.category_id = c.id
+            WHERE p.category_id = ?
+            ORDER BY p.created_at DESC
+        `, [req.params.categoryId]);
+        
+        if (posts.length === 0) {
+            return res.json([]);
+        }
+        
+        const postIds = posts.map(post => post.id);
+        const [media] = await pool.query(`
+            SELECT post_id, media_type, media_url
+            FROM post_media
+            WHERE post_id IN (?)
+            ORDER BY post_id, id
+        `, [postIds]);
+        
+        const mediaByPost = {};
+        media.forEach(m => {
+            if (!mediaByPost[m.post_id]) {
+                mediaByPost[m.post_id] = [];
+            }
+            mediaByPost[m.post_id].push({
                 type: m.media_type,
                 url: m.media_url
             });
         });
         
-        // Combine posts with their media
         const result = posts.map(post => ({
             id: post.id,
             category_id: post.category_id,
@@ -418,61 +513,136 @@ app.get('/api/posts/category/:categoryId', async (req, res) => {
     }
 });
 
-// Get single post with all media
+// Single post API with YouTube support
 app.get('/api/posts/:id', async (req, res) => {
     try {
         const [posts] = await pool.query(`
-            SELECT p.*, 
-                   JSON_ARRAYAGG(
-                       JSON_OBJECT('type', pm.media_type, 'url', pm.media_url)
-                   ) as media
+            SELECT p.*, c.name as category_name
             FROM posts p
-            LEFT JOIN post_media pm ON p.id = pm.post_id
+            INNER JOIN categories c ON p.category_id = c.id
             WHERE p.id = ?
-            GROUP BY p.id
         `, [req.params.id]);
         
         if (posts.length === 0) {
             return res.status(404).json({ error: 'Post not found' });
         }
         
-        const post = {
+        const [media] = await pool.query(`
+            SELECT media_type, media_url
+            FROM post_media
+            WHERE post_id = ?
+            ORDER BY id
+        `, [req.params.id]);
+        
+        const result = {
             ...posts[0],
-            media: posts[0].media ? JSON.parse(posts[0].media).filter(m => m.url) : []
+            media: media.map(m => ({
+                type: m.media_type,
+                url: m.media_url
+            }))
         };
         
-        res.json(post);
+        res.json(result);
     } catch (error) {
+        console.error('Error fetching post:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// Get all posts
-// server.js - Fixed get all posts with media
-app.get('/api/posts', async (req, res) => {
+// ============= SHARE POST API =============
+
+// Share post to multiple users
+app.post('/api/posts/share', verifyToken, async (req, res) => {
     try {
-        // First query: Get all posts
-        const [posts] = await pool.query(`
-            SELECT p.*, c.name as category_name
-            FROM posts p
-            INNER JOIN categories c ON p.category_id = c.id
-            ORDER BY p.created_at DESC
-        `);
+        const { post_id, shared_to_users } = req.body;
+        const shared_by = req.user.id;
         
+        if (!post_id || !shared_to_users || shared_to_users.length === 0) {
+            return res.status(400).json({ error: 'Post ID and at least one user to share with are required' });
+        }
+        
+        // Check if post exists
+        const [posts] = await pool.query('SELECT id, title FROM posts WHERE id = ?', [post_id]);
         if (posts.length === 0) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+        
+        // Start transaction
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        try {
+            const shareRecords = [];
+            
+            for (const shared_to of shared_to_users) {
+                shareRecords.push([post_id, shared_by, shared_to]);
+            }
+            
+            // Insert share records
+            let insertedCount = 0;
+            if (shareRecords.length > 0) {
+                const [result] = await connection.query(
+                    'INSERT INTO post_shares (post_id, shared_by, shared_to) VALUES ?',
+                    [shareRecords]
+                );
+                insertedCount = result.affectedRows;
+            }
+            
+            await connection.commit();
+            connection.release();
+            
+            res.json({ 
+                success: true, 
+                message: `Post shared successfully with ${insertedCount} user${insertedCount !== 1 ? 's' : ''}`,
+                shared_count: insertedCount,
+                total_requested: shared_to_users.length
+            });
+            
+        } catch (err) {
+            await connection.rollback();
+            connection.release();
+            throw err;
+        }
+        
+    } catch (error) {
+        console.error('Error sharing post:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all shares received by a user (with media)
+app.get('/api/posts/shares/received', verifyToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        const [shares] = await pool.query(`
+            SELECT ps.*, 
+                   p.id as post_id,
+                   p.title as post_title,
+                   p.content as post_content,
+                   p.hashtags as post_hashtags,
+                   u.name as shared_by_name,
+                   u.employeeid as shared_by_employeeid,
+                   u.profile_image as shared_by_profile_image
+            FROM post_shares ps
+            INNER JOIN posts p ON ps.post_id = p.id
+            INNER JOIN users u ON ps.shared_by = u.id
+            WHERE ps.shared_to = ?
+            ORDER BY ps.created_at DESC
+        `, [userId]);
+        
+        if (shares.length === 0) {
             return res.json([]);
         }
         
-        // Second query: Get all media for these posts
-        const postIds = posts.map(post => post.id);
+        // Get media for all posts
+        const postIds = shares.map(share => share.post_id);
         const [media] = await pool.query(`
             SELECT post_id, media_type, media_url
             FROM post_media
             WHERE post_id IN (?)
             ORDER BY post_id, id
         `, [postIds]);
-        
-        console.log('Media found:', media); // Debug log
         
         // Group media by post_id
         const mediaByPost = {};
@@ -486,28 +656,127 @@ app.get('/api/posts', async (req, res) => {
             });
         });
         
-        // Combine posts with their media
-        const result = posts.map(post => ({
-            id: post.id,
-            category_id: post.category_id,
-            category_name: post.category_name,
-            title: post.title,
-            content: post.content,
-            hashtags: post.hashtags,
-            created_at: post.created_at,
-            updated_at: post.updated_at,
-            media: mediaByPost[post.id] || []
+        // Combine shares with their media
+        const result = shares.map(share => ({
+            ...share,
+            media: mediaByPost[share.post_id] || []
         }));
-        
-        console.log('Result posts with media:', result); // Debug log
         
         res.json(result);
     } catch (error) {
-        console.error('Error fetching posts:', error);
+        console.error('Error fetching received shares:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
+// Get all shares sent by a user (with media)
+app.get('/api/posts/shares/sent', verifyToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        const [shares] = await pool.query(`
+            SELECT ps.*, 
+                   p.id as post_id,
+                   p.title as post_title,
+                   p.content as post_content,
+                   p.hashtags as post_hashtags,
+                   u.name as shared_to_name,
+                   u.employeeid as shared_to_employeeid,
+                   u.profile_image as shared_to_profile_image
+            FROM post_shares ps
+            INNER JOIN posts p ON ps.post_id = p.id
+            INNER JOIN users u ON ps.shared_to = u.id
+            WHERE ps.shared_by = ?
+            ORDER BY ps.created_at DESC
+        `, [userId]);
+        
+        if (shares.length === 0) {
+            return res.json([]);
+        }
+        
+        // Get media for all posts
+        const postIds = shares.map(share => share.post_id);
+        const [media] = await pool.query(`
+            SELECT post_id, media_type, media_url
+            FROM post_media
+            WHERE post_id IN (?)
+            ORDER BY post_id, id
+        `, [postIds]);
+        
+        // Group media by post_id
+        const mediaByPost = {};
+        media.forEach(m => {
+            if (!mediaByPost[m.post_id]) {
+                mediaByPost[m.post_id] = [];
+            }
+            mediaByPost[m.post_id].push({
+                type: m.media_type,
+                url: m.media_url
+            });
+        });
+        
+        // Combine shares with their media
+        const result = shares.map(share => ({
+            ...share,
+            media: mediaByPost[share.post_id] || []
+        }));
+        
+        res.json(result);
+    } catch (error) {
+        console.error('Error fetching sent shares:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get shares for a specific post
+app.get('/api/posts/:postId/shares', verifyToken, async (req, res) => {
+    try {
+        const { postId } = req.params;
+        
+        const [shares] = await pool.query(`
+            SELECT ps.*, 
+                   u.name as shared_by_name,
+                   u.employeeid as shared_by_employeeid,
+                   u2.name as shared_to_name,
+                   u2.employeeid as shared_to_employeeid
+            FROM post_shares ps
+            INNER JOIN users u ON ps.shared_by = u.id
+            INNER JOIN users u2 ON ps.shared_to = u2.id
+            WHERE ps.post_id = ?
+            ORDER BY ps.created_at DESC
+        `, [postId]);
+        
+        res.json(shares);
+    } catch (error) {
+        console.error('Error fetching post shares:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete a share
+app.delete('/api/posts/shares/:shareId', verifyToken, async (req, res) => {
+    try {
+        const { shareId } = req.params;
+        const userId = req.user.id;
+        
+        // Verify user owns this share (either sender or receiver)
+        const [shares] = await pool.query(
+            'SELECT id FROM post_shares WHERE id = ? AND (shared_by = ? OR shared_to = ?)',
+            [shareId, userId, userId]
+        );
+        
+        if (shares.length === 0) {
+            return res.status(404).json({ error: 'Share not found or unauthorized' });
+        }
+        
+        await pool.query('DELETE FROM post_shares WHERE id = ?', [shareId]);
+        
+        res.json({ success: true, message: 'Share removed successfully' });
+    } catch (error) {
+        console.error('Error deleting share:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // Start server
 app.listen(PORT, () => {
