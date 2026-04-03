@@ -5,10 +5,15 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// JWT Secret
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
 
 // Middleware
 app.use(cors());
@@ -68,13 +73,190 @@ const initDB = async () => {
         )
     `);
     
+    // Create users table with password
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS users (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            profile_image VARCHAR(500) DEFAULT NULL,
+            name VARCHAR(255) NOT NULL,
+            employeeid VARCHAR(100) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            role VARCHAR(100) NOT NULL,
+            status ENUM('active', 'inactive') DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+    `);
+    
     console.log('✅ Database tables ready');
 };
 initDB();
 
+// ============= AUTH API =============
+
+// Login API
+app.post('/api/login', async (req, res) => {
+    try {
+        const { employeeid, password } = req.body;
+        
+        if (!employeeid || !password) {
+            return res.status(400).json({ error: 'Employee ID and password required' });
+        }
+        
+        // Check if user exists
+        const [users] = await pool.query(
+            'SELECT * FROM users WHERE employeeid = ?',
+            [employeeid]
+        );
+        
+        if (users.length === 0) {
+            return res.status(401).json({ error: 'Invalid Employee ID or password' });
+        }
+        
+        const user = users[0];
+        
+        // Check if user is active
+        if (user.status !== 'active') {
+            return res.status(401).json({ error: 'Account is inactive. Please contact administrator.' });
+        }
+        
+        // Verify password
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        
+        if (!isValidPassword) {
+            return res.status(401).json({ error: 'Invalid Employee ID or password' });
+        }
+        
+        // Generate JWT token
+        const token = jwt.sign(
+            { 
+                id: user.id, 
+                employeeid: user.employeeid, 
+                name: user.name, 
+                role: user.role 
+            },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+        
+        
+        res.json({
+            success: true,
+            message: 'Login successful',
+            token,
+        });
+        
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Verify Token Middleware
+const verifyToken = (req, res, next) => {
+    const token = req.headers['authorization']?.split(' ')[1];
+    
+    if (!token) {
+        return res.status(401).json({ error: 'Access denied. No token provided.' });
+    }
+    
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (error) {
+        return res.status(403).json({ error: 'Invalid or expired token.' });
+    }
+};
+
+// ============= USER APIs =============
+
+app.get('/api/me', verifyToken, async (req, res) => {
+    try {
+        const [users] = await pool.query(
+            'SELECT id, profile_image, name, employeeid, role, status, created_at, updated_at FROM users WHERE id = ?',
+            [req.user.id]
+        );
+        
+        if (users.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        res.json(users[0]);
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all users
+app.get('/api/users', verifyToken, async (req, res) => {
+    try {
+        const [users] = await pool.query('SELECT id, profile_image, name, employeeid, role, status, created_at, updated_at FROM users ORDER BY created_at DESC');
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get single user
+app.get('/api/users/:id', verifyToken, async (req, res) => {
+    try {
+        const [users] = await pool.query('SELECT id, profile_image, name, employeeid, role, status, created_at, updated_at FROM users WHERE id = ?', [req.params.id]);
+        
+        if (users.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        res.json(users[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Create user with profile image and password
+app.post('/api/users', upload.single('profile_image'), async (req, res) => {
+    try {
+        const { name, employeeid, password, role, status } = req.body;
+        
+        if (!name || !employeeid || !password || !role) {
+            return res.status(400).json({ error: 'Name, Employee ID, Password, and Role are required' });
+        }
+        
+        // Check if employee ID already exists
+        const [existing] = await pool.query('SELECT id FROM users WHERE employeeid = ?', [employeeid]);
+        if (existing.length > 0) {
+            return res.status(409).json({ error: 'Employee ID already exists' });
+        }
+        
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
+        // Get profile image URL if uploaded
+        let profileImage = null;
+        if (req.file) {
+            profileImage = `/uploads/${req.file.filename}`;
+        }
+        
+        // Insert user
+        const [result] = await pool.query(
+            'INSERT INTO users (profile_image, name, employeeid, password, role, status) VALUES (?, ?, ?, ?, ?, ?)',
+            [profileImage, name, employeeid, hashedPassword, role, status || 'active']
+        );
+        
+        const [user] = await pool.query('SELECT id, profile_image, name, employeeid, role, status, created_at, updated_at FROM users WHERE id = ?', [result.insertId]);
+        
+        res.json({ success: true, data: user[0] });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+
 // ============= CATEGORY APIs =============
 
-app.post('/api/categories', upload.single('icon'), async (req, res) => {
+app.post('/api/categories', verifyToken, upload.single('icon'), async (req, res) => {
     try {
         const { name } = req.body;
         if (!name) return res.status(400).json({ error: 'Category name required' });
@@ -103,49 +285,6 @@ app.post('/api/categories', upload.single('icon'), async (req, res) => {
     }
 });
 
-// Update category with icon
-app.put('/api/categories/:id', upload.single('icon'), async (req, res) => {
-    try {
-        const { name } = req.body;
-        const { id } = req.params;
-        
-        if (!name) return res.status(400).json({ error: 'Category name required' });
-        
-        // Check if category exists
-        const [existing] = await pool.query('SELECT id, icon_url FROM categories WHERE id = ?', [id]);
-        if (existing.length === 0) return res.status(404).json({ error: 'Category not found' });
-        
-        // Check for duplicate name
-        const [duplicate] = await pool.query(
-            'SELECT id FROM categories WHERE name = ? AND id != ?',
-            [name, id]
-        );
-        if (duplicate.length > 0) return res.status(409).json({ error: 'Category name already exists' });
-        
-        // Delete old icon if new one uploaded
-        let iconUrl = existing[0].icon_url;
-        if (req.file) {
-            // Delete old icon file
-            if (iconUrl) {
-                const oldPath = path.join(__dirname, iconUrl);
-                fs.unlink(oldPath, () => {});
-            }
-            iconUrl = `/uploads/${req.file.filename}`;
-        }
-        
-        // Update category
-        await pool.query(
-            'UPDATE categories SET name = ?, icon_url = ? WHERE id = ?',
-            [name, iconUrl, id]
-        );
-        
-        const [category] = await pool.query('SELECT * FROM categories WHERE id = ?', [id]);
-        
-        res.json({ success: true, data: category[0] });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
 
 // Get all categories
 app.get('/api/categories', async (req, res) => {
@@ -157,38 +296,11 @@ app.get('/api/categories', async (req, res) => {
     }
 });
 
-// Delete category
-app.delete('/api/categories/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        
-        // Get icon URL to delete file
-        const [category] = await pool.query('SELECT icon_url FROM categories WHERE id = ?', [id]);
-        
-        // Delete icon file if exists
-        if (category.length > 0 && category[0].icon_url) {
-            const filePath = path.join(__dirname, category[0].icon_url);
-            fs.unlink(filePath, () => {});
-        }
-        
-        // Delete category (posts will be deleted automatically due to CASCADE)
-        const [result] = await pool.query('DELETE FROM categories WHERE id = ?', [id]);
-        
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Category not found' });
-        }
-        
-        res.json({ success: true, message: 'Category deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting category:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
 
 // ============= POST APIs =============
 
 // Create post with multiple media files
-app.post('/api/posts', upload.array('media', 10), async (req, res) => {
+app.post('/api/posts', verifyToken, upload.array('media', 10), async (req, res) => {
     try {
         const { category_id, title, content, hashtags } = req.body;
         
@@ -396,91 +508,6 @@ app.get('/api/posts', async (req, res) => {
     }
 });
 
-// Update post
-app.put('/api/posts/:id', upload.array('media', 10), async (req, res) => {
-    try {
-        const { title, content, hashtags } = req.body;
-        const postId = req.params.id;
-        
-        const [result] = await pool.query(
-            'UPDATE posts SET title = ?, content = ?, hashtags = ? WHERE id = ?',
-            [title, content, hashtags, postId]
-        );
-        
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Post not found' });
-        }
-        
-        // Add new media if any
-        if (req.files && req.files.length > 0) {
-            const mediaValues = [];
-            req.files.forEach(file => {
-                let mediaType = 'image';
-                if (file.mimetype === 'image/gif') mediaType = 'gif';
-                else if (file.mimetype.startsWith('video/')) mediaType = 'video';
-                
-                mediaValues.push([postId, mediaType, `/uploads/${file.filename}`]);
-            });
-            
-            await pool.query('INSERT INTO post_media (post_id, media_type, media_url) VALUES ?', [mediaValues]);
-        }
-        
-        res.json({ success: true, message: 'Post updated successfully' });
-        
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Delete post
-app.delete('/api/posts/:id', async (req, res) => {
-    try {
-        // Get media URLs to delete files
-        const [media] = await pool.query('SELECT media_url FROM post_media WHERE post_id = ?', [req.params.id]);
-        
-        // Delete files
-        media.forEach(m => {
-            const filePath = path.join(__dirname, m.media_url);
-            fs.unlink(filePath, () => {});
-        });
-        
-        // Delete post (cascade deletes media records)
-        const [result] = await pool.query('DELETE FROM posts WHERE id = ?', [req.params.id]);
-        
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Post not found' });
-        }
-        
-        res.json({ success: true, message: 'Post deleted successfully' });
-        
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Delete specific media from post
-app.delete('/api/posts/:postId/media/:mediaId', async (req, res) => {
-    try {
-        const [media] = await pool.query('SELECT media_url FROM post_media WHERE id = ? AND post_id = ?', 
-            [req.params.mediaId, req.params.postId]);
-        
-        if (media.length === 0) {
-            return res.status(404).json({ error: 'Media not found' });
-        }
-        
-        // Delete file
-        const filePath = path.join(__dirname, media[0].media_url);
-        fs.unlink(filePath, () => {});
-        
-        // Delete from database
-        await pool.query('DELETE FROM post_media WHERE id = ?', [req.params.mediaId]);
-        
-        res.json({ success: true, message: 'Media deleted successfully' });
-        
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
 
 // Start server
 app.listen(PORT, () => {
