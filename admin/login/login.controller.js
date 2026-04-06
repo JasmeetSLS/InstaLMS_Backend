@@ -49,13 +49,13 @@ exports.adminLogin = async (req, res) => {
                 });
             }
 
-            // Generate token with admin flag
+            // Generate token with isAdmin: true
             const tokenPayload = {
                 userId: admin.id,
                 username: admin.username,
                 email: admin.email,
                 role: admin.role,
-                isAdmin: true
+                isAdmin: true  // Admin user
             };
 
             const token = JWTUtils.generateToken(tokenPayload);
@@ -63,7 +63,7 @@ exports.adminLogin = async (req, res) => {
             res.json({
                 success: true,
                 message: 'Admin login successful',
-                token: token
+                token: token,
             });
 
         } finally {

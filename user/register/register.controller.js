@@ -1,14 +1,23 @@
 const { pool } = require('../../config/db');
+const { hashPassword } = require('../../services/password.service');
 
 exports.register = async (req, res) => {
     try {
-        const { email, employee_id, name, role } = req.body;
+        const { email, employee_id, name, role, password } = req.body;
 
         // Validate required fields
-        if (!email || !employee_id || !name) {
+        if (!email || !employee_id || !name || !password) {
             return res.status(400).json({ 
                 success: false, 
-                error: 'Email, employee_id, and name are required' 
+                error: 'Email, employee_id, name, and password are required' 
+            });
+        }
+
+        // Validate password strength
+        if (password.length < 6) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Password must be at least 6 characters long' 
             });
         }
 
@@ -46,10 +55,13 @@ exports.register = async (req, res) => {
                 }
             }
 
-            // Insert new user with default role 'user'
+            // Hash password using service
+            const hashedPassword = await hashPassword(password);
+
+            // Insert new user
             const [result] = await connection.query(
-                'INSERT INTO users (email, employee_id, name, status, role) VALUES (?, ?, ?, "active", ?)',
-                [email, employee_id, name, role]
+                'INSERT INTO users (email, employee_id, name, password, status, role) VALUES (?, ?, ?, ?, "active", ?)',
+                [email, employee_id, name, hashedPassword, role || 'user']
             );
 
             res.status(201).json({
@@ -60,7 +72,7 @@ exports.register = async (req, res) => {
                     email: email,
                     employee_id: employee_id,
                     name: name,
-                    role: role
+                    role: role || 'user'
                 }
             });
 
