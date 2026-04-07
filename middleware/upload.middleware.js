@@ -8,35 +8,53 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Create temp folder
+const tempDir = 'uploads/temp';
+if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
+}
+
 // Configure multer storage
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/');
+        cb(null, 'uploads/temp');
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        // Use file- prefix for all files
-        cb(null, 'file-' + uniqueSuffix + path.extname(file.originalname));
+        const ext = path.extname(file.originalname);
+        cb(null, file.fieldname + '-' + uniqueSuffix + ext);
     }
 });
 
-// File filter for images (for categories)
+// File filter for different media types
 const fileFilter = (req, file, cb) => {
-    // Accept images
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
+    const allowedTypes = [
+        // Images
+        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/avif',
+        // Videos
+        'video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo', 'video/webm',
+        // WBT files (Web-Based Training)
+        'application/zip', 'application/x-zip-compressed', 'application/x-scorm',
+        'application/x-html', 'text/html', 'application/xhtml+xml'
+    ];
     
-    if (allowedTypes.includes(file.mimetype)) {
+    // Also allow common WBT file extensions
+    const allowedExtensions = ['.zip', '.wbt', '.scorm', '.html', '.htm'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    
+    if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
         cb(null, true);
     } else {
-        cb(new Error('Only image files are allowed'), false);
+        cb(new Error('Only image, video, GIF, and WBT files are allowed'), false);
     }
 };
 
+// Create multer upload instance
 const upload = multer({
     storage: storage,
     fileFilter: fileFilter,
     limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
+         fileSize: 1024 * 1024 * 1024, // 500MB
     }
 });
 
