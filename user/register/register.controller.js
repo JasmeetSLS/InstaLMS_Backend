@@ -1,9 +1,13 @@
 const { pool } = require('../../config/db');
 const { hashPassword } = require('../../services/password.service');
+const path = require('path');
+const fs = require('fs');
 
+// Updated register function with profile_url support
 exports.register = async (req, res) => {
     try {
         const { email, employee_id, name, role, password } = req.body;
+        const profileFile = req.file; // Get profile image if uploaded
 
         // Validate required fields
         if (!email || !employee_id || !name || !password) {
@@ -58,21 +62,49 @@ exports.register = async (req, res) => {
             // Hash password using service
             const hashedPassword = await hashPassword(password);
 
-            // Insert new user
+            // Insert new user (without profile_url first)
             const [result] = await connection.query(
-                'INSERT INTO users (email, employee_id, name, password, status, role) VALUES (?, ?, ?, ?, "active", ?)',
-                [email, employee_id, name, hashedPassword, role || 'user']
+                'INSERT INTO users (email, employee_id, name, password, status, role, profile_url) VALUES (?, ?, ?, ?, "active", ?, ?)',
+                [email, employee_id, name, hashedPassword, role || 'user', null]
             );
+
+            const userId = result.insertId;
+            let profileUrl = null;
+
+            // Handle profile picture upload if provided
+            if (profileFile) {
+                // Create user profile folder
+                const userDir = path.join('uploads', 'users', userId.toString());
+                if (!fs.existsSync(userDir)) {
+                    fs.mkdirSync(userDir, { recursive: true });
+                }
+
+                // Get file extension
+                const ext = path.extname(profileFile.originalname);
+                const filename = `profile-${Date.now()}${ext}`;
+                const newPath = path.join(userDir, filename);
+
+                // Move file from temp to user folder
+                fs.renameSync(profileFile.path, newPath);
+                profileUrl = `/uploads/users/${userId}/${filename}`;
+
+                // Update user with profile URL
+                await connection.query(
+                    'UPDATE users SET profile_url = ? WHERE id = ?',
+                    [profileUrl, userId]
+                );
+            }
 
             res.status(201).json({
                 success: true,
                 message: 'User registered successfully. You can now login.',
                 data: {
-                    user_id: result.insertId,
+                    user_id: userId,
                     email: email,
                     employee_id: employee_id,
                     name: name,
-                    role: role || 'user'
+                    role: role || 'user',
+                    profile_url: profileUrl
                 }
             });
 
