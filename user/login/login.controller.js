@@ -17,9 +17,9 @@ exports.login = async (req, res) => {
         const connection = await pool.getConnection();
 
         try {
-    // Get user by email (removed role restriction)
+            // Get user by email with all fields including phone and gender
             const [users] = await connection.query(
-                `SELECT id, email, employee_id, name, password, role, status 
+                `SELECT id, email, employee_id, name, phone, gender, password, role, status, profile_url
                  FROM users 
                  WHERE email = ?`,
                 [email]
@@ -54,22 +54,36 @@ exports.login = async (req, res) => {
             // Remove password from user object
             delete user.password;
 
-            // Generate token with isAdmin: false
+            // Generate token with isAdmin: false and include phone & gender
             const tokenPayload = {
                 userId: user.id,
                 email: user.email,
                 name: user.name,
                 employee_id: user.employee_id,
+                phone: user.phone ,
+                gender: user.gender ,
                 role: user.role,
                 isAdmin: false  // Regular user, not admin
             };
 
             const token = JWTUtils.generateToken(tokenPayload);
 
+            // Return user details in response
             res.json({
                 success: true,
                 message: 'Login successful',
                 token: token,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    employee_id: user.employee_id,
+                    name: user.name,
+                    phone: user.phone,
+                    gender: user.gender,
+                    role: user.role,
+                    profile_url: user.profile_url ,
+                    status: user.status
+                }
             });
 
         } finally {

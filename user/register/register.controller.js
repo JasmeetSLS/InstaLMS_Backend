@@ -3,10 +3,10 @@ const { hashPassword } = require('../../services/password.service');
 const path = require('path');
 const fs = require('fs');
 
-// Updated register function with profile_url support
+// Updated register function with phone and gender
 exports.register = async (req, res) => {
     try {
-        const { email, employee_id, name, role, password } = req.body;
+        const { email, employee_id, name, phone, gender, role, password } = req.body;
         const profileFile = req.file; // Get profile image if uploaded
 
         // Validate required fields
@@ -31,6 +31,22 @@ exports.register = async (req, res) => {
             return res.status(400).json({ 
                 success: false, 
                 error: 'Invalid email format' 
+            });
+        }
+
+        // Validate phone if provided
+        if (phone && !/^[0-9]{10}$/.test(phone)) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Invalid phone number. Must be 10 digits' 
+            });
+        }
+
+        // Validate gender if provided
+        if (gender && !['male', 'female'].includes(gender)) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Gender must be male or female' 
             });
         }
 
@@ -62,10 +78,10 @@ exports.register = async (req, res) => {
             // Hash password using service
             const hashedPassword = await hashPassword(password);
 
-            // Insert new user (without profile_url first)
+            // Insert new user with phone and gender
             const [result] = await connection.query(
-                'INSERT INTO users (email, employee_id, name, password, status, role, profile_url) VALUES (?, ?, ?, ?, "active", ?, ?)',
-                [email, employee_id, name, hashedPassword, role || 'user', null]
+                'INSERT INTO users (email, employee_id, name, phone, gender, password, status, role, profile_url) VALUES (?, ?, ?, ?, ?, ?, "active", ?, ?)',
+                [email, employee_id, name, phone || null, gender || null, hashedPassword, role || 'user', null]
             );
 
             const userId = result.insertId;
@@ -103,6 +119,8 @@ exports.register = async (req, res) => {
                     email: email,
                     employee_id: employee_id,
                     name: name,
+                    phone: phone || null,
+                    gender: gender || null,
                     role: role || 'user',
                     profile_url: profileUrl
                 }

@@ -6,7 +6,7 @@ exports.getActiveCategories = async (req, res) => {
         const connection = await pool.getConnection();
 
         try {
-            // Only get active categories for users
+            // Get active categories
             const [categories] = await connection.query(
                 `SELECT id, name, icon_url, created_at 
                  FROM categories 
@@ -14,10 +14,24 @@ exports.getActiveCategories = async (req, res) => {
                  ORDER BY id ASC`
             );
 
+            // Get active users
+            const [users] = await connection.query(
+                `SELECT id, email, employee_id, name, phone, gender, role, profile_url, status, created_at 
+                 FROM users 
+                 WHERE status = 'active' 
+                 ORDER BY id ASC`
+            );
+
             res.json({
                 success: true,
-                count: categories.length,
-                data: categories
+                categories: {
+                    count: categories.length,
+                    data: categories
+                },
+                users: {
+                    count: users.length,
+                    data: users
+                }
             });
 
         } finally {
@@ -26,53 +40,6 @@ exports.getActiveCategories = async (req, res) => {
 
     } catch (error) {
         console.error('Get active categories error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Internal server error'
-        });
-    }
-};
-
-// Get single category by ID (only if active)
-exports.getCategoryById = async (req, res) => {
-    try {
-        const { id } = req.params;
-        
-        if (!id || isNaN(id)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid category ID'
-            });
-        }
-
-        const connection = await pool.getConnection();
-
-        try {
-            const [categories] = await connection.query(
-                `SELECT id, name, icon_url, created_at 
-                 FROM categories 
-                 WHERE id = ? AND status = 'active'`,
-                [id]
-            );
-
-            if (categories.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    error: 'Category not found'
-                });
-            }
-
-            res.json({
-                success: true,
-                data: categories[0]
-            });
-
-        } finally {
-            connection.release();
-        }
-
-    } catch (error) {
-        console.error('Get category by ID error:', error);
         res.status(500).json({
             success: false,
             error: 'Internal server error'
