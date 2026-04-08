@@ -14,6 +14,12 @@ if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir, { recursive: true });
 }
 
+// Create default thumbnails folder
+const defaultDir = 'uploads/default';
+if (!fs.existsSync(defaultDir)) {
+    fs.mkdirSync(defaultDir, { recursive: true });
+}
+
 // Configure multer storage
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -35,17 +41,26 @@ const fileFilter = (req, file, cb) => {
         'video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo', 'video/webm',
         // WBT files (Web-Based Training)
         'application/zip', 'application/x-zip-compressed', 'application/x-scorm',
-        'application/x-html', 'text/html', 'application/xhtml+xml'
+        'application/x-html', 'text/html', 'application/xhtml+xml',
+        // PDF files
+        'application/pdf',
+        // PPT/PPTX files
+        'application/vnd.ms-powerpoint',           // .ppt
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation'  // .pptx
     ];
     
-    // Also allow common WBT file extensions
-    const allowedExtensions = ['.zip', '.wbt', '.scorm', '.html', '.htm'];
+    // Also allow common file extensions
+    const allowedExtensions = [
+        '.zip', '.wbt', '.scorm', '.html', '.htm',  // WBT
+        '.pdf',                                       // PDF
+        '.ppt', '.pptx'                               // PowerPoint
+    ];
     const ext = path.extname(file.originalname).toLowerCase();
     
     if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
         cb(null, true);
     } else {
-        cb(new Error('Only image, video, GIF, and WBT files are allowed'), false);
+        cb(new Error('Only image, video, GIF, PDF, PPT, and WBT files are allowed'), false);
     }
 };
 
@@ -54,7 +69,7 @@ const upload = multer({
     storage: storage,
     fileFilter: fileFilter,
     limits: {
-         fileSize: 1024 * 1024 * 1024, // 500MB
+        fileSize: 1024 * 1024 * 1024, // 1GB (increased for larger PDFs and PPTs)
     }
 });
 

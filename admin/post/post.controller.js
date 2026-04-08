@@ -13,20 +13,79 @@ function extractYouTubeId(url) {
 // Helper function to get YouTube thumbnail
 function getYouTubeThumbnail(url) {
     const videoId = extractYouTubeId(url);
-    if (videoId) {
-        return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    return videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : null;
+}
+
+// Get clean filename - preserve original name
+function getCleanFileName(originalname) {
+    // Remove special characters but keep original name structure
+    let cleanName = originalname
+        .replace(/[^a-zA-Z0-9.-]/g, '_')  // Replace special chars with underscore
+        .replace(/_+/g, '_');              // Replace multiple underscores with single
+    
+    // Limit length to 100 characters to avoid issues
+    if (cleanName.length > 100) {
+        const ext = path.extname(cleanName);
+        const nameWithoutExt = cleanName.substring(0, 100 - ext.length);
+        cleanName = nameWithoutExt + ext;
+    }
+    
+    return cleanName;
+}
+
+// Check file types
+const fileTypeCheckers = {
+    isWBT: (filename, mimetype) => {
+        const wbtExtensions = ['.zip', '.wbt', '.scorm', '.html', '.htm'];
+        const ext = path.extname(filename).toLowerCase();
+        return wbtExtensions.includes(ext) || (mimetype && mimetype.includes('zip'));
+    },
+    isPDF: (filename, mimetype) => {
+        const ext = path.extname(filename).toLowerCase();
+        return ext === '.pdf' || mimetype === 'application/pdf';
+    },
+    isPPT: (filename, mimetype) => {
+        const ext = path.extname(filename).toLowerCase();
+        return ext === '.ppt' || ext === '.pptx' || 
+               mimetype === 'application/vnd.ms-powerpoint' || 
+               mimetype === 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+    },
+    isImage: (mimetype) => mimetype.startsWith('image/'),
+    isGif: (mimetype) => mimetype === 'image/gif',
+    isVideo: (mimetype) => mimetype.startsWith('video/')
+};
+
+// Get media configuration
+function getMediaConfig(file, mimetype) {
+    if (fileTypeCheckers.isWBT(file, mimetype)) {
+        return { type: 'wbt', defaultThumb: '/uploads/default/wbt-thumbnail.jpg' };
+    }
+    if (fileTypeCheckers.isPDF(file, mimetype)) {
+        return { type: 'pdf', defaultThumb: '/uploads/default/pdf-thumbnail.jpg' };
+    }
+    if (fileTypeCheckers.isPPT(file, mimetype)) {
+        return { type: 'ppt', defaultThumb: '/uploads/default/ppt-thumbnail.jpg' };
+    }
+    if (fileTypeCheckers.isGif(mimetype)) {
+        return { type: 'gif', defaultThumb: null };
+    }
+    if (fileTypeCheckers.isImage(mimetype)) {
+        return { type: 'image', defaultThumb: null };
+    }
+    if (fileTypeCheckers.isVideo(mimetype)) {
+        return { type: 'video', defaultThumb: null };
     }
     return null;
 }
 
-// Helper function to check if file is WBT
-function isWBTFile(filename, mimetype) {
-    const wbtExtensions = ['.zip', '.wbt', '.scorm', '.html', '.htm'];
-    const ext = path.extname(filename).toLowerCase();
-    return wbtExtensions.includes(ext) || (mimetype && mimetype.includes('zip'));
+// Ensure directory exists
+function ensureDir(dirPath) {
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+    }
 }
 
-// Helper function to find launch file in extracted WBT
+// Find launch file in extracted WBT
 function findLaunchFile(extractPath) {
     const possibleLaunches = [
         'index.html', 'index.htm', 'launch.html', 'launch.htm',
@@ -36,67 +95,46 @@ function findLaunchFile(extractPath) {
     
     for (const launchFile of possibleLaunches) {
         const launchPath = path.join(extractPath, launchFile);
-        if (fs.existsSync(launchPath)) {
-            return launchFile;
-        }
+        if (fs.existsSync(launchPath)) return launchFile;
     }
     
-    // Look for any HTML file in root
     try {
         const files = fs.readdirSync(extractPath);
         const htmlFile = files.find(f => f.endsWith('.html') || f.endsWith('.htm'));
-        if (htmlFile) {
-            return htmlFile;
-        }
+        return htmlFile || null;
     } catch (err) {
-        console.error('Error reading directory:', err);
+        return null;
     }
-    
-    return null;
 }
 
-// Extract ZIP using unzipper stream (no timeout issues)
+// Extract ZIP file
 async function extractZip(zipPath, extractPath) {
     return new Promise((resolve, reject) => {
-        const stream = fs.createReadStream(zipPath)
-            .pipe(unzipper.Extract({ path: extractPath }));
-        
-        stream.on('close', () => {
-            console.log(`Extracted successfully: ${zipPath}`);
-            resolve(true);
-        });
-        
-        stream.on('error', (error) => {
-            console.error(`Extraction error: ${error}`);
-            reject(error);
-        });
+        fs.createReadStream(zipPath)
+            .pipe(unzipper.Extract({ path: extractPath }))
+            .on('close', () => resolve(true))
+            .on('error', reject);
     });
 }
 
-// Create post with multiple media files and their thumbnails
+// Clean up temp files
+function cleanupTempFiles(files) {
+    if (!files) return;
+    Object.values(files).flat().forEach(file => {
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+    });
+}
+
+// Create post with multiple media files
 exports.createPost = async (req, res) => {
     try {
         const { title, category_id, description, hashtags, youtube_links } = req.body;
-        
         const mediaFiles = req.files['media'] || [];
         const thumbnailFiles = req.files['thumbnail'] || [];
 
         if (!title || !category_id) {
-            if (mediaFiles.length) {
-                mediaFiles.forEach(file => {
-                    if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-                });
-            }
-            if (thumbnailFiles.length) {
-                thumbnailFiles.forEach(file => {
-                    if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-                });
-            }
-            
-            return res.status(400).json({
-                success: false,
-                error: 'Title and category ID are required'
-            });
+            cleanupTempFiles(req.files);
+            return res.status(400).json({ success: false, error: 'Title and category ID are required' });
         }
 
         const connection = await pool.getConnection();
@@ -108,21 +146,8 @@ exports.createPost = async (req, res) => {
             );
 
             if (categories.length === 0) {
-                if (mediaFiles.length) {
-                    mediaFiles.forEach(file => {
-                        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-                    });
-                }
-                if (thumbnailFiles.length) {
-                    thumbnailFiles.forEach(file => {
-                        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-                    });
-                }
-                
-                return res.status(404).json({
-                    success: false,
-                    error: 'Category not found'
-                });
+                cleanupTempFiles(req.files);
+                return res.status(404).json({ success: false, error: 'Category not found' });
             }
 
             await connection.beginTransaction();
@@ -133,153 +158,97 @@ exports.createPost = async (req, res) => {
             );
 
             const postId = postResult.insertId;
-
-            const postDir = path.join('uploads', 'posts', postId.toString());
-            const mediaDir = path.join(postDir, 'media');
-            const thumbnailDir = path.join(postDir, 'thumbnails');
-            const wbtDir = path.join(postDir, 'wbt');
+            const mediaBaseDir = path.join('uploads', 'posts', postId.toString(), 'media');
             
-            if (!fs.existsSync(mediaDir)) {
-                fs.mkdirSync(mediaDir, { recursive: true });
-            }
-            if (!fs.existsSync(thumbnailDir)) {
-                fs.mkdirSync(thumbnailDir, { recursive: true });
-            }
-            if (!fs.existsSync(wbtDir)) {
-                fs.mkdirSync(wbtDir, { recursive: true });
-            }
-
             const mediaItems = [];
             
-            // Process uploaded media files
+            // Process each media file
             for (let i = 0; i < mediaFiles.length; i++) {
                 const mediaFile = mediaFiles[i];
-                const fileExt = path.extname(mediaFile.originalname).toLowerCase();
-                let mediaType = 'image';
+                const config = getMediaConfig(mediaFile.originalname, mediaFile.mimetype);
+                
+                if (!config) continue;
+
+                // Insert to get media ID
+                const [tempMediaResult] = await connection.query(
+                    'INSERT INTO post_media (post_id, media_type, media_url, thumbnail_url) VALUES (?, ?, ?, ?)',
+                    [postId, config.type, '', '']
+                );
+                
+                const mediaId = tempMediaResult.insertId;
+                
+                // Create media ID folder
+                const mediaFolder = path.join(mediaBaseDir, mediaId.toString());
+                ensureDir(mediaFolder);
+                
+                // Use original filename
+                const originalFilename = getCleanFileName(mediaFile.originalname);
+                const mediaPath = path.join(mediaFolder, originalFilename);
+                
                 let mediaUrl = null;
                 let thumbnailUrl = null;
-                let finalMediaDir = mediaDir;
-
-                const uniqueId = Date.now() + '-' + Math.round(Math.random() * 1E9);
-                let mediaFilename = `media-${uniqueId}${fileExt}`;
                 
-                if (isWBTFile(mediaFile.originalname, mediaFile.mimetype)) {
-                    mediaType = 'wbt';
-                    finalMediaDir = wbtDir;
-                    mediaFilename = `wbt-${uniqueId}${fileExt}`;
+                // Move original file
+                fs.renameSync(mediaFile.path, mediaPath);
+                mediaUrl = `/uploads/posts/${postId}/media/${mediaId}/${originalFilename}`;
+                
+                // Handle WBT extraction
+                if (config.type === 'wbt' && path.extname(mediaFile.originalname).toLowerCase() === '.zip') {
+                    const extractPath = path.join(mediaFolder, 'extracted');
+                    ensureDir(extractPath);
                     
-                    if (thumbnailFiles[i]) {
-                        const thumbExt = path.extname(thumbnailFiles[i].originalname);
-                        const thumbFilename = `thumb-${uniqueId}${thumbExt}`;
-                        const thumbPath = path.join(thumbnailDir, thumbFilename);
-                        fs.renameSync(thumbnailFiles[i].path, thumbPath);
-                        thumbnailUrl = `/uploads/posts/${postId}/thumbnails/${thumbFilename}`;
-                    } else {
-                        thumbnailUrl = '/uploads/default/wbt-thumbnail.jpg';
-                    }
-                    
-                    const wbtPath = path.join(finalMediaDir, mediaFilename);
-                    fs.renameSync(mediaFile.path, wbtPath);
-                    
-                    // Extract ZIP file using unzipper (stream-based, no timeout)
-                    if (fileExt === '.zip') {
-                        try {
-                            console.log(`Extracting ZIP: ${mediaFilename}`);
-                            const extractFolderName = `wbt-${uniqueId}`;
-                            const extractPath = path.join(wbtDir, extractFolderName);
-                            
-                            if (!fs.existsSync(extractPath)) {
-                                fs.mkdirSync(extractPath, { recursive: true });
-                            }
-                            
-                            // Extract using unzipper stream
-                            await extractZip(wbtPath, extractPath);
-                            
-                            console.log(`Extraction complete for: ${mediaFilename}`);
-                            
-                            // Find launch file
-                            const launchFile = findLaunchFile(extractPath);
-                            
-                            if (launchFile) {
-                                mediaUrl = `/uploads/posts/${postId}/wbt/${extractFolderName}/${launchFile}`;
-                                console.log(`Launch file found: ${launchFile}`);
-                            } else {
-                                mediaUrl = `/uploads/posts/${postId}/wbt/${mediaFilename}`;
-                                console.log(`No launch file found, using original ZIP`);
-                            }
-                        } catch (zipError) {
-                            console.error('Error extracting zip:', zipError);
-                            mediaUrl = `/uploads/posts/${postId}/wbt/${mediaFilename}`;
+                    try {
+                        await extractZip(mediaPath, extractPath);
+                        const launchFile = findLaunchFile(extractPath);
+                        if (launchFile) {
+                            mediaUrl = `/uploads/posts/${postId}/media/${mediaId}/extracted/${launchFile}`;
                         }
-                    } else {
-                        mediaUrl = `/uploads/posts/${postId}/wbt/${mediaFilename}`;
-                    }
-                    
-                } else if (mediaFile.mimetype.startsWith('image/')) {
-                    if (mediaFile.mimetype === 'image/gif') {
-                        mediaType = 'gif';
-                    } else {
-                        mediaType = 'image';
-                    }
-                    
-                    const mediaPath = path.join(finalMediaDir, mediaFilename);
-                    fs.renameSync(mediaFile.path, mediaPath);
-                    mediaUrl = `/uploads/posts/${postId}/media/${mediaFilename}`;
-                    
-                    if (thumbnailFiles[i]) {
-                        const thumbExt = path.extname(thumbnailFiles[i].originalname);
-                        const thumbFilename = `thumb-${uniqueId}${thumbExt}`;
-                        const thumbPath = path.join(thumbnailDir, thumbFilename);
-                        fs.renameSync(thumbnailFiles[i].path, thumbPath);
-                        thumbnailUrl = `/uploads/posts/${postId}/thumbnails/${thumbFilename}`;
-                    } else {
-                        thumbnailUrl = mediaUrl;
-                    }
-                    
-                } else if (mediaFile.mimetype.startsWith('video/')) {
-                    mediaType = 'video';
-                    
-                    const videoPath = path.join(finalMediaDir, mediaFilename);
-                    fs.renameSync(mediaFile.path, videoPath);
-                    mediaUrl = `/uploads/posts/${postId}/media/${mediaFilename}`;
-                    
-                    if (thumbnailFiles[i]) {
-                        const thumbExt = path.extname(thumbnailFiles[i].originalname);
-                        const thumbFilename = `thumb-${uniqueId}${thumbExt}`;
-                        const thumbPath = path.join(thumbnailDir, thumbFilename);
-                        fs.renameSync(thumbnailFiles[i].path, thumbPath);
-                        thumbnailUrl = `/uploads/posts/${postId}/thumbnails/${thumbFilename}`;
-                    } else {
-                        thumbnailUrl = null;
+                    } catch (error) {
+                        console.error('Extraction error:', error);
                     }
                 }
-
-                const [mediaResult] = await connection.query(
-                    'INSERT INTO post_media (post_id, media_type, media_url, thumbnail_url) VALUES (?, ?, ?, ?)',
-                    [postId, mediaType, mediaUrl, thumbnailUrl]
+                
+                // Handle thumbnail - use same name as original but with thumb_ prefix
+                if (thumbnailFiles[i]) {
+                    const thumbExt = path.extname(thumbnailFiles[i].originalname);
+                    // Use the same base name as original file
+                    const baseName = path.basename(originalFilename, path.extname(originalFilename));
+                    const thumbFilename = `thumb_${baseName}${thumbExt}`;
+                    const thumbPath = path.join(mediaFolder, thumbFilename);
+                    fs.renameSync(thumbnailFiles[i].path, thumbPath);
+                    thumbnailUrl = `/uploads/posts/${postId}/media/${mediaId}/${thumbFilename}`;
+                } else if (config.defaultThumb) {
+                    thumbnailUrl = config.defaultThumb;
+                } else if (config.type === 'image' || config.type === 'gif') {
+                    thumbnailUrl = mediaUrl;
+                }
+                
+                // Update database
+                await connection.query(
+                    'UPDATE post_media SET media_url = ?, thumbnail_url = ? WHERE id = ?',
+                    [mediaUrl, thumbnailUrl, mediaId]
                 );
-
+                
                 mediaItems.push({
-                    id: mediaResult.insertId,
-                    media_type: mediaType,
+                    id: mediaId,
+                    media_type: config.type,
                     media_url: mediaUrl,
                     thumbnail_url: thumbnailUrl
                 });
             }
-
+            
             // Process YouTube links
             if (youtube_links) {
-                let youtubeLinks = Array.isArray(youtube_links) ? youtube_links : [youtube_links];
+                const youtubeLinks = Array.isArray(youtube_links) ? youtube_links : [youtube_links];
                 
                 for (const youtubeUrl of youtubeLinks) {
                     if (youtubeUrl && youtubeUrl.trim()) {
                         const thumbnailUrl = getYouTubeThumbnail(youtubeUrl);
-                        
                         const [mediaResult] = await connection.query(
                             'INSERT INTO post_media (post_id, media_type, media_url, thumbnail_url) VALUES (?, ?, ?, ?)',
                             [postId, 'youtube', youtubeUrl, thumbnailUrl]
                         );
-
+                        
                         mediaItems.push({
                             id: mediaResult.insertId,
                             media_type: 'youtube',
@@ -289,9 +258,9 @@ exports.createPost = async (req, res) => {
                     }
                 }
             }
-
+            
             await connection.commit();
-
+            
             res.status(201).json({
                 success: true,
                 message: 'Post created successfully',
@@ -306,32 +275,18 @@ exports.createPost = async (req, res) => {
                     media: mediaItems
                 }
             });
-
+            
         } catch (error) {
             await connection.rollback();
             throw error;
         } finally {
             connection.release();
         }
-
+        
     } catch (error) {
         console.error('Create post error:', error);
-        if (req.files) {
-            if (req.files['media']) {
-                req.files['media'].forEach(file => {
-                    if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-                });
-            }
-            if (req.files['thumbnail']) {
-                req.files['thumbnail'].forEach(file => {
-                    if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-                });
-            }
-        }
-        res.status(500).json({
-            success: false,
-            error: 'Internal server error: ' + error.message
-        });
+        cleanupTempFiles(req.files);
+        res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
     }
 };
 
@@ -339,13 +294,11 @@ exports.createPost = async (req, res) => {
 exports.getAllPosts = async (req, res) => {
     try {
         const { category_id, status, page = 1, limit = 10 } = req.query;
-        
         const connection = await pool.getConnection();
         
         try {
             let query = `
-                SELECT p.*, c.name as category_name,
-                       COUNT(pm.id) as media_count
+                SELECT p.*, c.name as category_name, COUNT(pm.id) as media_count
                 FROM posts p
                 LEFT JOIN categories c ON p.category_id = c.id
                 LEFT JOIN post_media pm ON p.id = pm.post_id
@@ -369,10 +322,8 @@ exports.getAllPosts = async (req, res) => {
                 countParams.push(status);
             }
             
-            query += ' GROUP BY p.id ORDER BY p.created_at DESC';
-            
+            query += ' GROUP BY p.id ORDER BY p.created_at DESC LIMIT ? OFFSET ?';
             const offset = (parseInt(page) - 1) * parseInt(limit);
-            query += ' LIMIT ? OFFSET ?';
             queryParams.push(parseInt(limit), offset);
             
             const [posts] = await connection.query(query, queryParams);
@@ -405,9 +356,6 @@ exports.getAllPosts = async (req, res) => {
         
     } catch (error) {
         console.error('Get posts error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Internal server error'
-        });
+        res.status(500).json({ success: false, error: 'Internal server error' });
     }
 };
