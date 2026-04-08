@@ -17,11 +17,11 @@ exports.login = async (req, res) => {
         const connection = await pool.getConnection();
 
         try {
-            // Get user by email (only regular users, not admins)
+    // Get user by email (removed role restriction)
             const [users] = await connection.query(
                 `SELECT id, email, employee_id, name, password, role, status 
                  FROM users 
-                 WHERE email = ? AND role NOT IN ('admin', 'super_admin')`,
+                 WHERE email = ?`,
                 [email]
             );
 
