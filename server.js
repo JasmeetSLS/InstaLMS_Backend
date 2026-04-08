@@ -9,6 +9,7 @@ const userLoginRoutes = require('./user/login/login.routes');
 const adminLoginRoutes = require('./admin/login/login.routes'); // Add this
 const adminUserRoutes = require('./admin/user/user.routes');
 const adminCategoryRoutes = require('./admin/category/category.routes');
+const userCategoryRoutes = require('./user/category/category.routes'); // Add user category routes
 const adminPostRoutes = require('./admin/post/post.routes');
 
 const { authenticateToken, requireAdmin, requireUser } = require('./middleware/auth.middleware');
@@ -34,6 +35,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // User Routes
 app.use('/api/user/register', registerRoutes);
 app.use('/api/user/login', userLoginRoutes);
+
+// Protected User Routes (Require user authentication)
+app.use('/api/user', authenticateToken, requireUser, userCategoryRoutes);
 
 //Admin Routes
 app.use('/api/admin', adminLoginRoutes); // Add admin routes
