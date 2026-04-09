@@ -5,7 +5,7 @@ const JWTUtils = require('../../utils/jwt.util');
 // User Login with email and password
 exports.login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, fcm_token, device_type } = req.body;
 
         if (!email || !password) {
             return res.status(400).json({
@@ -51,19 +51,27 @@ exports.login = async (req, res) => {
                 });
             }
 
+            // Store FCM token and device type if provided
+            if (fcm_token) {
+                await connection.query(
+                    'UPDATE users SET fcm_token = ?, device_type = ? WHERE id = ?',
+                    [fcm_token, device_type || 'android', user.id] // Default to 'android' if not specified
+                );
+            }
+
             // Remove password from user object
             delete user.password;
 
-            // Generate token with isAdmin: false and include phone & gender
+            // Generate token
             const tokenPayload = {
                 userId: user.id,
                 email: user.email,
                 name: user.name,
                 employee_id: user.employee_id,
-                phone: user.phone ,
-                gender: user.gender ,
+                phone: user.phone,
+                gender: user.gender,
                 role: user.role,
-                isAdmin: false  // Regular user, not admin
+                isAdmin: false
             };
 
             const token = JWTUtils.generateToken(tokenPayload);
@@ -81,7 +89,7 @@ exports.login = async (req, res) => {
                     phone: user.phone,
                     gender: user.gender,
                     role: user.role,
-                    profile_url: user.profile_url ,
+                    profile_url: user.profile_url,
                     status: user.status
                 }
             });

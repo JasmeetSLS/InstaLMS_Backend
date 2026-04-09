@@ -37,6 +37,8 @@ const fileFilter = (req, file, cb) => {
     const allowedTypes = [
         // Images
         'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/avif',
+        // SVG icons
+        'image/svg+xml',  // SVG support
         // Videos
         'video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo', 'video/webm',
         // WBT files (Web-Based Training)
@@ -51,6 +53,7 @@ const fileFilter = (req, file, cb) => {
     
     // Also allow common file extensions
     const allowedExtensions = [
+        '.svg',                                      // SVG icons
         '.zip', '.wbt', '.scorm', '.html', '.htm',  // WBT
         '.pdf',                                       // PDF
         '.ppt', '.pptx'                               // PowerPoint
@@ -60,7 +63,7 @@ const fileFilter = (req, file, cb) => {
     if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
         cb(null, true);
     } else {
-        cb(new Error('Only image, video, GIF, PDF, PPT, and WBT files are allowed'), false);
+        cb(new Error('Only image, video, GIF, SVG, PDF, PPT, and WBT files are allowed'), false);
     }
 };
 
