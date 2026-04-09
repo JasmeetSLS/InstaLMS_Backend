@@ -11,6 +11,11 @@ const adminUserRoutes = require('./admin/user/user.routes');
 const adminCategoryRoutes = require('./admin/category/category.routes');
 const userCategoryRoutes = require('./user/category/category.routes'); // Add user category routes
 const adminPostRoutes = require('./admin/post/post.routes');
+const userLikeRoutes = require('./user/like/like.routes');
+const userCommentRoutes = require('./user/comment/comment.routes');
+const userViewRoutes = require('./user/view/view.routes');
+const userBookmarkRoutes = require('./user/bookmark/bookmark.routes');
+const userShareRoutes = require('./user/share/share.routes');
 
 const { authenticateToken, requireAdmin, requireUser } = require('./middleware/auth.middleware');
 
@@ -38,6 +43,11 @@ app.use('/api/user/login', userLoginRoutes);
 
 // Protected User Routes (Require user authentication)
 app.use('/api/user', authenticateToken, requireUser, userCategoryRoutes);
+app.use('/api/user', authenticateToken, requireUser, userLikeRoutes);
+app.use('/api/user', authenticateToken, requireUser, userCommentRoutes);
+app.use('/api/user', authenticateToken, requireUser, userViewRoutes);
+app.use('/api/user', authenticateToken, requireUser, userBookmarkRoutes);
+app.use('/api/user', authenticateToken, requireUser, userShareRoutes);
 
 //Admin Routes
 app.use('/api/admin', adminLoginRoutes); // Add admin routes
