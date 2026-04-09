@@ -4,7 +4,7 @@ const registerController = require('../register/register.controller');
 const upload = require('../../middleware/upload.middleware');
 
 // POST /api/user/register
-router.post('/register', upload.single('profile'), registerController.register);
+router.post('/', upload.single('profile'), registerController.register);
 
 
 module.exports = router;

@@ -38,8 +38,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // User Routes
-app.use('/api/user', registerRoutes);
-app.use('/api/user', userLoginRoutes);
+app.use('/api/user/public', registerRoutes);
+app.use('/api/user/public', userLoginRoutes);
+
+//Admin Routes
+app.use('/api/admin/public', adminLoginRoutes); // Add admin routes
 
 // Protected User Routes (Require user authentication)
 app.use('/api/user', authenticateToken, requireUser, userCategoryRoutes);
@@ -49,8 +52,7 @@ app.use('/api/user', authenticateToken, requireUser, userViewRoutes);
 app.use('/api/user', authenticateToken, requireUser, userBookmarkRoutes);
 app.use('/api/user', authenticateToken, requireUser, userShareRoutes);
 
-//Admin Routes
-app.use('/api/admin', adminLoginRoutes); // Add admin routes
+
 app.use('/api/admin', authenticateToken, requireAdmin, adminUserRoutes);
 app.use('/api/admin' ,authenticateToken, requireAdmin, adminCategoryRoutes);
 app.use('/api/admin' ,authenticateToken, requireAdmin, adminPostRoutes);
