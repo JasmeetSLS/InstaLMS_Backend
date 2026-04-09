@@ -38,8 +38,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // User Routes
-app.use('/api/user/register', registerRoutes);
-app.use('/api/user/login', userLoginRoutes);
+app.use('/api/user', registerRoutes);
+app.use('/api/user', userLoginRoutes);
 
 // Protected User Routes (Require user authentication)
 app.use('/api/user', authenticateToken, requireUser, userCategoryRoutes);
