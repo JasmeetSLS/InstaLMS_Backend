@@ -290,72 +290,56 @@ exports.createPost = async (req, res) => {
     }
 };
 
-// Get all posts
+// Get all posts with media files (without media_count)
 exports.getAllPosts = async (req, res) => {
     try {
-        const { category_id, status, page = 1, limit = 10 } = req.query;
-        const connection = await pool.getConnection();
-        
-        try {
-            let query = `
-                SELECT p.*, c.name as category_name, COUNT(pm.id) as media_count
-                FROM posts p
-                LEFT JOIN categories c ON p.category_id = c.id
-                LEFT JOIN post_media pm ON p.id = pm.post_id
-                WHERE 1=1
-            `;
-            let countQuery = 'SELECT COUNT(DISTINCT p.id) as total FROM posts p WHERE 1=1';
-            const queryParams = [];
-            const countParams = [];
-            
-            if (category_id) {
-                query += ' AND p.category_id = ?';
-                countQuery += ' AND category_id = ?';
-                queryParams.push(category_id);
-                countParams.push(category_id);
-            }
-            
-            if (status) {
-                query += ' AND p.status = ?';
-                countQuery += ' AND status = ?';
-                queryParams.push(status);
-                countParams.push(status);
-            }
-            
-            query += ' GROUP BY p.id ORDER BY p.created_at DESC LIMIT ? OFFSET ?';
-            const offset = (parseInt(page) - 1) * parseInt(limit);
-            queryParams.push(parseInt(limit), offset);
-            
-            const [posts] = await connection.query(query, queryParams);
-            const [totalResult] = await connection.query(countQuery, countParams);
-            
-            for (let post of posts) {
-                const [media] = await connection.query(
-                    'SELECT id, media_type, media_url, thumbnail_url FROM post_media WHERE post_id = ?',
-                    [post.id]
-                );
-                post.media = media;
-            }
-            
-            res.json({
-                success: true,
-                data: {
-                    posts: posts,
-                    pagination: {
-                        current_page: parseInt(page),
-                        per_page: parseInt(limit),
-                        total: totalResult[0].total,
-                        total_pages: Math.ceil(totalResult[0].total / parseInt(limit))
-                    }
-                }
-            });
-            
-        } finally {
-            connection.release();
+        const [posts] = await pool.query(
+            `SELECT 
+                p.id,
+                p.category_id,
+                c.name as category_name,
+                p.title,
+                p.content,
+                p.hashtags,
+                p.likes_count,
+                p.comments_count,
+                p.views_count,
+                p.shares_count,
+                p.status,
+                p.created_at,
+                p.updated_at
+            FROM posts p
+            INNER JOIN categories c ON p.category_id = c.id
+            ORDER BY p.created_at ASC`
+        );
+
+        // Get media for all posts
+        for (let post of posts) {
+            const [media] = await pool.query(
+                `SELECT 
+                    id,
+                    media_type,
+                    media_url,
+                    thumbnail_url,
+                    created_at
+                FROM post_media 
+                WHERE post_id = ?
+                ORDER BY created_at ASC`,
+                [post.id]
+            );
+            post.media = media;
         }
+
+        res.status(200).json({
+            success: true,
+            data: posts
+        });
         
     } catch (error) {
-        console.error('Get posts error:', error);
-        res.status(500).json({ success: false, error: 'Internal server error' });
+        console.error('Get all posts error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Internal server error: ' + error.message 
+        });
     }
 };
