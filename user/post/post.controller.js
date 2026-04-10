@@ -1,16 +1,14 @@
 const { pool } = require('../../config/db');
 
-// Get posts by category ID (with user authentication)
 exports.getPostsByCategory = async (req, res) => {
     try {
-        const { category_id } = req.params;
+        const { limit = 10, category_id } = req.query; // category_id from query params
         const userId = req.user.userId;
-        const { limit = 10 } = req.query;
 
         if (!category_id) {
             return res.status(400).json({
                 success: false,
-                error: 'Category ID is required'
+                error: 'Category ID is required in query params'
             });
         }
 
