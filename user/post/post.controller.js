@@ -48,8 +48,9 @@ exports.getPostsByCategory = async (req, res) => {
                 [userId, userId, userId, category_id, parseInt(limit)]
             );
 
-            // Get media for each post
+            // Get media and comments for each post
             for (let post of posts) {
+                // Get media
                 const [media] = await connection.query(
                     `SELECT id, media_type, media_url, thumbnail_url 
                      FROM post_media 
@@ -58,6 +59,21 @@ exports.getPostsByCategory = async (req, res) => {
                     [post.id]
                 );
                 post.media = media;
+
+                // Get comments with user details (including login user identification)
+                const [comments] = await connection.query(
+                    `SELECT pc.id, pc.comment_text, pc.created_at,
+                            u.id as user_id, u.name, u.email, u.employee_id, u.profile_url,
+                            CASE WHEN u.id = ? THEN 1 ELSE 0 END as is_login_user
+                     FROM post_comments pc
+                     JOIN users u ON pc.user_id = u.id
+                     WHERE pc.post_id = ? AND pc.status = 'active'
+                     ORDER BY pc.created_at DESC
+                     LIMIT 10`,
+                    [userId, post.id]
+                );
+                post.comments = comments;
+                post.comments_count = comments.length;
             }
 
             res.status(200).json({
