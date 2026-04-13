@@ -298,6 +298,7 @@ exports.getAllPosts = async (req, res) => {
                 p.id,
                 p.category_id,
                 c.name as category_name,
+                c.icon_url as category_icon_url,
                 p.title,
                 p.content,
                 p.hashtags,

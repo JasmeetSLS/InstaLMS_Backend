@@ -33,9 +33,7 @@ CREATE TABLE IF NOT EXISTS `admins` (
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table insta_style_lms.admins: ~1 rows (approximately)
-INSERT INTO `admins` (`id`, `username`, `password`, `email`, `role`, `status`, `created_at`, `updated_at`) VALUES
-	(1, 'Admin', '$2b$12$24vr9WK4g3VJRlDslopOBuIU5tsgIVNcfEx4jhgaYrcMszO5wqyzS', 'admin@admin.com', 'SuperAdmin', 'active', '2026-04-06 06:34:53', '2026-04-06 06:35:37');
+-- Data exporting was unselected.
 
 -- Dumping structure for table insta_style_lms.categories
 CREATE TABLE IF NOT EXISTS `categories` (
@@ -51,13 +49,7 @@ CREATE TABLE IF NOT EXISTS `categories` (
   KEY `idx_name` (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table insta_style_lms.categories: ~5 rows (approximately)
-INSERT INTO `categories` (`id`, `name`, `icon_url`, `status`, `created_at`, `updated_at`) VALUES
-	(1, 'All', '/uploads/category/1/icon-1775728660466-890754222.svg', 'active', '2026-04-09 09:57:40', '2026-04-13 05:12:15'),
-	(2, 'Product', '/uploads/category/2/icon-1775730548438-315653422.svg', 'active', '2026-04-09 10:29:08', '2026-04-13 05:12:22'),
-	(3, 'Process', '/uploads/category/3/icon-1775730588754-706962643.svg', 'active', '2026-04-09 10:29:48', '2026-04-13 05:12:35'),
-	(4, 'BAT', '/uploads/category/4/icon-1775730607174-102396582.svg', 'active', '2026-04-09 10:30:07', '2026-04-09 10:30:07'),
-	(5, 'Soft Skills', '/uploads/category/5/icon-1775730629357-684959557.svg', 'active', '2026-04-09 10:30:29', '2026-04-09 10:30:29');
+-- Data exporting was unselected.
 
 -- Dumping structure for table insta_style_lms.post_bookmarks
 CREATE TABLE IF NOT EXISTS `post_bookmarks` (
@@ -73,11 +65,7 @@ CREATE TABLE IF NOT EXISTS `post_bookmarks` (
   CONSTRAINT `post_bookmarks_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table insta_style_lms.post_bookmarks: ~3 rows (approximately)
-INSERT INTO `post_bookmarks` (`id`, `post_id`, `user_id`, `created_at`) VALUES
-	(1, 1, 2, '2026-04-09 06:48:19'),
-	(2, 1, 1, '2026-04-09 06:49:04'),
-	(3, 3, 2, '2026-04-09 11:13:46');
+-- Data exporting was unselected.
 
 -- Dumping structure for table insta_style_lms.post_comments
 CREATE TABLE IF NOT EXISTS `post_comments` (
@@ -97,12 +85,7 @@ CREATE TABLE IF NOT EXISTS `post_comments` (
   CONSTRAINT `post_comments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table insta_style_lms.post_comments: ~4 rows (approximately)
-INSERT INTO `post_comments` (`id`, `post_id`, `user_id`, `comment_text`, `status`, `created_at`, `updated_at`) VALUES
-	(1, 1, 2, 'Very informative.', 'active', '2026-04-09 06:24:31', '2026-04-09 06:24:31'),
-	(2, 1, 1, 'great post!', 'active', '2026-04-09 06:26:07', '2026-04-09 06:26:07'),
-	(3, 1, 1, 'Very informative.', 'active', '2026-04-09 06:26:20', '2026-04-09 06:26:20'),
-	(4, 2, 2, 'Very informative.', 'active', '2026-04-09 11:12:30', '2026-04-09 11:12:30');
+-- Data exporting was unselected.
 
 -- Dumping structure for table insta_style_lms.post_likes
 CREATE TABLE IF NOT EXISTS `post_likes` (
@@ -118,10 +101,7 @@ CREATE TABLE IF NOT EXISTS `post_likes` (
   CONSTRAINT `post_likes_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table insta_style_lms.post_likes: ~2 rows (approximately)
-INSERT INTO `post_likes` (`id`, `post_id`, `user_id`, `created_at`) VALUES
-	(1, 1, 1, '2026-04-09 06:12:51'),
-	(2, 1, 2, '2026-04-09 06:14:55');
+-- Data exporting was unselected.
 
 -- Dumping structure for table insta_style_lms.post_media
 CREATE TABLE IF NOT EXISTS `post_media` (
@@ -136,30 +116,7 @@ CREATE TABLE IF NOT EXISTS `post_media` (
   CONSTRAINT `post_media_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table insta_style_lms.post_media: ~22 rows (approximately)
-INSERT INTO `post_media` (`id`, `post_id`, `media_type`, `media_url`, `thumbnail_url`, `created_at`) VALUES
-	(1, 1, 'image', '/uploads/posts/1/media/1/BR_43_BR_50_BF_32_copy_png_a64bc06916.png', '/uploads/posts/1/media/1/thumb_BR_43_BR_50_BF_32_copy_png_a64bc06916.png', '2026-04-09 05:16:40'),
-	(2, 1, 'video', '/uploads/posts/1/media/2/E-BLAZE_EV_Tyre_Video_Comp_7-11-25.mp4', '/uploads/posts/1/media/2/thumb_E-BLAZE_EV_Tyre_Video_Comp_7-11-25.webp', '2026-04-09 05:16:40'),
-	(3, 2, 'image', '/uploads/posts/2/media/3/life_at_jk_page_3a591463b2.png', '/uploads/posts/2/media/3/thumb_life_at_jk_page_3a591463b2.png', '2026-04-09 05:18:48'),
-	(4, 2, 'video', '/uploads/posts/2/media/4/JK_Tyre_Dealer_Onboarding_Process_Video_19-2-26_1_.mp4', '/uploads/posts/2/media/4/thumb_JK_Tyre_Dealer_Onboarding_Process_Video_19-2-26_1_.jpg', '2026-04-09 05:18:48'),
-	(5, 3, 'image', '/uploads/posts/3/media/5/farm_tractor_trolley_54c9074369.png', '/uploads/posts/3/media/5/thumb_farm_tractor_trolley_54c9074369.png', '2026-04-09 05:20:55'),
-	(6, 3, 'video', '/uploads/posts/3/media/6/SHRESTH_PUDDLING_MASTER_3D_Animation_Hindi_VO_11-12-25.mp4', '/uploads/posts/3/media/6/thumb_SHRESTH_PUDDLING_MASTER_3D_Animation_Hindi_VO_11-12-25.avif', '2026-04-09 05:20:55'),
-	(7, 4, 'video', '/uploads/posts/4/media/7/JK_Tyre_Micro_Learning_01_-_Tyre_Construction.mp4', '/uploads/posts/4/media/7/thumb_JK_Tyre_Micro_Learning_01_-_Tyre_Construction.png', '2026-04-09 05:23:20'),
-	(8, 5, 'ppt', '/uploads/posts/5/media/8/SCV_-_Instructor_material_-_BAT_ver2.0_29-05-2015.pptx', '/uploads/posts/5/media/8/thumb_SCV_-_Instructor_material_-_BAT_ver2.0_29-05-2015.png', '2026-04-09 05:24:44'),
-	(9, 6, 'image', '/uploads/posts/6/media/9/Service_Advisor_Training_CPI.webp', '/uploads/posts/6/media/9/thumb_Service_Advisor_Training_CPI.webp', '2026-04-09 05:26:45'),
-	(10, 6, 'image', '/uploads/posts/6/media/10/images.jpg', '/uploads/posts/6/media/10/thumb_images.jpg', '2026-04-09 05:26:45'),
-	(11, 7, 'image', '/uploads/posts/7/media/11/image_6487327-copy.jpg', '/uploads/posts/7/media/11/thumb_image_6487327-copy.jpg', '2026-04-09 05:30:45'),
-	(12, 8, 'image', '/uploads/posts/8/media/12/image_6487327-copy.jpg', '/uploads/posts/8/media/12/thumb_image_6487327-copy.jpg', '2026-04-09 05:34:23'),
-	(13, 8, 'youtube', 'https://www.youtube.com/watch?v=n_ewkN4SPTg&t=46s', 'https://img.youtube.com/vi/n_ewkN4SPTg/maxresdefault.jpg', '2026-04-09 05:34:23'),
-	(14, 9, 'image', '/uploads/posts/9/media/14/JK_Tyre_Blaze-Rydr-Tyre-for-Premium-Motorcycles-750x375.webp', '/uploads/posts/9/media/14/thumb_JK_Tyre_Blaze-Rydr-Tyre-for-Premium-Motorcycles-750x375.webp', '2026-04-09 05:36:20'),
-	(15, 9, 'youtube', 'https://www.youtube.com/watch?v=aMstMFkpRiQ', 'https://img.youtube.com/vi/aMstMFkpRiQ/maxresdefault.jpg', '2026-04-09 05:36:20'),
-	(16, 10, 'wbt', '/uploads/posts/10/media/16/extracted/story.html', '/uploads/posts/10/media/16/thumb_SLS_LMS.jpg', '2026-04-09 05:37:26'),
-	(17, 11, 'wbt', '/uploads/posts/11/media/17/extracted/story.html', '/uploads/posts/11/media/17/thumb_Basic_Electrical_WBT_-_POC.jpg', '2026-04-09 05:37:56'),
-	(18, 12, 'image', '/uploads/posts/12/media/18/p1.jpg', '/uploads/posts/12/media/18/thumb_p1.jpg', '2026-04-09 10:25:40'),
-	(19, 12, 'image', '/uploads/posts/12/media/19/p2.jpg', '/uploads/posts/12/media/19/thumb_p2.jpg', '2026-04-09 10:25:40'),
-	(20, 12, 'image', '/uploads/posts/12/media/20/p3.jpg', '/uploads/posts/12/media/20/thumb_p3.jpg', '2026-04-09 10:25:40'),
-	(21, 12, 'image', '/uploads/posts/12/media/21/p4.jpg', '/uploads/posts/12/media/21/thumb_p4.jpg', '2026-04-09 10:25:40'),
-	(22, 12, 'image', '/uploads/posts/12/media/22/p5.jpg', '/uploads/posts/12/media/22/thumb_p5.jpg', '2026-04-09 10:25:40');
+-- Data exporting was unselected.
 
 -- Dumping structure for table insta_style_lms.post_shares
 CREATE TABLE IF NOT EXISTS `post_shares` (
@@ -180,12 +137,7 @@ CREATE TABLE IF NOT EXISTS `post_shares` (
   CONSTRAINT `post_shares_ibfk_3` FOREIGN KEY (`share_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table insta_style_lms.post_shares: ~4 rows (approximately)
-INSERT INTO `post_shares` (`id`, `post_id`, `user_id`, `share_id`, `status`, `created_at`) VALUES
-	(1, 1, 1, 2, 'active', '2026-04-09 07:32:38'),
-	(2, 1, 1, 3, 'active', '2026-04-09 07:33:14'),
-	(3, 1, 2, 3, 'active', '2026-04-09 11:14:01'),
-	(4, 1, 2, 3, 'active', '2026-04-09 11:14:07');
+-- Data exporting was unselected.
 
 -- Dumping structure for table insta_style_lms.post_views
 CREATE TABLE IF NOT EXISTS `post_views` (
@@ -202,10 +154,7 @@ CREATE TABLE IF NOT EXISTS `post_views` (
   CONSTRAINT `post_views_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table insta_style_lms.post_views: ~2 rows (approximately)
-INSERT INTO `post_views` (`id`, `post_id`, `user_id`, `viewed_at`) VALUES
-	(1, 1, 1, '2026-04-09 06:40:37'),
-	(2, 1, 2, '2026-04-09 11:13:24');
+-- Data exporting was unselected.
 
 -- Dumping structure for table insta_style_lms.posts
 CREATE TABLE IF NOT EXISTS `posts` (
@@ -226,20 +175,7 @@ CREATE TABLE IF NOT EXISTS `posts` (
   CONSTRAINT `posts_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table insta_style_lms.posts: ~12 rows (approximately)
-INSERT INTO `posts` (`id`, `category_id`, `title`, `content`, `hashtags`, `likes_count`, `comments_count`, `views_count`, `shares_count`, `status`, `created_at`, `updated_at`) VALUES
-	(1, 2, 'E-BLAZE_EV Tyre', 'E-BLAZE_EV Tyre', '#E-BLAZE #Tyre', 2, 3, 2, 4, 'active', '2026-04-09 05:16:40', '2026-04-13 05:15:21'),
-	(2, 3, 'JK Tyre Dealer Onboarding Process', 'JK Tyre Dealer Onboarding Process', '#JK Tyre #Dealer Onboarding Process', 0, 1, 0, 0, 'active', '2026-04-09 05:18:48', '2026-04-13 05:15:14'),
-	(3, 2, 'Farm Tyre', 'Farm Tyre', '#Farm Tyre', 0, 0, 0, 0, 'active', '2026-04-09 05:20:55', '2026-04-13 05:15:24'),
-	(4, 2, 'JK Tyre Micro Learning', 'JK Tyre Micro Learning 01 - Tyre Construction', '#MicroLearning #JK Tyre', 0, 0, 0, 0, 'active', '2026-04-09 05:23:20', '2026-04-13 05:15:28'),
-	(5, 4, 'SCV - Instructor material - BAT', 'SCV - Instructor material - BAT', '#BAT #SCV - Instructor material', 0, 0, 0, 0, 'active', '2026-04-09 05:24:44', '2026-04-09 05:24:44'),
-	(6, 5, 'Soft Skills', 'Soft Skills', '#Soft Skills', 0, 0, 0, 0, 'active', '2026-04-09 05:26:45', '2026-04-09 10:32:12'),
-	(7, 2, 'Ventilated Seat', 'Ventilated Seat', '#Ventilated Seat', 0, 0, 0, 0, 'active', '2026-04-09 05:30:45', '2026-04-13 05:14:47'),
-	(8, 2, 'Ventilated Seat Shorts', 'Ventilated Seat', '#Ventilated Seat', 0, 0, 0, 0, 'active', '2026-04-09 05:34:23', '2026-04-13 05:14:51'),
-	(9, 2, 'E-BLAZE Youtube Shorts', 'E-BLAZE Youtube Shorts', '#E-BLAZE', 0, 0, 0, 0, 'active', '2026-04-09 05:36:20', '2026-04-13 05:15:34'),
-	(10, 3, 'WBT Training Module1', 'This is an interactive WBT training module', '#WBT #Training #Learning', 0, 0, 0, 0, 'active', '2026-04-09 05:37:26', '2026-04-13 05:14:58'),
-	(11, 3, 'WBT Training Module2', 'This is an interactive WBT training module', '#WBT #Training #Learning', 0, 0, 0, 0, 'active', '2026-04-09 05:37:56', '2026-04-13 05:15:00'),
-	(12, 2, 'Maruti Suzuki Cars', 'Maruti Suzuki Cars', '#Maruti Suzuki', 0, 0, 0, 0, 'active', '2026-04-09 10:25:40', '2026-04-13 05:15:39');
+-- Data exporting was unselected.
 
 -- Dumping structure for table insta_style_lms.users
 CREATE TABLE IF NOT EXISTS `users` (
@@ -265,11 +201,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   KEY `idx_status` (`status`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table insta_style_lms.users: ~3 rows (approximately)
-INSERT INTO `users` (`id`, `email`, `employee_id`, `name`, `phone`, `gender`, `password`, `profile_url`, `fcm_token`, `device_type`, `role`, `status`, `created_at`, `updated_at`) VALUES
-	(1, 'demo@sls.com', 'EMP001', 'Keshav_Goyal', '8282828282', 'male', '$2b$12$ZslmCICm4jckewtmotATtOyvLHKWfDRSBks.slJVbMrB3LImYsnsa', '/uploads/users/1/profile-1775713806692.jpg', 'fcm_token_xyz_123_abc', 'android', 'DSE', 'active', '2026-04-09 05:50:06', '2026-04-09 10:47:24'),
-	(2, 'demo@sls2.com', 'EMP002', 'Neeraj Jain', '8989898989', 'male', '$2b$12$QBXiSY0OPhBa9qV8f48MzuRvUwqsl67/Sb1mjCjKsvlcszd5nvAQa', '/uploads/users/2/profile-1775713867244.jpg', 'fcm_token_xyz_123_abc', 'android', 'PSE', 'active', '2026-04-09 05:51:07', '2026-04-09 10:50:22'),
-	(3, 'demo@sls3.com', 'EMP003', 'Ravi Pandey', '8181818181', 'male', '$2b$12$PNRO6eNla8CKqp4prVXoT.QNjB8ULGi/u0dc2N1Wo1wP7U8OsFlKi', '/uploads/users/3/profile-1775713939921.jpg', 'fcm_token_xyz_123_abc', 'android', 'SNE', 'active', '2026-04-09 05:52:19', '2026-04-09 10:49:50');
+-- Data exporting was unselected.
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
