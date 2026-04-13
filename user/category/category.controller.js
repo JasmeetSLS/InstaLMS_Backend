@@ -13,7 +13,7 @@ exports.ActiveUserCategories = async (req, res) => {
             const [categories] = await connection.query(
                 `SELECT id, name, icon_url, created_at 
                  FROM categories 
-                 WHERE status = 'active' 
+                 WHERE status = 'active' AND id != 1
                  ORDER BY id ASC`
             );
 
