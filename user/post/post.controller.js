@@ -15,18 +15,39 @@ exports.getPostsByCategory = async (req, res) => {
         const connection = await pool.getConnection();
 
         try {
-            // Check if category exists and is active
-            const [categories] = await connection.query(
-                'SELECT id, name, status FROM categories WHERE id = ? AND status = "active"',
-                [category_id]
-            );
+            let categoryFilter = '';
+            let queryParams = [userId, userId, userId];
+            let categoryInfo = null;
 
-            if (categories.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    error: 'Category not found or inactive'
-                });
+            // If category_id is 1, show all posts (no category filter)
+            if (category_id === '1') {
+                // Get category name from database
+                const [categories] = await connection.query(
+                    'SELECT id, name FROM categories WHERE id = ? AND status = "active"',
+                    [category_id]
+                );
+                categoryInfo = categories[0];
+                categoryFilter = ''; // No category filter
+                // Don't add category_id to queryParams
+            } else {
+                // Check if category exists and is active
+                const [categories] = await connection.query(
+                    'SELECT id, name, status FROM categories WHERE id = ? AND status = "active"',
+                    [category_id]
+                );
+
+                if (categories.length === 0) {
+                    return res.status(404).json({
+                        success: false,
+                        error: 'Category not found or inactive'
+                    });
+                }
+                categoryInfo = categories[0];
+                categoryFilter = 'AND p.category_id = ?';
+                queryParams.push(category_id);
             }
+
+            queryParams.push(parseInt(limit));
 
             // Get posts ordered by id ASC with limit
             const [posts] = await connection.query(
@@ -40,10 +61,10 @@ exports.getPostsByCategory = async (req, res) => {
                  LEFT JOIN post_likes pl ON p.id = pl.post_id AND pl.user_id = ?
                  LEFT JOIN post_bookmarks pb ON p.id = pb.post_id AND pb.user_id = ?
                  LEFT JOIN post_views pv ON p.id = pv.post_id AND pv.user_id = ?
-                 WHERE p.category_id = ? AND p.status = 'active'
+                 WHERE p.status = 'active' ${categoryFilter}
                  ORDER BY p.id ASC
                  LIMIT ?`,
-                [userId, userId, userId, category_id, parseInt(limit)]
+                queryParams
             );
 
             // Get media and comments for each post
@@ -78,8 +99,8 @@ exports.getPostsByCategory = async (req, res) => {
                 success: true,
                 data: {
                     category: {
-                        id: categories[0].id,
-                        name: categories[0].name
+                        id: categoryInfo.id,
+                        name: categoryInfo.name
                     },
                     posts: posts,
                     count: posts.length
