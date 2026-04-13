@@ -94,7 +94,7 @@ exports.getAllCategories = async (req, res) => {
 
         try {
             const [categories] = await connection.query(
-                'SELECT id, name, icon_url, status, created_at FROM categories ORDER BY created_at DESC'
+                'SELECT id, name, icon_url, status, created_at FROM categories ORDER BY id ASC'
             );
 
             res.json({
