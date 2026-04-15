@@ -17,16 +17,9 @@ exports.getPostsByCategory = async (req, res) => {
         try {
             let categoryFilter = '';
             let queryParams = [userId, userId, userId];
-            let categoryInfo = null;
 
             // If category_id is 1, show all posts (no category filter)
             if (category_id === '1') {
-                // Get category name from database
-                const [categories] = await connection.query(
-                    'SELECT id, name FROM categories WHERE id = ? AND status = "active"',
-                    [category_id]
-                );
-                categoryInfo = categories[0];
                 categoryFilter = ''; // No category filter
                 // Don't add category_id to queryParams
             } else {
@@ -42,7 +35,6 @@ exports.getPostsByCategory = async (req, res) => {
                         error: 'Category not found or inactive'
                     });
                 }
-                categoryInfo = categories[0];
                 categoryFilter = 'AND p.category_id = ?';
                 queryParams.push(category_id);
             }
@@ -98,10 +90,6 @@ exports.getPostsByCategory = async (req, res) => {
             res.status(200).json({
                 success: true,
                 data: {
-                    category: {
-                        id: categoryInfo.id,
-                        name: categoryInfo.name
-                    },
                     posts: posts,
                     count: posts.length
                 }
