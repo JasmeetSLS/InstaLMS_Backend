@@ -1,7 +1,7 @@
 const { pool } = require('../../config/db');
 
-// Get all active categories and active users (excluding logged-in user)
-exports.ActiveUserCategories = async (req, res) => {
+// Get all active categories, active users, and active comments
+exports.ActiveUsersCategoriesComments = async (req, res) => {
     try {
         const connection = await pool.getConnection();
         
@@ -26,6 +26,14 @@ exports.ActiveUserCategories = async (req, res) => {
                 [userId]
             );
 
+            // Get all active comments
+            const [comments] = await connection.query(
+                `SELECT id, comment, status, created_at 
+                 FROM comments 
+                 WHERE status = 'active'
+                 ORDER BY id ASC`
+            );
+
             res.json({
                 success: true,
                 categories: {
@@ -35,6 +43,10 @@ exports.ActiveUserCategories = async (req, res) => {
                 users: {
                     count: users.length,
                     data: users
+                },
+                comments: {
+                    count: comments.length,
+                    data: comments
                 }
             });
 
