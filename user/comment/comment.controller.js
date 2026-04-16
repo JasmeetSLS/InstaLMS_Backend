@@ -3,7 +3,7 @@ const { pool } = require('../../config/db');
 // Create a comment on a post
 exports.createComment = async (req, res) => {
     try {
-        const { post_id } = req.params;
+        const { post_id } = req.query; 
         const { comment_text } = req.body;
         const userId = req.user.userId; // From authentication token
 
@@ -11,7 +11,7 @@ exports.createComment = async (req, res) => {
         if (!post_id) {
             return res.status(400).json({
                 success: false,
-                error: 'Post ID is required'
+                error: 'Post ID is required in query params'
             });
         }
 
