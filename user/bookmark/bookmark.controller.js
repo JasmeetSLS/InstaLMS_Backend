@@ -3,8 +3,7 @@ const { pool } = require('../../config/db');
 // Add or Remove bookmark from a post
 exports.toggleBookmark = async (req, res) => {
     try {
-        const { post_id } = req.query; 
-        const { bookmark_status } = req.body; 
+        const { post_id, bookmark_status } = req.query; // Changed: both from query params
         const userId = req.user.userId; 
 
         if (!post_id) {
@@ -21,7 +20,7 @@ exports.toggleBookmark = async (req, res) => {
             });
         }
 
-        if (bookmark_status !== 0 && bookmark_status !== 1) {
+        if (bookmark_status !== '0' && bookmark_status !== '1') {
             return res.status(400).json({
                 success: false,
                 error: 'bookmark_status must be 0 or 1'
@@ -50,7 +49,7 @@ exports.toggleBookmark = async (req, res) => {
                 [post_id, userId]
             );
 
-            if (bookmark_status === 1) {
+            if (bookmark_status === '1') {
                 // ADD BOOKMARK operation
                 if (existingBookmark.length > 0) {
                     return res.status(400).json({
@@ -65,7 +64,7 @@ exports.toggleBookmark = async (req, res) => {
                     [post_id, userId]
                 );
 
-            } else if (bookmark_status === 0) {
+            } else if (bookmark_status === '0') {
                 // REMOVE BOOKMARK operation
                 if (existingBookmark.length === 0) {
                     return res.status(400).json({
@@ -81,7 +80,7 @@ exports.toggleBookmark = async (req, res) => {
                 );
             }
 
-            const message = bookmark_status === 1 ? 'Post bookmarked successfully' : 'Post bookmark removed successfully';
+            const message = bookmark_status === '1' ? 'Post bookmarked successfully' : 'Post bookmark removed successfully';
             
             res.status(200).json({
                 success: true,
@@ -89,7 +88,7 @@ exports.toggleBookmark = async (req, res) => {
                 data: {
                     post_id: parseInt(post_id),
                     user_id: userId,
-                    bookmark_status: bookmark_status
+                    bookmark_status: parseInt(bookmark_status)
                 }
             });
 

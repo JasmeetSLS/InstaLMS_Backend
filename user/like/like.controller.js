@@ -3,8 +3,7 @@ const { pool } = require('../../config/db');
 // Like or Unlike a post
 exports.likePost = async (req, res) => {
     try {
-        const { post_id } = req.query; 
-        const { like_status } = req.body; 
+        const { post_id, like_status } = req.query; // Changed: both from query params
         const userId = req.user.userId; 
 
         if (!post_id) {
@@ -21,7 +20,7 @@ exports.likePost = async (req, res) => {
             });
         }
 
-        if (like_status !== 0 && like_status !== 1) {
+        if (like_status !== '0' && like_status !== '1') {
             return res.status(400).json({
                 success: false,
                 error: 'like_status must be 0 or 1'
@@ -52,7 +51,7 @@ exports.likePost = async (req, res) => {
 
             await connection.beginTransaction();
 
-            if (like_status === 1) {
+            if (like_status === '1') {
                 // LIKE operation
                 if (existingLike.length > 0) {
                     await connection.rollback();
@@ -74,7 +73,7 @@ exports.likePost = async (req, res) => {
                     [post_id]
                 );
 
-            } else if (like_status === 0) {
+            } else if (like_status === '0') {
                 // UNLIKE operation
                 if (existingLike.length === 0) {
                     await connection.rollback();
@@ -105,7 +104,7 @@ exports.likePost = async (req, res) => {
                 [post_id]
             );
 
-            const message = like_status === 1 ? 'Post liked successfully' : 'Post unliked successfully';
+            const message = like_status === '1' ? 'Post liked successfully' : 'Post unliked successfully';
             
             res.status(200).json({
                 success: true,
@@ -113,7 +112,7 @@ exports.likePost = async (req, res) => {
                 data: {
                     post_id: parseInt(post_id),
                     user_id: userId,
-                    like_status: like_status,
+                    like_status: parseInt(like_status),
                     likes_count: updatedPost[0].likes_count
                 }
             });
