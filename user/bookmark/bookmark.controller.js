@@ -1,15 +1,30 @@
 const { pool } = require('../../config/db');
 
-// Add bookmark to a post
-exports.addBookmark = async (req, res) => {
+// Add or Remove bookmark from a post
+exports.toggleBookmark = async (req, res) => {
     try {
-        const { post_id } = req.params;
-        const userId = req.user.userId; // From authentication token
+        const { post_id } = req.query;
+        const { bookmark_status } = req.body; 
+        const userId = req.user.userId; 
 
         if (!post_id) {
             return res.status(400).json({
                 success: false,
                 error: 'Post ID is required'
+            });
+        }
+
+        if (bookmark_status === undefined) {
+            return res.status(400).json({
+                success: false,
+                error: 'bookmark_status is required (1 for add, 0 for remove)'
+            });
+        }
+
+        if (bookmark_status !== 0 && bookmark_status !== 1) {
+            return res.status(400).json({
+                success: false,
+                error: 'bookmark_status must be 0 or 1'
             });
         }
 
@@ -35,26 +50,47 @@ exports.addBookmark = async (req, res) => {
                 [post_id, userId]
             );
 
-            if (existingBookmark.length > 0) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Post already bookmarked'
-                });
+            if (bookmark_status === 1) {
+                // ADD BOOKMARK operation
+                if (existingBookmark.length > 0) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Post already bookmarked'
+                    });
+                }
+
+                // Insert bookmark
+                await connection.query(
+                    'INSERT INTO post_bookmarks (post_id, user_id) VALUES (?, ?)',
+                    [post_id, userId]
+                );
+
+            } else if (bookmark_status === 0) {
+                // REMOVE BOOKMARK operation
+                if (existingBookmark.length === 0) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Post not bookmarked yet'
+                    });
+                }
+
+                // Remove bookmark
+                await connection.query(
+                    'DELETE FROM post_bookmarks WHERE post_id = ? AND user_id = ?',
+                    [post_id, userId]
+                );
             }
 
-            // Insert bookmark
-            await connection.query(
-                'INSERT INTO post_bookmarks (post_id, user_id) VALUES (?, ?)',
-                [post_id, userId]
-            );
-
+            const message = bookmark_status === 1 ? 'Post bookmarked successfully' : 'Post bookmark removed successfully';
+            
             res.status(200).json({
                 success: true,
-                message: 'Post bookmarked successfully',
+                message: message,
                 data: {
                     post_id: parseInt(post_id),
                     user_id: userId,
-                    bookmarked_at: new Date().toISOString()
+                    bookmark_status: bookmark_status,
+                    bookmarked_at: bookmark_status === 1 ? new Date().toISOString() : null
                 }
             });
 
@@ -65,7 +101,7 @@ exports.addBookmark = async (req, res) => {
         }
 
     } catch (error) {
-        console.error('Add bookmark error:', error);
+        console.error('Toggle bookmark error:', error);
         res.status(500).json({
             success: false,
             error: 'Internal server error: ' + error.message

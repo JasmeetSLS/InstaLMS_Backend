@@ -1,15 +1,30 @@
 const { pool } = require('../../config/db');
 
-// Like a post
+// Like or Unlike a post
 exports.likePost = async (req, res) => {
     try {
-        const { post_id } = req.params;
-        const userId = req.user.userId; // From authentication token
+        const { post_id } = req.query; 
+        const { like_status } = req.body; 
+        const userId = req.user.userId; 
 
         if (!post_id) {
             return res.status(400).json({
                 success: false,
                 error: 'Post ID is required'
+            });
+        }
+
+        if (like_status === undefined) {
+            return res.status(400).json({
+                success: false,
+                error: 'like_status is required (1 for like, 0 for unlike)'
+            });
+        }
+
+        if (like_status !== 0 && like_status !== 1) {
+            return res.status(400).json({
+                success: false,
+                error: 'like_status must be 0 or 1'
             });
         }
 
@@ -35,26 +50,52 @@ exports.likePost = async (req, res) => {
                 [post_id, userId]
             );
 
-            if (existingLike.length > 0) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'You have already liked this post'
-                });
-            }
-
             await connection.beginTransaction();
 
-            // Insert like record
-            await connection.query(
-                'INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)',
-                [post_id, userId]
-            );
+            if (like_status === 1) {
+                // LIKE operation
+                if (existingLike.length > 0) {
+                    await connection.rollback();
+                    return res.status(400).json({
+                        success: false,
+                        error: 'You have already liked this post'
+                    });
+                }
 
-            // Update likes count in posts table
-            await connection.query(
-                'UPDATE posts SET likes_count = likes_count + 1 WHERE id = ?',
-                [post_id]
-            );
+                // Insert like record
+                await connection.query(
+                    'INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)',
+                    [post_id, userId]
+                );
+
+                // Update likes count in posts table (increment)
+                await connection.query(
+                    'UPDATE posts SET likes_count = likes_count + 1 WHERE id = ?',
+                    [post_id]
+                );
+
+            } else if (like_status === 0) {
+                // UNLIKE operation
+                if (existingLike.length === 0) {
+                    await connection.rollback();
+                    return res.status(400).json({
+                        success: false,
+                        error: 'You have not liked this post yet'
+                    });
+                }
+
+                // Remove like record
+                await connection.query(
+                    'DELETE FROM post_likes WHERE post_id = ? AND user_id = ?',
+                    [post_id, userId]
+                );
+
+                // Update likes count in posts table (decrement)
+                await connection.query(
+                    'UPDATE posts SET likes_count = likes_count - 1 WHERE id = ?',
+                    [post_id]
+                );
+            }
 
             await connection.commit();
 
@@ -64,12 +105,15 @@ exports.likePost = async (req, res) => {
                 [post_id]
             );
 
+            const message = like_status === 1 ? 'Post liked successfully' : 'Post unliked successfully';
+            
             res.status(200).json({
                 success: true,
-                message: 'Post liked successfully',
+                message: message,
                 data: {
                     post_id: parseInt(post_id),
                     user_id: userId,
+                    like_status: like_status,
                     likes_count: updatedPost[0].likes_count
                 }
             });
@@ -82,7 +126,7 @@ exports.likePost = async (req, res) => {
         }
 
     } catch (error) {
-        console.error('Like post error:', error);
+        console.error('Like/Unlike post error:', error);
         res.status(500).json({
             success: false,
             error: 'Internal server error: ' + error.message
