@@ -3,7 +3,7 @@ const { pool } = require('../../config/db');
 // Add or Remove bookmark from a post
 exports.toggleBookmark = async (req, res) => {
     try {
-        const { post_id } = req.query;
+        const { post_id } = req.query; 
         const { bookmark_status } = req.body; 
         const userId = req.user.userId; 
 
@@ -89,8 +89,7 @@ exports.toggleBookmark = async (req, res) => {
                 data: {
                     post_id: parseInt(post_id),
                     user_id: userId,
-                    bookmark_status: bookmark_status,
-                    bookmarked_at: bookmark_status === 1 ? new Date().toISOString() : null
+                    bookmark_status: bookmark_status
                 }
             });
 
