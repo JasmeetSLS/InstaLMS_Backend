@@ -61,9 +61,8 @@ exports.getPostsByCategory = async (req, res) => {
 
             // Get media and comments for each post
             for (let post of posts) {
-                // Get media
                 const [media] = await connection.query(
-                    `SELECT id, media_type, media_url, thumbnail_url 
+                    `SELECT id, media_type, media_url, thumbnail_url, thumbnail_type 
                      FROM post_media 
                      WHERE post_id = ? 
                      ORDER BY id ASC`,
