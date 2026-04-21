@@ -106,3 +106,77 @@ exports.toggleBookmark = async (req, res) => {
         });
     }
 };
+exports.getUserBookmarks = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        
+        const connection = await pool.getConnection();
+        
+        try {
+            // Get bookmarked posts with all details
+            const [bookmarkedPosts] = await connection.query(
+                `SELECT 
+                    p.*, 
+                    c.name as category_name,
+                    pb.created_at as bookmarked_at,
+                    COALESCE(pl.id IS NOT NULL, 0) as is_liked,
+                    COALESCE(pb2.id IS NOT NULL, 0) as is_bookmarked,
+                    COALESCE(pv.id IS NOT NULL, 0) as is_viewed
+                 FROM post_bookmarks pb
+                 INNER JOIN posts p ON pb.post_id = p.id
+                 INNER JOIN categories c ON p.category_id = c.id
+                 LEFT JOIN post_likes pl ON p.id = pl.post_id AND pl.user_id = ?
+                 LEFT JOIN post_bookmarks pb2 ON p.id = pb2.post_id AND pb2.user_id = ?
+                 LEFT JOIN post_views pv ON p.id = pv.post_id AND pv.user_id = ?
+                 WHERE pb.user_id = ? AND p.status = 'active'
+                 ORDER BY pb.created_at DESC`,
+                [userId, userId, userId, userId]
+            );
+            
+            // Get media and comments for each post
+            for (let post of bookmarkedPosts) {
+                // Get media
+                const [media] = await connection.query(
+                    `SELECT id, media_type, media_url, thumbnail_url 
+                     FROM post_media 
+                     WHERE post_id = ? 
+                     ORDER BY id ASC`,
+                    [post.id]
+                );
+                post.media = media;
+                
+                // Get comments with user details (limit to recent 10)
+                const [comments] = await connection.query(
+                    `SELECT pc.id, pc.comment_text, pc.created_at,
+                            u.id as user_id, u.name, u.email, u.employee_id, u.profile_url,
+                            CASE WHEN u.id = ? THEN 1 ELSE 0 END as is_login_user
+                     FROM post_comments pc
+                     JOIN users u ON pc.user_id = u.id
+                     WHERE pc.post_id = ? AND pc.status = 'active'
+                     ORDER BY pc.created_at DESC
+                     LIMIT 10`,
+                    [userId, post.id]
+                );
+                post.comments = comments;
+            }
+            
+            res.status(200).json({
+                success: true,
+                data: {
+                    posts: bookmarkedPosts,
+                    count: bookmarkedPosts.length
+                }
+            });
+            
+        } finally {
+            connection.release();
+        }
+        
+    } catch (error) {
+        console.error('Get user bookmarks error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error: ' + error.message
+        });
+    }
+};
