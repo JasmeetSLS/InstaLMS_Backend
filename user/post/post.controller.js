@@ -41,10 +41,10 @@ exports.getPostsByCategory = async (req, res) => {
 
             queryParams.push(parseInt(limit));
 
-            // Get posts ordered by id ASC with limit
             const [posts] = await connection.query(
                 `SELECT p.*, 
                         c.name as category_name,
+                        p.thumbnail_type,  
                         COALESCE(pl.id IS NOT NULL, 0) as is_liked,
                         COALESCE(pb.id IS NOT NULL, 0) as is_bookmarked,
                         COALESCE(pv.id IS NOT NULL, 0) as is_viewed
@@ -59,10 +59,9 @@ exports.getPostsByCategory = async (req, res) => {
                 queryParams
             );
 
-            // Get media and comments for each post
             for (let post of posts) {
                 const [media] = await connection.query(
-                    `SELECT id, media_type, media_url, thumbnail_url, thumbnail_type 
+                    `SELECT id, media_type, media_url, thumbnail_url 
                      FROM post_media 
                      WHERE post_id = ? 
                      ORDER BY id ASC`,

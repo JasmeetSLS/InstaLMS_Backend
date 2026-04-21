@@ -128,9 +128,15 @@ function cleanupTempFiles(files) {
 // Create post with multiple media files
 exports.createPost = async (req, res) => {
     try {
-        const { title, category_id, description, hashtags, youtube_links } = req.body;
+        const { title, category_id, description, hashtags, youtube_links, thumbnail_type } = req.body;
         const mediaFiles = req.files['media'] || [];
         const thumbnailFiles = req.files['thumbnail'] || [];
+
+        // Validate thumbnail_type (user input once for all)
+        const validThumbnailTypes = ['portrait', 'landscape'];
+        const selectedThumbnailType = thumbnail_type && validThumbnailTypes.includes(thumbnail_type.toLowerCase()) 
+            ? thumbnail_type.toLowerCase() 
+            : 'landscape';
 
         if (!title || !category_id) {
             cleanupTempFiles(req.files);
@@ -152,9 +158,10 @@ exports.createPost = async (req, res) => {
 
             await connection.beginTransaction();
 
+            // Insert post with thumbnail_type
             const [postResult] = await connection.query(
-                'INSERT INTO posts (category_id, title, content, hashtags) VALUES (?, ?, ?, ?)',
-                [category_id, title, description || null, hashtags || null]
+                'INSERT INTO posts (category_id, title, content, hashtags, thumbnail_type) VALUES (?, ?, ?, ?, ?)',
+                [category_id, title, description || null, hashtags || null, selectedThumbnailType]
             );
 
             const postId = postResult.insertId;
@@ -169,7 +176,7 @@ exports.createPost = async (req, res) => {
                 
                 if (!config) continue;
 
-                // Insert to get media ID
+                // Insert without thumbnail_type
                 const [tempMediaResult] = await connection.query(
                     'INSERT INTO post_media (post_id, media_type, media_url, thumbnail_url) VALUES (?, ?, ?, ?)',
                     [postId, config.type, '', '']
@@ -177,22 +184,18 @@ exports.createPost = async (req, res) => {
                 
                 const mediaId = tempMediaResult.insertId;
                 
-                // Create media ID folder
                 const mediaFolder = path.join(mediaBaseDir, mediaId.toString());
                 ensureDir(mediaFolder);
                 
-                // Use original filename
                 const originalFilename = getCleanFileName(mediaFile.originalname);
                 const mediaPath = path.join(mediaFolder, originalFilename);
                 
                 let mediaUrl = null;
                 let thumbnailUrl = null;
                 
-                // Move original file
                 fs.renameSync(mediaFile.path, mediaPath);
                 mediaUrl = `/uploads/posts/${postId}/media/${mediaId}/${originalFilename}`;
                 
-                // Handle WBT extraction
                 if (config.type === 'wbt' && path.extname(mediaFile.originalname).toLowerCase() === '.zip') {
                     const extractPath = path.join(mediaFolder, 'extracted');
                     ensureDir(extractPath);
@@ -208,10 +211,8 @@ exports.createPost = async (req, res) => {
                     }
                 }
                 
-                // Handle thumbnail - use same name as original but with thumb_ prefix
                 if (thumbnailFiles[i]) {
                     const thumbExt = path.extname(thumbnailFiles[i].originalname);
-                    // Use the same base name as original file
                     const baseName = path.basename(originalFilename, path.extname(originalFilename));
                     const thumbFilename = `thumb_${baseName}${thumbExt}`;
                     const thumbPath = path.join(mediaFolder, thumbFilename);
@@ -223,7 +224,6 @@ exports.createPost = async (req, res) => {
                     thumbnailUrl = mediaUrl;
                 }
                 
-                // Update database
                 await connection.query(
                     'UPDATE post_media SET media_url = ?, thumbnail_url = ? WHERE id = ?',
                     [mediaUrl, thumbnailUrl, mediaId]
@@ -271,6 +271,7 @@ exports.createPost = async (req, res) => {
                     category_name: categories[0].name,
                     description: description,
                     hashtags: hashtags,
+                    thumbnail_type: selectedThumbnailType,
                     media_count: mediaItems.length,
                     media: mediaItems
                 }
@@ -290,7 +291,7 @@ exports.createPost = async (req, res) => {
     }
 };
 
-// Get all posts with media files (without media_count)
+// Get all posts with media files
 exports.getAllPosts = async (req, res) => {
     try {
         const [posts] = await pool.query(
@@ -302,6 +303,7 @@ exports.getAllPosts = async (req, res) => {
                 p.title,
                 p.content,
                 p.hashtags,
+                p.thumbnail_type,
                 p.likes_count,
                 p.comments_count,
                 p.views_count,
