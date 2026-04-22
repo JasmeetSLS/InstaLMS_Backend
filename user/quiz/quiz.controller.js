@@ -3,13 +3,13 @@ const { pool } = require('../../config/db');
 // Get quiz questions for a post
 exports.getQuizQuestions = async (req, res) => {
     try {
-        const { post_id } = req.params;
+        const { post_id } = req.query;
         const userId = req.user.userId;
 
         if (!post_id) {
             return res.status(400).json({
                 success: false,
-                error: 'Post ID is required'
+                error: 'Post ID is required in query params'
             });
         }
 
@@ -95,7 +95,6 @@ exports.getQuizQuestions = async (req, res) => {
                             D: q.option_d
                         },
                         marks: q.marks
-                        // Note: correct_option is NOT sent to client
                     }))
                 }
             });
@@ -113,24 +112,25 @@ exports.getQuizQuestions = async (req, res) => {
     }
 };
 
-// Submit quiz answers
+// Submit quiz answers - SIMPLIFIED RESPONSE
 exports.submitQuizAnswers = async (req, res) => {
     try {
-        const { post_id, answers } = req.body;
+        const { post_id } = req.query;
+        const { answers } = req.body;
         const userId = req.user.userId;
 
         // Validation
         if (!post_id) {
             return res.status(400).json({
                 success: false,
-                error: 'Post ID is required'
+                error: 'Post ID is required in query params'
             });
         }
 
         if (!answers || !Array.isArray(answers) || answers.length === 0) {
             return res.status(400).json({
                 success: false,
-                error: 'Answers array is required'
+                error: 'Answers array is required in body'
             });
         }
 
@@ -198,7 +198,6 @@ exports.submitQuizAnswers = async (req, res) => {
             // Process answers and calculate score
             let totalScore = 0;
             const processedAnswers = [];
-            const results = [];
 
             for (const answer of answers) {
                 const { question_id, selected_option } = answer;
@@ -236,7 +235,6 @@ exports.submitQuizAnswers = async (req, res) => {
                 }
 
                 const isCorrect = (selected_option.toUpperCase() === question.correct_option);
-                const marksEarned = isCorrect ? question.marks : 0;
                 
                 if (isCorrect) {
                     totalScore += question.marks;
@@ -248,14 +246,6 @@ exports.submitQuizAnswers = async (req, res) => {
                     question_id: question_id,
                     selected_option: selected_option.toUpperCase(),
                     is_correct: isCorrect ? 1 : 0
-                });
-
-                results.push({
-                    question_id: question_id,
-                    selected_option: selected_option.toUpperCase(),
-                    is_correct: isCorrect,
-                    marks_earned: marksEarned,
-                    correct_option: question.correct_option // Only for response
                 });
             }
 
@@ -288,27 +278,10 @@ exports.submitQuizAnswers = async (req, res) => {
 
             await connection.commit();
 
-            // Get total possible marks
-            let totalPossibleMarks = 0;
-            questions.forEach(q => {
-                totalPossibleMarks += q.marks;
-            });
-
-            const percentage = ((totalScore / totalPossibleMarks) * 100).toFixed(2);
-
+            // SIMPLIFIED RESPONSE - Only success and message
             res.status(200).json({
                 success: true,
-                message: 'Quiz submitted successfully',
-                data: {
-                    post_id: parseInt(post_id),
-                    user_id: userId,
-                    total_score: totalScore,
-                    total_marks: totalPossibleMarks,
-                    percentage: parseFloat(percentage),
-                    correct_answers: results.filter(r => r.is_correct).length,
-                    wrong_answers: results.filter(r => !r.is_correct).length,
-                    results: results
-                }
+                message: 'Quiz submitted successfully'
             });
 
         } catch (error) {

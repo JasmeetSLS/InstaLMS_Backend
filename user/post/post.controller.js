@@ -2,7 +2,7 @@ const { pool } = require('../../config/db');
 
 exports.getPostsByCategory = async (req, res) => {
     try {
-        const { limit = 10, category_id } = req.query; // category_id from query params
+        const { limit = 10, category_id } = req.query;
         const userId = req.user.userId;
 
         if (!category_id) {
@@ -16,14 +16,11 @@ exports.getPostsByCategory = async (req, res) => {
 
         try {
             let categoryFilter = '';
-            let queryParams = [userId, userId, userId];
+            let queryParams = [userId, userId, userId, userId]; // Added userId for quiz completion
 
-            // If category_id is 1, show all posts (no category filter)
             if (category_id === '1') {
-                categoryFilter = ''; // No category filter
-                // Don't add category_id to queryParams
+                categoryFilter = '';
             } else {
-                // Check if category exists and is active
                 const [categories] = await connection.query(
                     'SELECT id, name, status FROM categories WHERE id = ? AND status = "active"',
                     [category_id]
@@ -41,18 +38,22 @@ exports.getPostsByCategory = async (req, res) => {
 
             queryParams.push(parseInt(limit));
 
+            // Added LEFT JOIN for quiz completion and quiz_active in SELECT
             const [posts] = await connection.query(
                 `SELECT p.*, 
                         c.name as category_name,
                         p.thumbnail_type,  
                         COALESCE(pl.id IS NOT NULL, 0) as is_liked,
                         COALESCE(pb.id IS NOT NULL, 0) as is_bookmarked,
-                        COALESCE(pv.id IS NOT NULL, 0) as is_viewed
+                        COALESCE(pv.id IS NOT NULL, 0) as is_viewed,
+                        COALESCE(qc.id IS NOT NULL, 0) as quiz_completed,
+                        qc.score as quiz_score
                  FROM posts p
                  LEFT JOIN categories c ON p.category_id = c.id
                  LEFT JOIN post_likes pl ON p.id = pl.post_id AND pl.user_id = ?
                  LEFT JOIN post_bookmarks pb ON p.id = pb.post_id AND pb.user_id = ?
                  LEFT JOIN post_views pv ON p.id = pv.post_id AND pv.user_id = ?
+                 LEFT JOIN user_quiz_completion qc ON p.id = qc.post_id AND qc.user_id = ?
                  WHERE p.status = 'active' ${categoryFilter}
                  ORDER BY p.id ASC
                  LIMIT ?`,
@@ -69,7 +70,6 @@ exports.getPostsByCategory = async (req, res) => {
                 );
                 post.media = media;
 
-                // Get comments with user details (including login user identification)
                 const [comments] = await connection.query(
                     `SELECT pc.id, pc.comment_text, pc.created_at,
                             u.id as user_id, u.name, u.email, u.employee_id, u.profile_url,
