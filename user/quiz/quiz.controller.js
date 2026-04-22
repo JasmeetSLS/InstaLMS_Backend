@@ -112,18 +112,17 @@ exports.getQuizQuestions = async (req, res) => {
     }
 };
 
-// Submit quiz answers - SIMPLIFIED RESPONSE
+// Submit quiz answers - post_id in body
 exports.submitQuizAnswers = async (req, res) => {
     try {
-        const { post_id } = req.query;
-        const { answers } = req.body;
+        const { post_id, answers } = req.body; 
         const userId = req.user.userId;
 
         // Validation
         if (!post_id) {
             return res.status(400).json({
                 success: false,
-                error: 'Post ID is required in query params'
+                error: 'Post ID is required in body'
             });
         }
 
