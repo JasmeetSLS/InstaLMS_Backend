@@ -17,6 +17,7 @@ const userViewRoutes = require('./user/view/view.routes');
 const userBookmarkRoutes = require('./user/bookmark/bookmark.routes');
 const userShareRoutes = require('./user/share/share.routes');
 const userPostRoutes = require('./user/post/post.routes');
+const userQuizRoutes = require('./user/quiz/quiz.routes');
 
 const { authenticateToken, requireAdmin, requireUser } = require('./middleware/auth.middleware');
 
@@ -53,6 +54,7 @@ app.use('/api/user', authenticateToken, requireUser, userViewRoutes);
 app.use('/api/user', authenticateToken, requireUser, userBookmarkRoutes);
 app.use('/api/user', authenticateToken, requireUser, userShareRoutes);
 app.use('/api/user', authenticateToken, requireUser, userPostRoutes);
+app.use('/api/user', authenticateToken, requireUser, userQuizRoutes); 
 
 
 app.use('/api/admin', authenticateToken, requireAdmin, adminUserRoutes);
