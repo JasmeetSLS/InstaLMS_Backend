@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const { pool } = require('./config/db');
 
 // Import routes
 const registerRoutes = require('./user/register/register.routes');
@@ -22,8 +23,6 @@ const userQuizRoutes = require('./user/quiz/quiz.routes');
 const { authenticateToken, requireAdmin, requireUser } = require('./middleware/auth.middleware');
 
 
-// Import database
-const { pool } = require('./config/db');
 
 // Load environment variables
 dotenv.config();
