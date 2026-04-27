@@ -105,7 +105,7 @@ exports.getSharedPostsToUser = async (req, res) => {
         const connection = await pool.getConnection();
 
         try {
-            // ✅ MAIN QUERY (removed DISTINCT)
+            // ✅ MAIN QUERY
             const [sharedPosts] = await connection.query(
                 `SELECT 
                     p.*, 
@@ -139,7 +139,6 @@ exports.getSharedPostsToUser = async (req, res) => {
             let commentMap = {};
 
             if (postIds.length > 0) {
-
                 // ✅ MEDIA (1 query)
                 const [allMedia] = await connection.query(
                     `SELECT id, post_id, media_type, media_url, thumbnail_url
@@ -153,18 +152,19 @@ exports.getSharedPostsToUser = async (req, res) => {
                     mediaMap[m.post_id].push(m);
                 });
 
+                // ✅ COMMENTS (1 query)
                 const [allComments] = await connection.query(
-    `SELECT 
-        pc.id, pc.post_id, pc.comment_text, pc.created_at,
-        u.id as user_id, u.name, u.email, u.employee_id, u.profile_url,
-        CASE WHEN u.id = ? THEN 1 ELSE 0 END as is_login_user
-     FROM post_comments pc
-     JOIN users u ON pc.user_id = u.id
-     WHERE pc.post_id IN (?) 
-     AND pc.status = 'active'
-     ORDER BY pc.created_at DESC`,
-    [userId, postIds]
-);
+                    `SELECT 
+                        pc.id, pc.post_id, pc.comment_text, pc.created_at,
+                        u.id as user_id, u.name, u.email, u.employee_id, u.profile_url,
+                        CASE WHEN u.id = ? THEN 1 ELSE 0 END as is_login_user
+                     FROM post_comments pc
+                     JOIN users u ON pc.user_id = u.id
+                     WHERE pc.post_id IN (?) 
+                     AND pc.status = 'active'
+                     ORDER BY pc.created_at DESC`,
+                    [userId, postIds]
+                );
 
                 allComments.forEach(c => {
                     if (!commentMap[c.post_id]) commentMap[c.post_id] = [];
@@ -179,7 +179,7 @@ exports.getSharedPostsToUser = async (req, res) => {
                 post.comments_count = post.comments.length;
             });
 
-            // ✅ GROUPING (same as before)
+            // ✅ GROUPING
             const usersMap = {};
 
             sharedPosts.forEach(post => {
@@ -196,13 +196,13 @@ exports.getSharedPostsToUser = async (req, res) => {
                     };
                 }
 
-                const {
-                    shared_by_user_id,
-                    shared_by_name,
-                    shared_by_email,
-                    shared_by_employee_id,
+                // Remove user fields from post
+                const { 
+                    shared_by_name, 
+                    shared_by_email, 
+                    shared_by_employee_id, 
                     shared_by_profile_url,
-                    ...postData
+                    ...postData 
                 } = post;
 
                 usersMap[uid].posts.push(postData);
