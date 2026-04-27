@@ -211,8 +211,7 @@ exports.getSharedPostsToUser = async (req, res) => {
             res.status(200).json({
                 success: true,
                 data: {
-                    users: Object.values(usersMap),
-                    count: Object.keys(usersMap).length
+                    users: Object.values(usersMap)
                 }
             });
 
