@@ -3,7 +3,7 @@ const { pool } = require('../../config/db');
 // Record a post view (when user opens/view a post)
 exports.recordPostView = async (req, res) => {
     try {
-        // Changed: Get post_id from query parameters instead of route params
+        // Get post_id from query parameters
         const { post_id } = req.query;
         const userId = req.user.userId; // From authentication token
 
@@ -38,8 +38,6 @@ exports.recordPostView = async (req, res) => {
                 [post_id, userId]
             );
 
-            let isNewView = false;
-
             if (existingView.length === 0) {
                 // First time view - insert new record
                 await connection.query(
@@ -52,8 +50,6 @@ exports.recordPostView = async (req, res) => {
                     'UPDATE posts SET views_count = views_count + 1 WHERE id = ?',
                     [post_id]
                 );
-                
-                isNewView = true;
             } else {
                 // Update existing view timestamp
                 await connection.query(
@@ -72,12 +68,11 @@ exports.recordPostView = async (req, res) => {
 
             res.status(200).json({
                 success: true,
-                message: isNewView ? 'Post view recorded' : 'Post view updated',
+                message: 'Post view recorded',
                 data: {
                     post_id: parseInt(post_id),
                     user_id: userId,
                     views_count: updatedPost[0].views_count,
-                    is_first_view: isNewView,
                     viewed_at: new Date().toISOString()
                 }
             });
