@@ -3,7 +3,8 @@ const { pool } = require('../../config/db');
 // Record a post view (when user opens/view a post)
 exports.recordPostView = async (req, res) => {
     try {
-        const { post_id } = req.params;
+        // Changed: Get post_id from query parameters instead of route params
+        const { post_id } = req.query;
         const userId = req.user.userId; // From authentication token
 
         if (!post_id) {
