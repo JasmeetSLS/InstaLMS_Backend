@@ -102,13 +102,12 @@ exports.sharePost = async (req, res) => {
 exports.getSharedPostsToUser = async (req, res) => {
     try {
         const userId = req.user.userId; 
-
         const connection = await pool.getConnection();
 
         try {
-            // Get shared posts with all details
+            // ✅ MAIN QUERY (removed DISTINCT)
             const [sharedPosts] = await connection.query(
-                `SELECT DISTINCT 
+                `SELECT 
                     p.*, 
                     c.name as category_name,
                     ps.created_at as shared_at,
@@ -117,9 +116,9 @@ exports.getSharedPostsToUser = async (req, res) => {
                     u.email as shared_by_email,
                     u.employee_id as shared_by_employee_id,
                     u.profile_url as shared_by_profile_url,
-                    COALESCE(pl.id IS NOT NULL, 0) as is_liked,
-                    COALESCE(pb.id IS NOT NULL, 0) as is_bookmarked,
-                    COALESCE(pv.id IS NOT NULL, 0) as is_viewed
+                    (pl.id IS NOT NULL) as is_liked,
+                    (pb.id IS NOT NULL) as is_bookmarked,
+                    (pv.id IS NOT NULL) as is_viewed
                  FROM post_shares ps
                  INNER JOIN posts p ON ps.post_id = p.id
                  INNER JOIN categories c ON p.category_id = c.id
@@ -134,39 +133,86 @@ exports.getSharedPostsToUser = async (req, res) => {
                 [userId, userId, userId, userId]
             );
 
-            // Get media and comments for each post
-            for (let post of sharedPosts) {
-                // Get media
-                const [media] = await connection.query(
-                    `SELECT id, media_type, media_url, thumbnail_url 
-                     FROM post_media 
-                     WHERE post_id = ? 
-                     ORDER BY id ASC`,
-                    [post.id]
-                );
-                post.media = media;
+            const postIds = sharedPosts.map(p => p.id);
 
-                // Get comments with user details
-                const [comments] = await connection.query(
-                    `SELECT pc.id, pc.comment_text, pc.created_at,
-                            u.id as user_id, u.name, u.email, u.employee_id, u.profile_url,
-                            CASE WHEN u.id = ? THEN 1 ELSE 0 END as is_login_user
-                     FROM post_comments pc
-                     JOIN users u ON pc.user_id = u.id
-                     WHERE pc.post_id = ? AND pc.status = 'active'
-                     ORDER BY pc.created_at DESC
-                     LIMIT 10`,
-                    [userId, post.id]
+            let mediaMap = {};
+            let commentMap = {};
+
+            if (postIds.length > 0) {
+
+                // ✅ MEDIA (1 query)
+                const [allMedia] = await connection.query(
+                    `SELECT id, post_id, media_type, media_url, thumbnail_url
+                     FROM post_media
+                     WHERE post_id IN (?)`,
+                    [postIds]
                 );
-                post.comments = comments;
-                post.comments_count = comments.length;
+
+                allMedia.forEach(m => {
+                    if (!mediaMap[m.post_id]) mediaMap[m.post_id] = [];
+                    mediaMap[m.post_id].push(m);
+                });
+
+                const [allComments] = await connection.query(
+    `SELECT 
+        pc.id, pc.post_id, pc.comment_text, pc.created_at,
+        u.id as user_id, u.name, u.email, u.employee_id, u.profile_url,
+        CASE WHEN u.id = ? THEN 1 ELSE 0 END as is_login_user
+     FROM post_comments pc
+     JOIN users u ON pc.user_id = u.id
+     WHERE pc.post_id IN (?) 
+     AND pc.status = 'active'
+     ORDER BY pc.created_at DESC`,
+    [userId, postIds]
+);
+
+                allComments.forEach(c => {
+                    if (!commentMap[c.post_id]) commentMap[c.post_id] = [];
+                    commentMap[c.post_id].push(c);
+                });
             }
+
+            // ✅ Attach media & comments
+            sharedPosts.forEach(post => {
+                post.media = mediaMap[post.id] || [];
+                post.comments = commentMap[post.id] || [];
+                post.comments_count = post.comments.length;
+            });
+
+            // ✅ GROUPING (same as before)
+            const usersMap = {};
+
+            sharedPosts.forEach(post => {
+                const uid = post.shared_by_user_id;
+
+                if (!usersMap[uid]) {
+                    usersMap[uid] = {
+                        shared_by_user_id: uid,
+                        shared_by_name: post.shared_by_name,
+                        shared_by_email: post.shared_by_email,
+                        shared_by_employee_id: post.shared_by_employee_id,
+                        shared_by_profile_url: post.shared_by_profile_url,
+                        posts: []
+                    };
+                }
+
+                const {
+                    shared_by_user_id,
+                    shared_by_name,
+                    shared_by_email,
+                    shared_by_employee_id,
+                    shared_by_profile_url,
+                    ...postData
+                } = post;
+
+                usersMap[uid].posts.push(postData);
+            });
 
             res.status(200).json({
                 success: true,
                 data: {
-                    posts: sharedPosts,
-                    count: sharedPosts.length
+                    users: Object.values(usersMap),
+                    count: Object.keys(usersMap).length
                 }
             });
 
