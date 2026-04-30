@@ -31,11 +31,12 @@ exports.createCMSPage = async (req, res) => {
             const dir = `uploads/cms/${result.insertId}`;
             if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
             
-            const ext = path.extname(image.originalname);
-            const newPath = `${dir}/image${ext}`;
+            // Use original file name
+            const originalName = image.originalname;
+            const newPath = `${dir}/${originalName}`;
             fs.renameSync(image.path, newPath);
             
-            imageUrl = `/uploads/cms/${result.insertId}/image${ext}`;
+            imageUrl = `/uploads/cms/${result.insertId}/${originalName}`;
             
             await connection.query(
                 'UPDATE cms_pages SET image_url = ? WHERE id = ?',
