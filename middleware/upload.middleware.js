@@ -48,7 +48,10 @@ const fileFilter = (req, file, cb) => {
         'application/pdf',
         // PPT/PPTX files
         'application/vnd.ms-powerpoint',           // .ppt
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation'  // .pptx
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation' , // .pptx
+         // Excel files
+        'application/vnd.ms-excel',                                      // .xls
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'  // .xlsx
     ];
     
     // Also allow common file extensions
@@ -56,14 +59,15 @@ const fileFilter = (req, file, cb) => {
         '.svg',                                      // SVG icons
         '.zip', '.wbt', '.scorm', '.html', '.htm',  // WBT
         '.pdf',                                       // PDF
-        '.ppt', '.pptx'                               // PowerPoint
+        '.ppt', '.pptx',                               // PowerPoint
+          '.xls', '.xlsx'  // Excel extensions
     ];
     const ext = path.extname(file.originalname).toLowerCase();
     
     if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
         cb(null, true);
     } else {
-        cb(new Error('Only image, video, GIF, SVG, PDF, PPT, and WBT files are allowed'), false);
+        cb(new Error('Only image, video, GIF, SVG, PDF, PPT, Excel, and WBT files are allowed'), false);
     }
 };
 
