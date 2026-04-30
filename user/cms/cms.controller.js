@@ -3,7 +3,7 @@ const { pool } = require('../../config/db');
 // Get CMS page by ID using query param
 exports.getCMSPageById = async (req, res) => {
     try {
-        const { id } = req.query; // Changed from req.params to req.query
+        const { id } = req.query;
 
         if (!id) {
             return res.status(400).json({
@@ -16,7 +16,7 @@ exports.getCMSPageById = async (req, res) => {
 
         try {
             const [pages] = await connection.query(
-                `SELECT id, title, slug, content, status, created_at, updated_at 
+                `SELECT id, title, slug, content, image_url, status, created_at, updated_at 
                  FROM cms_pages 
                  WHERE id = ? AND status = 'active'`,
                 [id]
