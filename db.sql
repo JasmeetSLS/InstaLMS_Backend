@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS `cms_pages` (
   KEY `idx_status` (`status`),
   KEY `idx_title` (`title`),
   KEY `idx_image_url` (`image_url`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Data exporting was unselected.
 
@@ -148,6 +148,26 @@ CREATE TABLE IF NOT EXISTS `post_media` (
 
 -- Data exporting was unselected.
 
+-- Dumping structure for table insta_style_lms.post_media_views
+CREATE TABLE IF NOT EXISTS `post_media_views` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `post_id` int NOT NULL,
+  `media_id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `viewed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_media_view` (`post_id`,`media_id`,`user_id`),
+  KEY `post_id` (`post_id`),
+  KEY `media_id` (`media_id`),
+  KEY `user_id` (`user_id`),
+  KEY `idx_viewed_at` (`viewed_at`),
+  CONSTRAINT `post_media_views_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `post_media_views_ibfk_2` FOREIGN KEY (`media_id`) REFERENCES `post_media` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `post_media_views_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
 -- Dumping structure for table insta_style_lms.post_shares
 CREATE TABLE IF NOT EXISTS `post_shares` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -226,7 +246,7 @@ CREATE TABLE IF NOT EXISTS `quiz_questions` (
   PRIMARY KEY (`id`),
   KEY `post_id` (`post_id`),
   CONSTRAINT `quiz_questions_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 

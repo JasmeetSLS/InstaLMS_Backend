@@ -16,7 +16,7 @@ exports.getPostsByCategory = async (req, res) => {
 
         try {
             let categoryFilter = '';
-            let queryParams = [userId, userId, userId, userId]; // Added userId for quiz completion
+            let queryParams = [userId, userId, userId, userId];
 
             if (category_id === '1') {
                 categoryFilter = '';
@@ -38,7 +38,6 @@ exports.getPostsByCategory = async (req, res) => {
 
             queryParams.push(parseInt(limit));
 
-            // Added LEFT JOIN for quiz completion and quiz_active in SELECT
             const [posts] = await connection.query(
                 `SELECT p.*, 
                         c.name as category_name,
@@ -68,6 +67,19 @@ exports.getPostsByCategory = async (req, res) => {
                      ORDER BY id ASC`,
                     [post.id]
                 );
+                
+                // Calculate media viewed percentage BEFORE adding media array
+                const totalMedia = media.length;
+                const [viewedCount] = await connection.query(
+                    `SELECT COUNT(*) as viewed FROM post_media_views 
+                     WHERE post_id = ? AND user_id = ?`,
+                    [post.id, userId]
+                );
+                post.media_viewed_percentage = totalMedia > 0 
+                    ? Math.round((viewedCount[0].viewed / totalMedia) * 100) 
+                    : 0;
+                
+                // Add media array after percentage calculation
                 post.media = media;
 
                 const [comments] = await connection.query(

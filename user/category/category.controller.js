@@ -9,12 +9,51 @@ exports.ActiveUsersCategoriesComments = async (req, res) => {
         const userId = req.user.userId;
 
         try {
-            // Get active categories
+            // Get active categories with total posts and total views
             const [categories] = await connection.query(
-                `SELECT id, name, icon_url, created_at 
-                 FROM categories 
-                 WHERE status = 'active'
-                 ORDER BY id ASC`
+                `SELECT c.id, c.name, c.icon_url, c.created_at,
+                        CASE 
+                            WHEN c.id = 1 THEN (
+                                SELECT COUNT(DISTINCT p.id)
+                                FROM posts p
+                                WHERE p.status = 'active'
+                            )
+                            ELSE COUNT(DISTINCT p.id)
+                        END as total_posts,
+                        CASE 
+                            WHEN c.id = 1 THEN (
+                                SELECT SUM(CASE 
+                                    WHEN (
+                                        SELECT COUNT(*) FROM post_media pm2 WHERE pm2.post_id = p2.id
+                                    ) > 0 AND (
+                                        SELECT COUNT(DISTINCT pmv.media_id)
+                                        FROM post_media_views pmv
+                                        WHERE pmv.post_id = p2.id AND pmv.user_id = ?
+                                    ) = (
+                                        SELECT COUNT(*) FROM post_media pm3 WHERE pm3.post_id = p2.id
+                                    ) THEN 1 ELSE 0 
+                                END)
+                                FROM posts p2
+                                WHERE p2.status = 'active'
+                            )
+                            ELSE SUM(CASE 
+                                WHEN (
+                                    SELECT COUNT(*) FROM post_media pm2 WHERE pm2.post_id = p.id
+                                ) > 0 AND (
+                                    SELECT COUNT(DISTINCT pmv.media_id)
+                                    FROM post_media_views pmv
+                                    WHERE pmv.post_id = p.id AND pmv.user_id = ?
+                                ) = (
+                                    SELECT COUNT(*) FROM post_media pm3 WHERE pm3.post_id = p.id
+                                ) THEN 1 ELSE 0 
+                            END)
+                        END as total_views
+                 FROM categories c
+                 LEFT JOIN posts p ON c.id = p.category_id AND p.status = 'active'
+                 WHERE c.status = 'active'
+                 GROUP BY c.id, c.name, c.icon_url, c.created_at
+                 ORDER BY c.id ASC`,
+                [userId, userId]  // Two user IDs for the two subqueries
             );
 
             // Get active users except the logged-in user
