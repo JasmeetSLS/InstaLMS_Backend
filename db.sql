@@ -12,7 +12,7 @@
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */; 
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 
 -- Dumping database structure for insta_style_lms
@@ -78,6 +78,18 @@ CREATE TABLE IF NOT EXISTS `comments` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table insta_style_lms.notifications
+CREATE TABLE IF NOT EXISTS `notifications` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `message` text COLLATE utf8mb4_unicode_ci,
+  `image_url` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Data exporting was unselected.
 
@@ -189,23 +201,6 @@ CREATE TABLE IF NOT EXISTS `post_shares` (
 
 -- Data exporting was unselected.
 
--- Dumping structure for table insta_style_lms.post_views
-CREATE TABLE IF NOT EXISTS `post_views` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `viewed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_view` (`post_id`,`user_id`),
-  KEY `post_id` (`post_id`),
-  KEY `user_id` (`user_id`),
-  KEY `idx_viewed_at` (`viewed_at`),
-  CONSTRAINT `post_views_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_views_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
 -- Dumping structure for table insta_style_lms.posts
 CREATE TABLE IF NOT EXISTS `posts` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -247,6 +242,21 @@ CREATE TABLE IF NOT EXISTS `quiz_questions` (
   KEY `post_id` (`post_id`),
   CONSTRAINT `quiz_questions_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table insta_style_lms.user_notification_reads
+CREATE TABLE IF NOT EXISTS `user_notification_reads` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `notification_id` int NOT NULL,
+  `is_read` tinyint(1) DEFAULT '0',
+  `read_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_user_notification` (`user_id`,`notification_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_notification_id` (`notification_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Data exporting was unselected.
 

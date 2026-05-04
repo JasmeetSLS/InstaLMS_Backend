@@ -73,6 +73,15 @@ exports.ActiveUsersCategoriesComments = async (req, res) => {
                  ORDER BY id ASC`
             );
 
+const [notificationCount] = await connection.query(
+    `SELECT COUNT(*) as count
+     FROM notifications n
+     LEFT JOIN user_notification_reads unr 
+        ON n.id = unr.notification_id AND unr.user_id = ?
+     WHERE unr.id IS NULL`,
+    [userId]
+);
+
             res.json({
                 success: true,
                 categories: {
@@ -86,6 +95,9 @@ exports.ActiveUsersCategoriesComments = async (req, res) => {
                 comments: {
                     count: comments.length,
                     data: comments
+                },
+                notifications: {
+                    unread_count: notificationCount[0].count || 0
                 }
             });
 
