@@ -58,7 +58,7 @@ exports.ActiveUsersCategoriesComments = async (req, res) => {
 
             // Get active users except the logged-in user
             const [users] = await connection.query(
-                `SELECT id, email, employee_id, name, phone, gender, role, profile_url, status, created_at 
+                `SELECT id, email, employee_id, name, phone, gender, role_id, profile_url, status, created_at 
                  FROM users 
                  WHERE status = 'active' AND id != ?
                  ORDER BY id ASC`,

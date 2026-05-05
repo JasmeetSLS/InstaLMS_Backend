@@ -19,7 +19,7 @@ exports.login = async (req, res) => {
         try {
             // Get user by email with all fields including phone and gender
             const [users] = await connection.query(
-                `SELECT id, email, employee_id, name, phone, gender, password, role, status, profile_url
+                `SELECT id, email, employee_id, name, phone, gender, password, role_id, status, profile_url
                  FROM users 
                  WHERE email = ?`,
                 [email]
@@ -70,7 +70,7 @@ exports.login = async (req, res) => {
                 employee_id: user.employee_id,
                 phone: user.phone,
                 gender: user.gender,
-                role: user.role,
+                role_id: user.role_id,
                 isAdmin: false
             };
 
@@ -88,7 +88,7 @@ exports.login = async (req, res) => {
                     name: user.name,
                     phone: user.phone,
                     gender: user.gender,
-                    role: user.role,
+                    role_id: user.role_id,
                     profile_url: user.profile_url,
                     status: user.status
                 }
