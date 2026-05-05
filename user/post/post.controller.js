@@ -4,6 +4,7 @@ exports.getPostsByCategory = async (req, res) => {
     try {
         const { limit = 10, category_id } = req.query;
         const userId = req.user.userId;
+        const userRoleId = req.user.role_id; 
 
         if (!category_id) {
             return res.status(400).json({
@@ -16,7 +17,7 @@ exports.getPostsByCategory = async (req, res) => {
 
         try {
             let categoryFilter = '';
-            let queryParams = [userId, userId, userId, userId];
+            let queryParams = [userId, userId, userId, userId, userRoleId];
 
             if (category_id === '1') {
                 categoryFilter = '';
@@ -53,7 +54,9 @@ exports.getPostsByCategory = async (req, res) => {
                  LEFT JOIN post_bookmarks pb ON p.id = pb.post_id AND pb.user_id = ?
                  LEFT JOIN post_views pv ON p.id = pv.post_id AND pv.user_id = ?
                  LEFT JOIN user_quiz_completion qc ON p.id = qc.post_id AND qc.user_id = ?
-                 WHERE p.status = 'active' ${categoryFilter}
+                 WHERE p.status = 'active' 
+                 AND p.role_id = ?  
+                 ${categoryFilter}
                  ORDER BY p.id ASC
                  LIMIT ?`,
                 queryParams
@@ -68,18 +71,6 @@ exports.getPostsByCategory = async (req, res) => {
                     [post.id]
                 );
                 
-                // Calculate media viewed percentage BEFORE adding media array
-                const totalMedia = media.length;
-                const [viewedCount] = await connection.query(
-                    `SELECT COUNT(*) as viewed FROM post_media_views 
-                     WHERE post_id = ? AND user_id = ?`,
-                    [post.id, userId]
-                );
-                post.media_viewed_percentage = totalMedia > 0 
-                    ? Math.round((viewedCount[0].viewed / totalMedia) * 100) 
-                    : 0;
-                
-                // Add media array after percentage calculation
                 post.media = media;
 
                 const [comments] = await connection.query(

@@ -113,7 +113,7 @@ exports.getUserBookmarks = async (req, res) => {
         const connection = await pool.getConnection();
         
         try {
-            // Get bookmarked posts with all details
+            // Get bookmarked posts with all details including quiz completion
             const [bookmarkedPosts] = await connection.query(
                 `SELECT 
                     p.*, 
@@ -121,16 +121,19 @@ exports.getUserBookmarks = async (req, res) => {
                     pb.created_at as bookmarked_at,
                     COALESCE(pl.id IS NOT NULL, 0) as is_liked,
                     COALESCE(pb2.id IS NOT NULL, 0) as is_bookmarked,
-                    COALESCE(pv.id IS NOT NULL, 0) as is_viewed
+                    COALESCE(pv.id IS NOT NULL, 0) as is_viewed,
+                    COALESCE(qc.id IS NOT NULL, 0) as quiz_completed,
+                    qc.score as quiz_score
                  FROM post_bookmarks pb
                  INNER JOIN posts p ON pb.post_id = p.id
                  INNER JOIN categories c ON p.category_id = c.id
                  LEFT JOIN post_likes pl ON p.id = pl.post_id AND pl.user_id = ?
                  LEFT JOIN post_bookmarks pb2 ON p.id = pb2.post_id AND pb2.user_id = ?
                  LEFT JOIN post_views pv ON p.id = pv.post_id AND pv.user_id = ?
+                 LEFT JOIN user_quiz_completion qc ON p.id = qc.post_id AND qc.user_id = ?
                  WHERE pb.user_id = ? AND p.status = 'active'
                  ORDER BY pb.created_at DESC`,
-                [userId, userId, userId, userId]
+                [userId, userId, userId, userId, userId]
             );
             
             // Get media and comments for each post

@@ -105,7 +105,7 @@ exports.getSharedPostsToUser = async (req, res) => {
         const connection = await pool.getConnection();
 
         try {
-            // ✅ MAIN QUERY
+            // ✅ MAIN QUERY with quiz completion
             const [sharedPosts] = await connection.query(
                 `SELECT 
                     p.*, 
@@ -116,9 +116,11 @@ exports.getSharedPostsToUser = async (req, res) => {
                     u.email as shared_by_email,
                     u.employee_id as shared_by_employee_id,
                     u.profile_url as shared_by_profile_url,
-                    (pl.id IS NOT NULL) as is_liked,
-                    (pb.id IS NOT NULL) as is_bookmarked,
-                    (pv.id IS NOT NULL) as is_viewed
+                    COALESCE(pl.id IS NOT NULL, 0) as is_liked,
+                    COALESCE(pb.id IS NOT NULL, 0) as is_bookmarked,
+                    COALESCE(pv.id IS NOT NULL, 0) as is_viewed,
+                    COALESCE(qc.id IS NOT NULL, 0) as quiz_completed,
+                    qc.score as quiz_score
                  FROM post_shares ps
                  INNER JOIN posts p ON ps.post_id = p.id
                  INNER JOIN categories c ON p.category_id = c.id
@@ -126,11 +128,12 @@ exports.getSharedPostsToUser = async (req, res) => {
                  LEFT JOIN post_likes pl ON p.id = pl.post_id AND pl.user_id = ?
                  LEFT JOIN post_bookmarks pb ON p.id = pb.post_id AND pb.user_id = ?
                  LEFT JOIN post_views pv ON p.id = pv.post_id AND pv.user_id = ?
+                 LEFT JOIN user_quiz_completion qc ON p.id = qc.post_id AND qc.user_id = ?
                  WHERE ps.share_id = ? 
                  AND ps.status = 'active'
                  AND p.status = 'active'
                  ORDER BY ps.created_at DESC`,
-                [userId, userId, userId, userId]
+                [userId, userId, userId, userId, userId]
             );
 
             const postIds = sharedPosts.map(p => p.id);

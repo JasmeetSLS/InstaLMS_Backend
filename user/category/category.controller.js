@@ -5,55 +5,38 @@ exports.ActiveUsersCategoriesComments = async (req, res) => {
     try {
         const connection = await pool.getConnection();
         
-        // Get logged-in user ID from token
+        // Get logged-in user ID and role_id from token
         const userId = req.user.userId;
+        const userRoleId = req.user.role_id;
 
         try {
-            // Get active categories with total posts and total views
+            // Get active categories with total posts and total views based on user role
             const [categories] = await connection.query(
-                `SELECT c.id, c.name, c.icon_url, c.created_at,
-                        CASE 
-                            WHEN c.id = 1 THEN (
-                                SELECT COUNT(DISTINCT p.id)
-                                FROM posts p
-                                WHERE p.status = 'active'
-                            )
-                            ELSE COUNT(DISTINCT p.id)
-                        END as total_posts,
-                        CASE 
-                            WHEN c.id = 1 THEN (
-                                SELECT SUM(CASE 
-                                    WHEN (
-                                        SELECT COUNT(*) FROM post_media pm2 WHERE pm2.post_id = p2.id
-                                    ) > 0 AND (
-                                        SELECT COUNT(DISTINCT pmv.media_id)
-                                        FROM post_media_views pmv
-                                        WHERE pmv.post_id = p2.id AND pmv.user_id = ?
-                                    ) = (
-                                        SELECT COUNT(*) FROM post_media pm3 WHERE pm3.post_id = p2.id
-                                    ) THEN 1 ELSE 0 
-                                END)
-                                FROM posts p2
-                                WHERE p2.status = 'active'
-                            )
-                            ELSE SUM(CASE 
-                                WHEN (
-                                    SELECT COUNT(*) FROM post_media pm2 WHERE pm2.post_id = p.id
-                                ) > 0 AND (
-                                    SELECT COUNT(DISTINCT pmv.media_id)
-                                    FROM post_media_views pmv
-                                    WHERE pmv.post_id = p.id AND pmv.user_id = ?
-                                ) = (
-                                    SELECT COUNT(*) FROM post_media pm3 WHERE pm3.post_id = p.id
-                                ) THEN 1 ELSE 0 
-                            END)
-                        END as total_views
+                `SELECT 
+                    c.id, 
+                    c.name, 
+                    c.icon_url, 
+                    c.created_at,
+                    COALESCE((
+                        SELECT COUNT(DISTINCT p.id)
+                        FROM posts p
+                        WHERE p.status = 'active' 
+                        AND p.role_id = ?
+                        AND (c.id = 1 OR p.category_id = c.id)
+                    ), 0) as total_posts,
+                    COALESCE((
+                        SELECT COUNT(DISTINCT pv.post_id)
+                        FROM post_views pv
+                        INNER JOIN posts p ON pv.post_id = p.id
+                        WHERE pv.user_id = ?
+                        AND p.status = 'active'
+                        AND p.role_id = ?
+                        AND (c.id = 1 OR p.category_id = c.id)
+                    ), 0) as total_views
                  FROM categories c
-                 LEFT JOIN posts p ON c.id = p.category_id AND p.status = 'active'
                  WHERE c.status = 'active'
-                 GROUP BY c.id, c.name, c.icon_url, c.created_at
                  ORDER BY c.id ASC`,
-                [userId, userId]  // Two user IDs for the two subqueries
+                [userRoleId, userId, userRoleId]
             );
 
             // Get active users except the logged-in user
@@ -73,14 +56,14 @@ exports.ActiveUsersCategoriesComments = async (req, res) => {
                  ORDER BY id ASC`
             );
 
-const [notificationCount] = await connection.query(
-    `SELECT COUNT(*) as count
-     FROM notifications n
-     LEFT JOIN user_notification_reads unr 
-        ON n.id = unr.notification_id AND unr.user_id = ?
-     WHERE unr.id IS NULL`,
-    [userId]
-);
+            const [notificationCount] = await connection.query(
+                `SELECT COUNT(*) as count
+                 FROM notifications n
+                 LEFT JOIN user_notification_reads unr 
+                    ON n.id = unr.notification_id AND unr.user_id = ?
+                 WHERE unr.id IS NULL`,
+                [userId]
+            );
 
             res.json({
                 success: true,
