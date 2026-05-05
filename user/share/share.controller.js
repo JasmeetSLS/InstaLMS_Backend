@@ -140,6 +140,7 @@ exports.getSharedPostsToUser = async (req, res) => {
 
             let mediaMap = {};
             let commentMap = {};
+            let mediaViewMap = {};
 
             if (postIds.length > 0) {
                 // ✅ MEDIA (1 query)
@@ -153,6 +154,19 @@ exports.getSharedPostsToUser = async (req, res) => {
                 allMedia.forEach(m => {
                     if (!mediaMap[m.post_id]) mediaMap[m.post_id] = [];
                     mediaMap[m.post_id].push(m);
+                });
+
+                // ✅ MEDIA VIEWS (1 query)
+                const [allMediaViews] = await connection.query(
+                    `SELECT post_id, COUNT(*) as viewed_count
+                     FROM post_media_views 
+                     WHERE post_id IN (?) AND user_id = ?
+                     GROUP BY post_id`,
+                    [postIds, userId]
+                );
+
+                allMediaViews.forEach(v => {
+                    mediaViewMap[v.post_id] = v.viewed_count;
                 });
 
                 // ✅ COMMENTS (1 query)
@@ -175,9 +189,16 @@ exports.getSharedPostsToUser = async (req, res) => {
                 });
             }
 
-            // ✅ Attach media & comments
+            // ✅ Attach media_viewed_percentage (ABOVE media), media & comments
             sharedPosts.forEach(post => {
-                post.media = mediaMap[post.id] || [];
+                const media = mediaMap[post.id] || [];
+                const mediaViewedCount = mediaViewMap[post.id] || 0;
+                
+                // Add media_viewed_percentage FIRST (above media)
+                post.media_viewed_percentage = media.length > 0 
+                    ? Math.round((mediaViewedCount / media.length) * 100) 
+                    : 100;
+                post.media = media;
                 post.comments = commentMap[post.id] || [];
                 post.comments_count = post.comments.length;
             });

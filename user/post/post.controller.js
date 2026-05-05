@@ -71,6 +71,13 @@ exports.getPostsByCategory = async (req, res) => {
                     [post.id]
                 );
                 
+                // ADD THESE 4 LINES ONLY
+                const [viewedCount] = await connection.query(
+                    `SELECT COUNT(*) as viewed FROM post_media_views WHERE post_id = ? AND user_id = ?`,
+                    [post.id, userId]
+                );
+                post.media_viewed_percentage = media.length > 0 ? Math.round((viewedCount[0].viewed / media.length) * 100) : 100;
+                
                 post.media = media;
 
                 const [comments] = await connection.query(

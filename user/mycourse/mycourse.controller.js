@@ -3,11 +3,12 @@ const { pool } = require('../../config/db');
 exports.getMyCourses = async (req, res) => {
     try {
         const userId = req.user.userId;
+        const userRoleId = req.user.role_id;
         
         const connection = await pool.getConnection();
         
         try {
-            // Get all courses (posts with quiz_active = 1) with all details
+            // Get all courses (posts) with role-based filtering
             const [courses] = await connection.query(
                 `SELECT 
                     p.*, 
@@ -23,12 +24,13 @@ exports.getMyCourses = async (req, res) => {
                  LEFT JOIN post_bookmarks pb ON p.id = pb.post_id AND pb.user_id = ?
                  LEFT JOIN post_views pv ON p.id = pv.post_id AND pv.user_id = ?
                  LEFT JOIN user_quiz_completion qc ON p.id = qc.post_id AND qc.user_id = ?
-                 WHERE p.status = 'active' AND p.quiz_active = 1
+                 WHERE p.status = 'active' 
+                 AND p.role_id = ?
                  ORDER BY p.created_at DESC`,
-                [userId, userId, userId, userId]
+                [userId, userId, userId, userId, userRoleId]
             );
             
-            // Get media and comments for each course
+            // Process each course to get media and determine status
             for (let course of courses) {
                 // Get media
                 const [media] = await connection.query(
@@ -38,20 +40,31 @@ exports.getMyCourses = async (req, res) => {
                      ORDER BY id ASC`,
                     [course.id]
                 );
+                course.media = media;
                 
-                // Calculate media viewed percentage
+                // Get total media count
                 const totalMedia = media.length;
+                
+                // Get viewed media count
                 const [viewedCount] = await connection.query(
-                    `SELECT COUNT(*) as viewed FROM post_media_views 
+                    `SELECT COUNT(DISTINCT media_id) as viewed 
+                     FROM post_media_views 
                      WHERE post_id = ? AND user_id = ?`,
                     [course.id, userId]
                 );
-                course.media_viewed_percentage = totalMedia > 0 
-                    ? Math.round((viewedCount[0].viewed / totalMedia) * 100) 
-                    : 0;
+                const viewedMediaCount = viewedCount[0].viewed || 0;
                 
-                // Add media array after percentage calculation
-                course.media = media;
+                // Determine if all media is viewed
+                const allMediaViewed = totalMedia === 0 || viewedMediaCount === totalMedia;
+                
+                // Determine if quiz is completed (for posts with quiz_active = 1)
+                const quizCompleted = course.quiz_active === 1 ? course.quiz_completed : true;
+                
+                // Set completion status
+                course.is_completed = allMediaViewed && quizCompleted;
+                course.all_media_viewed = allMediaViewed;
+                course.viewed_media_count = viewedMediaCount;
+                course.total_media_count = totalMedia;
                 
                 // Get comments with user details (limit to recent 10)
                 const [comments] = await connection.query(
@@ -69,11 +82,21 @@ exports.getMyCourses = async (req, res) => {
                 course.comments_count = comments.length;
             }
             
+            // Separate courses into pending and completed
+            const pendingCourses = courses.filter(course => !course.is_completed);
+            const completedCourses = courses.filter(course => course.is_completed);
+            
             res.status(200).json({
                 success: true,
                 data: {
-                    courses: courses,
-                    count: courses.length
+                    pending: {
+                        count: pendingCourses.length,
+                        courses: pendingCourses
+                    },
+                    completed: {
+                        count: completedCourses.length,
+                        courses: completedCourses
+                    }
                 }
             });
             
