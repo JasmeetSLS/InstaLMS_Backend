@@ -17,7 +17,7 @@ exports.getPostsByCategory = async (req, res) => {
 
         try {
             let categoryFilter = '';
-            let queryParams = [userId, userId, userId, userId, userRoleId];
+            let queryParams = [userId, userId, userId, userId, userId, userRoleId];
 
             if (category_id === '1') {
                 categoryFilter = '';
@@ -47,13 +47,15 @@ exports.getPostsByCategory = async (req, res) => {
                         COALESCE(pb.id IS NOT NULL, 0) as is_bookmarked,
                         COALESCE(pv.id IS NOT NULL, 0) as is_viewed,
                         COALESCE(qc.id IS NOT NULL, 0) as quiz_completed,
-                        qc.score as quiz_score
+                        qc.score as quiz_score,
+                        COALESCE(ump.view_percentage, 0) as media_view_percentage
                  FROM posts p
                  LEFT JOIN categories c ON p.category_id = c.id
                  LEFT JOIN post_likes pl ON p.id = pl.post_id AND pl.user_id = ?
                  LEFT JOIN post_bookmarks pb ON p.id = pb.post_id AND pb.user_id = ?
                  LEFT JOIN post_views pv ON p.id = pv.post_id AND pv.user_id = ?
                  LEFT JOIN user_quiz_completion qc ON p.id = qc.post_id AND qc.user_id = ?
+                 LEFT JOIN user_media_progress ump ON p.id = ump.post_id AND ump.user_id = ?
                  WHERE p.status = 'active' 
                  AND p.role_id = ?  
                  ${categoryFilter}
@@ -70,13 +72,6 @@ exports.getPostsByCategory = async (req, res) => {
                      ORDER BY id ASC`,
                     [post.id]
                 );
-                
-                // ADD THESE 4 LINES ONLY
-                const [viewedCount] = await connection.query(
-                    `SELECT COUNT(*) as viewed FROM post_media_views WHERE post_id = ? AND user_id = ?`,
-                    [post.id, userId]
-                );
-                post.media_viewed_percentage = media.length > 0 ? Math.round((viewedCount[0].viewed / media.length) * 100) : 100;
                 
                 post.media = media;
 

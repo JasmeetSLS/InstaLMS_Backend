@@ -176,7 +176,7 @@ CREATE TABLE IF NOT EXISTS `post_media_views` (
   CONSTRAINT `post_media_views_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
   CONSTRAINT `post_media_views_ibfk_2` FOREIGN KEY (`media_id`) REFERENCES `post_media` (`id`) ON DELETE CASCADE,
   CONSTRAINT `post_media_views_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -278,6 +278,27 @@ CREATE TABLE IF NOT EXISTS `roles` (
 
 -- Data exporting was unselected.
 
+-- Dumping structure for table insta_style_lms.user_media_progress
+CREATE TABLE IF NOT EXISTS `user_media_progress` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `post_id` int NOT NULL,
+  `total_media_count` int NOT NULL DEFAULT '0',
+  `viewed_media_count` int NOT NULL DEFAULT '0',
+  `view_percentage` decimal(5,2) NOT NULL DEFAULT '0.00',
+  `last_viewed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_user_post_progress` (`user_id`,`post_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_post_id` (`post_id`),
+  KEY `idx_view_percentage` (`view_percentage`),
+  CONSTRAINT `user_media_progress_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `user_media_progress_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
 -- Dumping structure for table insta_style_lms.user_notification_reads
 CREATE TABLE IF NOT EXISTS `user_notification_reads` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -363,24 +384,59 @@ CREATE TABLE IF NOT EXISTS `users` (
 SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 DELIMITER //
 CREATE TRIGGER `update_post_views_count` AFTER INSERT ON `post_media_views` FOR EACH ROW BEGIN
-    DECLARE total_media_count INT;
-    DECLARE viewed_media_count INT;
+    DECLARE total_media_count INT DEFAULT 0;
+    DECLARE viewed_media_count INT DEFAULT 0;
+    DECLARE view_exists INT DEFAULT 0;
     
     -- Get total media count for this post
     SELECT COUNT(*) INTO total_media_count
     FROM post_media
     WHERE post_id = NEW.post_id;
     
-    -- Get how many media this user has viewed for this post
-    SELECT COUNT(DISTINCT media_id) INTO viewed_media_count
-    FROM post_media_views
-    WHERE post_id = NEW.post_id AND user_id = NEW.user_id;
-    
-    -- If user has viewed all media, increment post views count
-    IF viewed_media_count = total_media_count THEN
-        UPDATE posts 
-        SET views_count = views_count + 1 
-        WHERE id = NEW.post_id;
+    -- Only proceed if post has media
+    IF total_media_count > 0 THEN
+        
+        -- Get how many media this user has viewed for this post
+        SELECT COUNT(DISTINCT media_id) INTO viewed_media_count
+        FROM post_media_views
+        WHERE post_id = NEW.post_id AND user_id = NEW.user_id;
+        
+        -- Check if user has viewed all media
+        IF viewed_media_count = total_media_count THEN
+            
+            -- Check if view record already exists
+            SELECT COUNT(*) INTO view_exists
+            FROM post_views
+            WHERE post_id = NEW.post_id AND user_id = NEW.user_id;
+            
+            -- Insert into post_views if not exists
+            IF view_exists = 0 THEN
+                INSERT INTO post_views (post_id, user_id, viewed_at)
+                VALUES (NEW.post_id, NEW.user_id, NOW());
+                
+                -- Increment the post's views_count
+                UPDATE posts 
+                SET views_count = views_count + 1 
+                WHERE id = NEW.post_id;
+            END IF;
+            
+        END IF;
+        
+    ELSE
+        -- For posts with no media, mark as viewed immediately
+        SELECT COUNT(*) INTO view_exists
+        FROM post_views
+        WHERE post_id = NEW.post_id AND user_id = NEW.user_id;
+        
+        IF view_exists = 0 THEN
+            INSERT INTO post_views (post_id, user_id, viewed_at)
+            VALUES (NEW.post_id, NEW.user_id, NOW());
+            
+            UPDATE posts 
+            SET views_count = views_count + 1 
+            WHERE id = NEW.post_id;
+        END IF;
+        
     END IF;
 END//
 DELIMITER ;

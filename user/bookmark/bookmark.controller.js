@@ -113,7 +113,7 @@ exports.getUserBookmarks = async (req, res) => {
         const connection = await pool.getConnection();
         
         try {
-            // Get bookmarked posts with all details including quiz completion
+            // Get bookmarked posts with all details including quiz completion and media progress
             const [bookmarkedPosts] = await connection.query(
                 `SELECT 
                     p.*, 
@@ -123,7 +123,8 @@ exports.getUserBookmarks = async (req, res) => {
                     COALESCE(pb2.id IS NOT NULL, 0) as is_bookmarked,
                     COALESCE(pv.id IS NOT NULL, 0) as is_viewed,
                     COALESCE(qc.id IS NOT NULL, 0) as quiz_completed,
-                    qc.score as quiz_score
+                    qc.score as quiz_score,
+                    COALESCE(ump.view_percentage, 0) as media_view_percentage
                  FROM post_bookmarks pb
                  INNER JOIN posts p ON pb.post_id = p.id
                  INNER JOIN categories c ON p.category_id = c.id
@@ -131,9 +132,10 @@ exports.getUserBookmarks = async (req, res) => {
                  LEFT JOIN post_bookmarks pb2 ON p.id = pb2.post_id AND pb2.user_id = ?
                  LEFT JOIN post_views pv ON p.id = pv.post_id AND pv.user_id = ?
                  LEFT JOIN user_quiz_completion qc ON p.id = qc.post_id AND qc.user_id = ?
+                 LEFT JOIN user_media_progress ump ON p.id = ump.post_id AND ump.user_id = ?
                  WHERE pb.user_id = ? AND p.status = 'active'
                  ORDER BY pb.created_at DESC`,
-                [userId, userId, userId, userId, userId]
+                [userId, userId, userId, userId, userId, userId]
             );
             
             // Get media and comments for each post
@@ -146,16 +148,6 @@ exports.getUserBookmarks = async (req, res) => {
                      ORDER BY id ASC`,
                     [post.id]
                 );
-                
-                // Calculate media viewed percentage
-                const [viewedCount] = await connection.query(
-                    `SELECT COUNT(*) as viewed FROM post_media_views 
-                     WHERE post_id = ? AND user_id = ?`,
-                    [post.id, userId]
-                );
-                post.media_viewed_percentage = media.length > 0 
-                    ? Math.round((viewedCount[0].viewed / media.length) * 100) 
-                    : 100;
                 
                 post.media = media;
                 

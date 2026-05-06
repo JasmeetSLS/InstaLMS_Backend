@@ -105,7 +105,7 @@ exports.getSharedPostsToUser = async (req, res) => {
         const connection = await pool.getConnection();
 
         try {
-            // ✅ MAIN QUERY with quiz completion
+            // ✅ MAIN QUERY with quiz completion and media progress
             const [sharedPosts] = await connection.query(
                 `SELECT 
                     p.*, 
@@ -120,7 +120,8 @@ exports.getSharedPostsToUser = async (req, res) => {
                     COALESCE(pb.id IS NOT NULL, 0) as is_bookmarked,
                     COALESCE(pv.id IS NOT NULL, 0) as is_viewed,
                     COALESCE(qc.id IS NOT NULL, 0) as quiz_completed,
-                    qc.score as quiz_score
+                    qc.score as quiz_score,
+                    COALESCE(ump.view_percentage, 0) as media_view_percentage
                  FROM post_shares ps
                  INNER JOIN posts p ON ps.post_id = p.id
                  INNER JOIN categories c ON p.category_id = c.id
@@ -129,18 +130,18 @@ exports.getSharedPostsToUser = async (req, res) => {
                  LEFT JOIN post_bookmarks pb ON p.id = pb.post_id AND pb.user_id = ?
                  LEFT JOIN post_views pv ON p.id = pv.post_id AND pv.user_id = ?
                  LEFT JOIN user_quiz_completion qc ON p.id = qc.post_id AND qc.user_id = ?
+                 LEFT JOIN user_media_progress ump ON p.id = ump.post_id AND ump.user_id = ?
                  WHERE ps.share_id = ? 
                  AND ps.status = 'active'
                  AND p.status = 'active'
                  ORDER BY ps.created_at DESC`,
-                [userId, userId, userId, userId, userId]
+                [userId, userId, userId, userId, userId, userId]
             );
 
             const postIds = sharedPosts.map(p => p.id);
 
             let mediaMap = {};
             let commentMap = {};
-            let mediaViewMap = {};
 
             if (postIds.length > 0) {
                 // ✅ MEDIA (1 query)
@@ -154,19 +155,6 @@ exports.getSharedPostsToUser = async (req, res) => {
                 allMedia.forEach(m => {
                     if (!mediaMap[m.post_id]) mediaMap[m.post_id] = [];
                     mediaMap[m.post_id].push(m);
-                });
-
-                // ✅ MEDIA VIEWS (1 query)
-                const [allMediaViews] = await connection.query(
-                    `SELECT post_id, COUNT(*) as viewed_count
-                     FROM post_media_views 
-                     WHERE post_id IN (?) AND user_id = ?
-                     GROUP BY post_id`,
-                    [postIds, userId]
-                );
-
-                allMediaViews.forEach(v => {
-                    mediaViewMap[v.post_id] = v.viewed_count;
                 });
 
                 // ✅ COMMENTS (1 query)
@@ -189,16 +177,9 @@ exports.getSharedPostsToUser = async (req, res) => {
                 });
             }
 
-            // ✅ Attach media_viewed_percentage (ABOVE media), media & comments
+            // ✅ Attach media and comments
             sharedPosts.forEach(post => {
-                const media = mediaMap[post.id] || [];
-                const mediaViewedCount = mediaViewMap[post.id] || 0;
-                
-                // Add media_viewed_percentage FIRST (above media)
-                post.media_viewed_percentage = media.length > 0 
-                    ? Math.round((mediaViewedCount / media.length) * 100) 
-                    : 100;
-                post.media = media;
+                post.media = mediaMap[post.id] || [];
                 post.comments = commentMap[post.id] || [];
                 post.comments_count = post.comments.length;
             });
