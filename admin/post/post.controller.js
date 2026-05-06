@@ -128,40 +128,55 @@ function cleanupTempFiles(files) {
 // Create post with multiple media files
 exports.createPost = async (req, res) => {
     try {
-        const { title, category_id, description, hashtags, youtube_links, thumbnail_type } = req.body;
+        const { title, category_id, role_id, description, hashtags, youtube_links, thumbnail_type } = req.body;
         const mediaFiles = req.files['media'] || [];
         const thumbnailFiles = req.files['thumbnail'] || [];
 
-        // Validate thumbnail_type (user input once for all)
+        // Validate required fields
+        if (!title || !category_id || !role_id) {
+            cleanupTempFiles(req.files);
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Title, category ID, and role ID are required' 
+            });
+        }
+
+        // Validate thumbnail_type
         const validThumbnailTypes = ['portrait', 'landscape'];
         const selectedThumbnailType = thumbnail_type && validThumbnailTypes.includes(thumbnail_type.toLowerCase()) 
             ? thumbnail_type.toLowerCase() 
             : 'landscape';
 
-        if (!title || !category_id) {
-            cleanupTempFiles(req.files);
-            return res.status(400).json({ success: false, error: 'Title and category ID are required' });
-        }
-
         const connection = await pool.getConnection();
 
         try {
             const [categories] = await connection.query(
-                'SELECT id, name FROM categories WHERE id = ?',
+                'SELECT id, name FROM categories WHERE id = ? AND status = "active"',
                 [category_id]
             );
 
             if (categories.length === 0) {
                 cleanupTempFiles(req.files);
-                return res.status(404).json({ success: false, error: 'Category not found' });
+                return res.status(404).json({ success: false, error: 'Category not found or inactive' });
+            }
+
+            // Validate role_id
+            const [roles] = await connection.query(
+                'SELECT id, name FROM roles WHERE id = ? AND status = "active"',
+                [role_id]
+            );
+            
+            if (roles.length === 0) {
+                cleanupTempFiles(req.files);
+                return res.status(404).json({ success: false, error: 'Role ID not found or inactive' });
             }
 
             await connection.beginTransaction();
 
-            // Insert post with thumbnail_type
+            // Insert post with role_id
             const [postResult] = await connection.query(
-                'INSERT INTO posts (category_id, title, content, hashtags, thumbnail_type) VALUES (?, ?, ?, ?, ?)',
-                [category_id, title, description || null, hashtags || null, selectedThumbnailType]
+                'INSERT INTO posts (category_id, role_id, title, content, hashtags, thumbnail_type) VALUES (?, ?, ?, ?, ?, ?)',
+                [category_id, role_id, title, description || null, hashtags || null, selectedThumbnailType]
             );
 
             const postId = postResult.insertId;
@@ -176,7 +191,6 @@ exports.createPost = async (req, res) => {
                 
                 if (!config) continue;
 
-                // Insert without thumbnail_type
                 const [tempMediaResult] = await connection.query(
                     'INSERT INTO post_media (post_id, media_type, media_url, thumbnail_url) VALUES (?, ?, ?, ?)',
                     [postId, config.type, '', '']
@@ -267,8 +281,10 @@ exports.createPost = async (req, res) => {
                 data: {
                     post_id: postId,
                     title: title,
-                    category_id: category_id,
+                    category_id: parseInt(category_id),
                     category_name: categories[0].name,
+                    role_id: parseInt(role_id),
+                    role_name: roles[0].name,
                     description: description,
                     hashtags: hashtags,
                     thumbnail_type: selectedThumbnailType,
@@ -300,6 +316,8 @@ exports.getAllPosts = async (req, res) => {
                 p.category_id,
                 c.name as category_name,
                 c.icon_url as category_icon_url,
+                p.role_id,
+                r.name as role_name,
                 p.title,
                 p.content,
                 p.hashtags,
@@ -313,6 +331,7 @@ exports.getAllPosts = async (req, res) => {
                 p.updated_at
             FROM posts p
             INNER JOIN categories c ON p.category_id = c.id
+            LEFT JOIN roles r ON p.role_id = r.id
             ORDER BY p.created_at ASC`
         );
 

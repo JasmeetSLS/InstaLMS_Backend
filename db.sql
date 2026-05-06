@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS `categories` (
   UNIQUE KEY `name` (`name`),
   KEY `idx_status` (`status`),
   KEY `idx_name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Data exporting was unselected.
 
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS `cms_pages` (
   KEY `idx_status` (`status`),
   KEY `idx_title` (`title`),
   KEY `idx_image_url` (`image_url`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Data exporting was unselected.
 
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS `notifications` (
   `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Data exporting was unselected.
 
@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS `post_bookmarks` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `post_bookmarks_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
   CONSTRAINT `post_bookmarks_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS `post_comments` (
   KEY `idx_created_at` (`created_at`),
   CONSTRAINT `post_comments_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
   CONSTRAINT `post_comments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS `post_likes` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `post_likes_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
   CONSTRAINT `post_likes_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -156,7 +156,7 @@ CREATE TABLE IF NOT EXISTS `post_media` (
   PRIMARY KEY (`id`),
   KEY `post_id` (`post_id`),
   CONSTRAINT `post_media_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=65 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -176,7 +176,7 @@ CREATE TABLE IF NOT EXISTS `post_media_views` (
   CONSTRAINT `post_media_views_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
   CONSTRAINT `post_media_views_ibfk_2` FOREIGN KEY (`media_id`) REFERENCES `post_media` (`id`) ON DELETE CASCADE,
   CONSTRAINT `post_media_views_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=447 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -197,7 +197,7 @@ CREATE TABLE IF NOT EXISTS `post_shares` (
   CONSTRAINT `post_shares_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
   CONSTRAINT `post_shares_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `post_shares_ibfk_3` FOREIGN KEY (`share_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -214,7 +214,7 @@ CREATE TABLE IF NOT EXISTS `post_views` (
   KEY `idx_viewed_at` (`viewed_at`),
   CONSTRAINT `post_views_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
   CONSTRAINT `post_views_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -240,7 +240,7 @@ CREATE TABLE IF NOT EXISTS `posts` (
   KEY `idx_role_id` (`role_id`),
   CONSTRAINT `fk_posts_role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `posts_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=56 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -295,7 +295,7 @@ CREATE TABLE IF NOT EXISTS `user_media_progress` (
   KEY `idx_view_percentage` (`view_percentage`),
   CONSTRAINT `user_media_progress_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_media_progress_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=256 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -310,7 +310,7 @@ CREATE TABLE IF NOT EXISTS `user_notification_reads` (
   UNIQUE KEY `unique_user_notification` (`user_id`,`notification_id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_notification_id` (`notification_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Data exporting was unselected.
 
@@ -348,7 +348,7 @@ CREATE TABLE IF NOT EXISTS `user_quiz_completion` (
   KEY `post_id` (`post_id`),
   CONSTRAINT `user_quiz_completion_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_quiz_completion_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -381,12 +381,14 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- Data exporting was unselected.
 
 -- Dumping structure for trigger insta_style_lms.update_post_views_count
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='';
 DELIMITER //
 CREATE TRIGGER `update_post_views_count` AFTER INSERT ON `post_media_views` FOR EACH ROW BEGIN
     DECLARE total_media_count INT DEFAULT 0;
     DECLARE viewed_media_count INT DEFAULT 0;
     DECLARE view_exists INT DEFAULT 0;
+    DECLARE view_percentage DECIMAL(5,2) DEFAULT 0.00;
+    DECLARE progress_exists INT DEFAULT 0;
     
     -- Get total media count for this post
     SELECT COUNT(*) INTO total_media_count
@@ -401,20 +403,39 @@ CREATE TRIGGER `update_post_views_count` AFTER INSERT ON `post_media_views` FOR 
         FROM post_media_views
         WHERE post_id = NEW.post_id AND user_id = NEW.user_id;
         
+        -- Calculate percentage
+        SET view_percentage = (viewed_media_count / total_media_count) * 100;
+        
+        -- Check if progress record already exists
+        SELECT COUNT(*) INTO progress_exists
+        FROM user_media_progress
+        WHERE user_id = NEW.user_id AND post_id = NEW.post_id;
+        
+        -- Update existing or insert new record
+        IF progress_exists > 0 THEN
+            UPDATE user_media_progress 
+            SET 
+                viewed_media_count = viewed_media_count,
+                view_percentage = view_percentage,
+                total_media_count = total_media_count,
+                last_viewed_at = NOW()
+            WHERE user_id = NEW.user_id AND post_id = NEW.post_id;
+        ELSE
+            INSERT INTO user_media_progress (user_id, post_id, total_media_count, viewed_media_count, view_percentage, last_viewed_at)
+            VALUES (NEW.user_id, NEW.post_id, total_media_count, viewed_media_count, view_percentage, NOW());
+        END IF;
+        
         -- Check if user has viewed all media
         IF viewed_media_count = total_media_count THEN
             
-            -- Check if view record already exists
             SELECT COUNT(*) INTO view_exists
             FROM post_views
             WHERE post_id = NEW.post_id AND user_id = NEW.user_id;
             
-            -- Insert into post_views if not exists
             IF view_exists = 0 THEN
                 INSERT INTO post_views (post_id, user_id, viewed_at)
                 VALUES (NEW.post_id, NEW.user_id, NOW());
                 
-                -- Increment the post's views_count
                 UPDATE posts 
                 SET views_count = views_count + 1 
                 WHERE id = NEW.post_id;
@@ -423,7 +444,7 @@ CREATE TRIGGER `update_post_views_count` AFTER INSERT ON `post_media_views` FOR 
         END IF;
         
     ELSE
-        -- For posts with no media, mark as viewed immediately
+        -- For posts with no media
         SELECT COUNT(*) INTO view_exists
         FROM post_views
         WHERE post_id = NEW.post_id AND user_id = NEW.user_id;
@@ -435,6 +456,19 @@ CREATE TRIGGER `update_post_views_count` AFTER INSERT ON `post_media_views` FOR 
             UPDATE posts 
             SET views_count = views_count + 1 
             WHERE id = NEW.post_id;
+            
+            SELECT COUNT(*) INTO progress_exists
+            FROM user_media_progress
+            WHERE user_id = NEW.user_id AND post_id = NEW.post_id;
+            
+            IF progress_exists > 0 THEN
+                UPDATE user_media_progress 
+                SET view_percentage = 100.00, last_viewed_at = NOW()
+                WHERE user_id = NEW.user_id AND post_id = NEW.post_id;
+            ELSE
+                INSERT INTO user_media_progress (user_id, post_id, total_media_count, viewed_media_count, view_percentage, last_viewed_at)
+                VALUES (NEW.user_id, NEW.post_id, 0, 0, 100.00, NOW());
+            END IF;
         END IF;
         
     END IF;
