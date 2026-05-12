@@ -134,6 +134,7 @@ exports.getSharedPostsToUser = async (req, res) => {
                  WHERE ps.share_id = ? 
                  AND ps.status = 'active'
                  AND p.status = 'active'
+                 AND p.my_course = 0
                  ORDER BY ps.created_at DESC`,
                 [userId, userId, userId, userId, userId, userId]
             );

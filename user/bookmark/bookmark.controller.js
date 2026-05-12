@@ -133,7 +133,7 @@ exports.getUserBookmarks = async (req, res) => {
                  LEFT JOIN post_views pv ON p.id = pv.post_id AND pv.user_id = ?
                  LEFT JOIN user_quiz_completion qc ON p.id = qc.post_id AND qc.user_id = ?
                  LEFT JOIN user_media_progress ump ON p.id = ump.post_id AND ump.user_id = ?
-                 WHERE pb.user_id = ? AND p.status = 'active'
+                 WHERE pb.user_id = ? AND p.status = 'active' AND p.my_course = 0
                  ORDER BY pb.created_at DESC`,
                 [userId, userId, userId, userId, userId, userId]
             );
