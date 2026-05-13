@@ -133,78 +133,152 @@ exports.getLeaderboard = async (req, res) => {
         const connection = await pool.getConnection();
 
         try {
-            // Get all 3 users with their ranks (ID 1, 2, 3)
+            // Get all users with IDs 1-12
             const [allUsers] = await connection.query(
                 `SELECT 
-                    id,
-                    name,
-                    profile_url,
-                    employee_id,
-                    email,
-                    @row_num := @row_num + 1 as user_rank
-                 FROM users, (SELECT @row_num := 0) r
-                 WHERE id IN (1, 2, 3)
-                 ORDER BY id ASC`,
+                    u.id,
+                    u.name,
+                    u.profile_url,
+                    u.employee_id,
+                    u.email,
+                    d.dealer_name as dealership,
+                    d.dealer_location as city,
+                    r.name as role
+                FROM users u
+                LEFT JOIN dealers d ON u.dealer_id = d.id
+                LEFT JOIN roles r ON u.role_id = r.id
+                WHERE u.id BETWEEN 1 AND 12 AND u.status = 'active'
+                ORDER BY u.id ASC`,
                 []
             );
 
-            // Static leaderboard data with common role "Sales Manager"
-            const fastestCompletion = [
-                { rank: 1, user_id: 2, name: "Ravi Kumar", city: "Delhi", dealership: "ABC Motors", role: "Sales Manager", completion_time: "2 days", points: 98 },
-                { rank: 2, user_id: 3, name: "Amit Singh", city: "Mumbai", dealership: "XYZ Auto", role: "Sales Manager", completion_time: "3 days", points: 95 },
-                { rank: 3, user_id: 1, name: "Sourabh Kumar", city: "Gurugram", dealership: "PQR Cars", role: "Sales Manager", completion_time: "4 days", points: 92 },
-                { rank: 4, user_id: 4, name: "Ankit Singh", city: "Delhi", dealership: "ABC Motors", role: "Sales Manager", completion_time: "5 days", points: 88 },
-                { rank: 5, user_id: 2, name: "Karan Kumar", city: "Chandigarh", dealership: "LMN Automotives", role: "Sales Manager", completion_time: "6 days", points: 85 },
-                { rank: 6, user_id: 3, name: "Akash Sharma", city: "Mumbai", dealership: "XYZ Auto", role: "Sales Manager", completion_time: "7 days", points: 82 },
-                { rank: 7, user_id: 1, name: "Vikash Singh", city: "Kerala", dealership: "RST Motors", role: "Sales Manager", completion_time: "8 days", points: 80 },
-                { rank: 8, user_id: 4, name: "Priya Patel", city: "Ahmedabad", dealership: "DEF Cars", role: "Sales Manager", completion_time: "9 days", points: 78 },
-                { rank: 9, user_id: 2, name: "Rajesh Kumar", city: "Jaipur", dealership: "GHI Autos", role: "Sales Manager", completion_time: "10 days", points: 75 },
-                { rank: 10, user_id: 3, name: "Neha Sharma", city: "Pune", dealership: "JKL Motors", role: "Sales Manager", completion_time: "11 days", points: 72 }
-            ];
+            if (allUsers.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'No users found'
+                });
+            }
 
-            const highestScores = [
-                { rank: 1, user_id: 1, name: "Sourabh Kumar", city: "Gurugram", dealership: "PQR Cars", role: "Sales Manager", score: 98, quizzes_taken: 25 },
-                { rank: 2, user_id: 2, name: "Ravi Kumar", city: "Delhi", dealership: "ABC Motors", role: "Sales Manager", score: 96, quizzes_taken: 22 },
-                { rank: 3, user_id: 3, name: "Amit Singh", city: "Mumbai", dealership: "XYZ Auto", role: "Sales Manager", score: 94, quizzes_taken: 20 },
-                { rank: 4, user_id: 4, name: "Ankit Singh", city: "Delhi", dealership: "ABC Motors", role: "Sales Manager", score: 92, quizzes_taken: 19 },
-                { rank: 5, user_id: 1, name: "Vikash Singh", city: "Kerala", dealership: "RST Motors", role: "Sales Manager", score: 90, quizzes_taken: 18 },
-                { rank: 6, user_id: 2, name: "Karan Kumar", city: "Chandigarh", dealership: "LMN Automotives", role: "Sales Manager", score: 88, quizzes_taken: 17 },
-                { rank: 7, user_id: 3, name: "Akash Sharma", city: "Mumbai", dealership: "XYZ Auto", role: "Sales Manager", score: 86, quizzes_taken: 16 },
-                { rank: 8, user_id: 4, name: "Priya Patel", city: "Ahmedabad", dealership: "DEF Cars", role: "Sales Manager", score: 85, quizzes_taken: 15 },
-                { rank: 9, user_id: 2, name: "Rajesh Kumar", city: "Jaipur", dealership: "GHI Autos", role: "Sales Manager", score: 84, quizzes_taken: 14 },
-                { rank: 10, user_id: 3, name: "Neha Sharma", city: "Pune", dealership: "JKL Motors", role: "Sales Manager", score: 83, quizzes_taken: 13 }
-            ];
+            // Helper function to shuffle array
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
 
-            const maxCertificates = [
-                { rank: 1, user_id: 3, name: "Amit Singh", city: "Mumbai", dealership: "XYZ Auto", role: "Sales Manager", certificates: 15, completion_rate: "100%" },
-                { rank: 2, user_id: 1, name: "Sourabh Kumar", city: "Gurugram", dealership: "PQR Cars", role: "Sales Manager", certificates: 14, completion_rate: "98%" },
-                { rank: 3, user_id: 2, name: "Ravi Kumar", city: "Delhi", dealership: "ABC Motors", role: "Sales Manager", certificates: 13, completion_rate: "95%" },
-                { rank: 4, user_id: 4, name: "Ankit Singh", city: "Delhi", dealership: "ABC Motors", role: "Sales Manager", certificates: 12, completion_rate: "92%" },
-                { rank: 5, user_id: 1, name: "Vikash Singh", city: "Kerala", dealership: "RST Motors", role: "Sales Manager", certificates: 11, completion_rate: "90%" },
-                { rank: 6, user_id: 2, name: "Karan Kumar", city: "Chandigarh", dealership: "LMN Automotives", role: "Sales Manager", certificates: 10, completion_rate: "88%" },
-                { rank: 7, user_id: 3, name: "Akash Sharma", city: "Mumbai", dealership: "XYZ Auto", role: "Sales Manager", certificates: 9, completion_rate: "85%" },
-                { rank: 8, user_id: 4, name: "Priya Patel", city: "Ahmedabad", dealership: "DEF Cars", role: "Sales Manager", certificates: 8, completion_rate: "82%" },
-                { rank: 9, user_id: 2, name: "Rajesh Kumar", city: "Jaipur", dealership: "GHI Autos", role: "Sales Manager", certificates: 7, completion_rate: "80%" },
-                { rank: 10, user_id: 3, name: "Neha Sharma", city: "Pune", dealership: "JKL Motors", role: "Sales Manager", certificates: 6, completion_rate: "78%" }
-            ];
+            // Helper function to get random completion time
+            function getRandomCompletionTime() {
+                const days = Math.floor(Math.random() * (12 - 2 + 1) + 2); // Random between 2-12 days
+                return `${days} days`;
+            }
 
-            const highestEngagement = [
-                { rank: 1, user_id: 2, name: "Ravi Kumar", city: "Delhi", dealership: "ABC Motors", role: "Sales Manager", engagement_score: 98, hours_spent: 120, posts_completed: 45 },
-                { rank: 2, user_id: 1, name: "Sourabh Kumar", city: "Gurugram", dealership: "PQR Cars", role: "Sales Manager", engagement_score: 96, hours_spent: 115, posts_completed: 42 },
-                { rank: 3, user_id: 3, name: "Amit Singh", city: "Mumbai", dealership: "XYZ Auto", role: "Sales Manager", engagement_score: 94, hours_spent: 110, posts_completed: 40 },
-                { rank: 4, user_id: 4, name: "Ankit Singh", city: "Delhi", dealership: "ABC Motors", role: "Sales Manager", engagement_score: 92, hours_spent: 105, posts_completed: 38 },
-                { rank: 5, user_id: 2, name: "Karan Kumar", city: "Chandigarh", dealership: "LMN Automotives", role: "Sales Manager", engagement_score: 90, hours_spent: 100, posts_completed: 36 },
-                { rank: 6, user_id: 3, name: "Akash Sharma", city: "Mumbai", dealership: "XYZ Auto", role: "Sales Manager", engagement_score: 88, hours_spent: 95, posts_completed: 34 },
-                { rank: 7, user_id: 1, name: "Vikash Singh", city: "Kerala", dealership: "RST Motors", role: "Sales Manager", engagement_score: 86, hours_spent: 90, posts_completed: 32 },
-                { rank: 8, user_id: 4, name: "Priya Patel", city: "Ahmedabad", dealership: "DEF Cars", role: "Sales Manager", engagement_score: 84, hours_spent: 85, posts_completed: 30 },
-                { rank: 9, user_id: 2, name: "Rajesh Kumar", city: "Jaipur", dealership: "GHI Autos", role: "Sales Manager", engagement_score: 82, hours_spent: 80, posts_completed: 28 },
-                { rank: 10, user_id: 3, name: "Neha Sharma", city: "Pune", dealership: "JKL Motors", role: "Sales Manager", engagement_score: 80, hours_spent: 75, posts_completed: 26 }
-            ];
+            // Helper function to get random points
+            function getRandomPoints() {
+                return Math.floor(Math.random() * (100 - 70 + 1) + 70); // Random between 70-100
+            }
+
+            // Helper function to get random score
+            function getRandomScore() {
+                return Math.floor(Math.random() * (100 - 75 + 1) + 75); // Random between 75-100
+            }
+
+            // Helper function to get random quizzes taken
+            function getRandomQuizzesTaken() {
+                return Math.floor(Math.random() * (30 - 10 + 1) + 10); // Random between 10-30
+            }
+
+            // Helper function to get random certificates
+            function getRandomCertificates() {
+                return Math.floor(Math.random() * (20 - 5 + 1) + 5); // Random between 5-20
+            }
+
+            // Helper function to get random completion rate
+            function getRandomCompletionRate() {
+                const rate = Math.floor(Math.random() * (100 - 70 + 1) + 70); // Random between 70-100
+                return `${rate}%`;
+            }
+
+            // Helper function to get random engagement score
+            function getRandomEngagementScore() {
+                return Math.floor(Math.random() * (100 - 70 + 1) + 70); // Random between 70-100
+            }
+
+            // Helper function to get random hours spent
+            function getRandomHoursSpent() {
+                return Math.floor(Math.random() * (150 - 60 + 1) + 60); // Random between 60-150
+            }
+
+            // Helper function to get random posts completed
+            function getRandomPostsCompleted() {
+                return Math.floor(Math.random() * (50 - 20 + 1) + 20); // Random between 20-50
+            }
+
+            // Prepare fastest completion leaderboard (all 12 users shuffled)
+            let fastestCompletionUsers = [...allUsers];
+            fastestCompletionUsers = shuffleArray(fastestCompletionUsers);
+            const fastestCompletion = fastestCompletionUsers.map((user, index) => ({
+                rank: index + 1,
+                user_id: user.id,
+                name: user.name,
+                profile_url: user.profile_url || null,
+                city: user.city || 'Not specified',
+                dealership: user.dealership || 'Not assigned',
+                role: user.role || 'Employee',
+                completion_time: getRandomCompletionTime(),
+                points: getRandomPoints()
+            }));
+
+            // Prepare highest scores leaderboard (all 12 users shuffled)
+            let highestScoresUsers = [...allUsers];
+            highestScoresUsers = shuffleArray(highestScoresUsers);
+            const highestScores = highestScoresUsers.map((user, index) => ({
+                rank: index + 1,
+                user_id: user.id,
+                name: user.name,
+                profile_url: user.profile_url || null,
+                city: user.city || 'Not specified',
+                dealership: user.dealership || 'Not assigned',
+                role: user.role || 'Employee',
+                score: getRandomScore(),
+                quizzes_taken: getRandomQuizzesTaken()
+            }));
+
+            // Prepare max certificates leaderboard (all 12 users shuffled)
+            let maxCertificatesUsers = [...allUsers];
+            maxCertificatesUsers = shuffleArray(maxCertificatesUsers);
+            const maxCertificates = maxCertificatesUsers.map((user, index) => ({
+                rank: index + 1,
+                user_id: user.id,
+                name: user.name,
+                profile_url: user.profile_url || null,
+                city: user.city || 'Not specified',
+                dealership: user.dealership || 'Not assigned',
+                role: user.role || 'Employee',
+                certificates: getRandomCertificates(),
+                completion_rate: getRandomCompletionRate()
+            }));
+
+            // Prepare highest engagement leaderboard (all 12 users shuffled)
+            let highestEngagementUsers = [...allUsers];
+            highestEngagementUsers = shuffleArray(highestEngagementUsers);
+            const highestEngagement = highestEngagementUsers.map((user, index) => ({
+                rank: index + 1,
+                user_id: user.id,
+                name: user.name,
+                profile_url: user.profile_url || null,
+                city: user.city || 'Not specified',
+                dealership: user.dealership || 'Not assigned',
+                role: user.role || 'Employee',
+                engagement_score: getRandomEngagementScore(),
+                hours_spent: getRandomHoursSpent(),
+                posts_completed: getRandomPostsCompleted()
+            }));
 
             res.status(200).json({
                 success: true,
                 data: {
-                    users_rank: allUsers,
                     fastest_completion: fastestCompletion,
                     highest_scores: highestScores,
                     max_certificates: maxCertificates,
