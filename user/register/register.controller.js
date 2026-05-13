@@ -6,14 +6,14 @@ const fs = require('fs');
 // Updated register function with phone and gender
 exports.register = async (req, res) => {
     try {
-        const { email, employee_id, name, phone, gender, role, password } = req.body;
+        const { email, employee_id, name, phone, gender, role_id, dealer_id, password } = req.body;
         const profileFile = req.file; // Get profile image if uploaded
 
         // Validate required fields
-        if (!email || !employee_id || !name || !password) {
+        if (!email || !employee_id || !name || !password || !role_id) {
             return res.status(400).json({ 
                 success: false, 
-                error: 'Email, employee_id, name, and password are required' 
+                error: 'Email, employee_id, name, password, and role_id are required' 
             });
         }
 
@@ -78,10 +78,10 @@ exports.register = async (req, res) => {
             // Hash password using service
             const hashedPassword = await hashPassword(password);
 
-            // Insert new user with phone and gender
+            // Insert new user with role_id and dealer_id
             const [result] = await connection.query(
-                'INSERT INTO users (email, employee_id, name, phone, gender, password, status, role, profile_url) VALUES (?, ?, ?, ?, ?, ?, "active", ?, ?)',
-                [email, employee_id, name, phone || null, gender || null, hashedPassword, role || 'user', null]
+                'INSERT INTO users (email, employee_id, name, phone, gender, password, role_id, dealer_id, status, profile_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "active", ?)',
+                [email, employee_id, name, phone || null, gender || null, hashedPassword, role_id, dealer_id || null, null]
             );
 
             const userId = result.insertId;
@@ -121,7 +121,8 @@ exports.register = async (req, res) => {
                     name: name,
                     phone: phone || null,
                     gender: gender || null,
-                    role: role || 'user',
+                    role_id: role_id,
+                    dealer_id: dealer_id || null,
                     profile_url: profileUrl
                 }
             });
