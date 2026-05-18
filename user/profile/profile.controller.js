@@ -44,37 +44,123 @@ exports.getMyProfile = async (req, res) => {
             
             const user = users[0];
             
-            // Get category-wise post completion data for categories 2 to 5 only
-            const [categoryProgress] = await connection.query(
+            // Get category-wise posts with all details (matching bookmark API structure)
+            const [categoryPosts] = await connection.query(
                 `SELECT 
                     c.id as category_id,
                     c.name as category_name,
                     c.icon_url,
-                    COUNT(DISTINCT p.id) as total_posts,
-                    COUNT(DISTINCT CASE 
-                        WHEN ump.view_percentage = 100.00 
-                        THEN p.id 
-                        ELSE NULL 
-                    END) as completed_posts,
-                    ROUND(
-                        (COUNT(DISTINCT CASE WHEN ump.view_percentage = 100.00 THEN p.id ELSE NULL END) * 100.0) / 
-                        NULLIF(COUNT(DISTINCT p.id), 0), 
-                        2
-                    ) as completion_percentage
+                    p.*,
+                    pb.created_at as bookmarked_at,
+                    COALESCE(pl.id IS NOT NULL, 0) as is_liked,
+                    COALESCE(pb2.id IS NOT NULL, 0) as is_bookmarked,
+                    COALESCE(pv.id IS NOT NULL, 0) as is_viewed,
+                    COALESCE(qc.id IS NOT NULL, 0) as quiz_completed,
+                    qc.score as quiz_score,
+                    COALESCE(ump.view_percentage, 0) as media_view_percentage
                  FROM categories c
-                 LEFT JOIN posts p ON c.id = p.category_id 
+                 INNER JOIN posts p ON c.id = p.category_id 
                     AND p.status = 'active'
                     AND p.role_id = ?
+                    AND p.my_course = 1
+                 LEFT JOIN post_likes pl ON p.id = pl.post_id AND pl.user_id = ?
+                 LEFT JOIN post_bookmarks pb ON p.id = pb.post_id AND pb.user_id = ?
+                 LEFT JOIN post_bookmarks pb2 ON p.id = pb2.post_id AND pb2.user_id = ?
+                 LEFT JOIN post_views pv ON p.id = pv.post_id AND pv.user_id = ?
+                 LEFT JOIN user_quiz_completion qc ON p.id = qc.post_id AND qc.user_id = ?
                  LEFT JOIN user_media_progress ump ON p.id = ump.post_id AND ump.user_id = ?
                  WHERE c.status = 'active' 
                  AND c.id BETWEEN 2 AND 5
-                 GROUP BY c.id, c.name, c.icon_url
-                 HAVING total_posts > 0
-                 ORDER BY c.id`,
-                [user.role_id, userId]
+                 ORDER BY c.id, p.created_at DESC`,
+                [user.role_id, userId, userId, userId, userId, userId, userId]
             );
             
-            // Prepare response with only user data and category completion data
+            // Group posts by category
+            const categoriesMap = new Map();
+            
+            for (const post of categoryPosts) {
+                if (!categoriesMap.has(post.category_id)) {
+                    categoriesMap.set(post.category_id, {
+                        category_id: post.category_id,
+                        category_name: post.category_name,
+                        icon_url: post.icon_url,
+                        total_posts: 0,
+                        completed_posts: 0,
+                        completion_percentage: 0,
+                        posts: []
+                    });
+                }
+                
+                const category = categoriesMap.get(post.category_id);
+                
+                // Calculate completion for this post
+                const isCompleted = parseFloat(post.media_view_percentage) === 100;
+                if (isCompleted) {
+                    category.completed_posts++;
+                }
+                category.total_posts++;
+                
+                // Get media for this post (similar to bookmark API)
+                const [media] = await connection.query(
+                    `SELECT id, media_type, media_url, thumbnail_url 
+                     FROM post_media 
+                     WHERE post_id = ? 
+                     ORDER BY id ASC`,
+                    [post.id]
+                );
+                
+                // Get comments for this post (similar to bookmark API)
+                const [comments] = await connection.query(
+                    `SELECT pc.id, pc.comment_text, pc.created_at,
+                            u.id as user_id, u.name, u.email, u.employee_id, u.profile_url,
+                            CASE WHEN u.id = ? THEN 1 ELSE 0 END as is_login_user
+                     FROM post_comments pc
+                     JOIN users u ON pc.user_id = u.id
+                     WHERE pc.post_id = ? AND pc.status = 'active'
+                     ORDER BY pc.created_at DESC
+                     LIMIT 10`,
+                    [userId, post.id]
+                );
+                
+                // Add post to category with complete details (matching bookmark structure)
+                category.posts.push({
+                    id: post.id,
+                    category_id: post.category_id,
+                    category_name: post.category_name,
+                    title: post.title,
+                    content: post.content,
+                    hashtags: post.hashtags,
+                    thumbnail_type: post.thumbnail_type,
+                    quiz_active: post.quiz_active === 1,
+                    my_course: post.my_course === 1,
+                    likes_count: post.likes_count,
+                    comments_count: post.comments_count,
+                    views_count: post.views_count,
+                    shares_count: post.shares_count,
+                    status: post.status,
+                    created_at: post.created_at,
+                    updated_at: post.updated_at,
+                    bookmarked_at: post.bookmarked_at,
+                    is_liked: post.is_liked === 1,
+                    is_bookmarked: post.is_bookmarked === 1,
+                    is_viewed: post.is_viewed === 1,
+                    quiz_completed: post.quiz_completed === 1,
+                    quiz_score: post.quiz_score,
+                    media_view_percentage: parseFloat(post.media_view_percentage) || 0,
+                    media: media,
+                    comments: comments
+                });
+            }
+            
+            // Calculate completion percentages and convert to array
+            const categories = Array.from(categoriesMap.values()).map(cat => {
+                cat.completion_percentage = cat.total_posts > 0 
+                    ? parseFloat(((cat.completed_posts / cat.total_posts) * 100).toFixed(2))
+                    : 0;
+                return cat;
+            });
+            
+            // Prepare response
             const responseData = {
                 user: {
                     id: user.id,
@@ -98,14 +184,7 @@ exports.getMyProfile = async (req, res) => {
                         status: user.dealer_status
                     } : null
                 },
-                category_completion: categoryProgress.map(cat => ({
-                    category_id: cat.category_id,
-                    category_name: cat.category_name,
-                    icon_url: cat.icon_url,
-                    total_posts: parseInt(cat.total_posts),
-                    completed_posts: parseInt(cat.completed_posts),
-                    completion_percentage: parseFloat(cat.completion_percentage) || 0
-                }))
+                categories: categories
             };
             
             res.status(200).json({
