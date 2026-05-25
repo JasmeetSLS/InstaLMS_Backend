@@ -1,7 +1,7 @@
 -- --------------------------------------------------------
--- Host:                         192.168.10.72
+-- Host:                         127.0.0.1
 -- Server version:               8.0.43 - MySQL Community Server - GPL
--- Server OS:                    Linux
+-- Server OS:                    Win64
 -- HeidiSQL Version:             12.15.0.7171
 -- --------------------------------------------------------
 
@@ -15,489 +15,332 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 
--- Dumping database structure for insta_style_lms
-CREATE DATABASE IF NOT EXISTS `insta_style_lms` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `insta_style_lms`;
+-- Dumping database structure for Hero_ZSSC_Final
+CREATE DATABASE IF NOT EXISTS `Hero_ZSSC_Final` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `Hero_ZSSC_Final`;
 
--- Dumping structure for table insta_style_lms.admins
-CREATE TABLE IF NOT EXISTS `admins` (
+-- Dumping structure for table Hero_ZSSC_Final.assignment_categories
+CREATE TABLE IF NOT EXISTS `assignment_categories` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `username` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `role` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'admin',
-  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
+  `assignment_id` int NOT NULL,
+  `category_id` int NOT NULL,
+  `question_count` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `assignment_id` (`assignment_id`),
+  KEY `category_id` (`category_id`),
+  CONSTRAINT `assignment_categories_ibfk_1` FOREIGN KEY (`assignment_id`) REFERENCES `test_assignments` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `assignment_categories_ibfk_2` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table Hero_ZSSC_Final.assignment_languages
+CREATE TABLE IF NOT EXISTS `assignment_languages` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `assignment_id` int NOT NULL,
+  `language_id` int NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_assignment_language` (`assignment_id`,`language_id`),
+  KEY `language_id` (`language_id`),
+  CONSTRAINT `assignment_languages_ibfk_1` FOREIGN KEY (`assignment_id`) REFERENCES `test_assignments` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `assignment_languages_ibfk_2` FOREIGN KEY (`language_id`) REFERENCES `languages` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=73 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table Hero_ZSSC_Final.attendance
+CREATE TABLE IF NOT EXISTS `attendance` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `attendance_url` varchar(500) DEFAULT NULL,
+  `match_face_id` varchar(255) DEFAULT NULL,
+  `face_confidence` decimal(5,2) DEFAULT NULL,
+  `market_status` enum('Present','Absent','Late','Half Day') DEFAULT 'Present',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.categories
-CREATE TABLE IF NOT EXISTS `categories` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `icon_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `name` (`name`),
-  KEY `idx_status` (`status`),
-  KEY `idx_name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_pages
-CREATE TABLE IF NOT EXISTS `cms_pages` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `slug` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `image_url` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `slug` (`slug`),
-  KEY `idx_status` (`status`),
-  KEY `idx_title` (`title`),
-  KEY `idx_image_url` (`image_url`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.comments
-CREATE TABLE IF NOT EXISTS `comments` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `comment` text NOT NULL,
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.dealers
-CREATE TABLE IF NOT EXISTS `dealers` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `dealer_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `dealer_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `dealer_location` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `zone` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `dealer_code` (`dealer_code`),
-  KEY `idx_dealer_code` (`dealer_code`),
-  KEY `idx_zone` (`zone`),
-  KEY `idx_status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.notifications
-CREATE TABLE IF NOT EXISTS `notifications` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `message` text COLLATE utf8mb4_unicode_ci,
-  `image_url` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.post_bookmarks
-CREATE TABLE IF NOT EXISTS `post_bookmarks` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_bookmark` (`post_id`,`user_id`),
-  KEY `post_id` (`post_id`),
   KEY `user_id` (`user_id`),
-  CONSTRAINT `post_bookmarks_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_bookmarks_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  CONSTRAINT `fk_attendance_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=386 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
--- Dumping structure for table insta_style_lms.post_comments
-CREATE TABLE IF NOT EXISTS `post_comments` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `comment_text` text NOT NULL,
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `post_id` (`post_id`),
-  KEY `user_id` (`user_id`),
-  KEY `idx_status` (`status`),
-  KEY `idx_created_at` (`created_at`),
-  CONSTRAINT `post_comments_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_comments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.post_likes
-CREATE TABLE IF NOT EXISTS `post_likes` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_like` (`post_id`,`user_id`),
-  KEY `post_id` (`post_id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `post_likes_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_likes_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.post_media
-CREATE TABLE IF NOT EXISTS `post_media` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `media_type` enum('image','video','gif','youtube','wbt','pdf','ppt') NOT NULL,
-  `media_url` varchar(500) NOT NULL,
-  `thumbnail_url` varchar(500) DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `post_id` (`post_id`),
-  CONSTRAINT `post_media_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.post_media_views
-CREATE TABLE IF NOT EXISTS `post_media_views` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `media_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `viewed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_media_view` (`post_id`,`media_id`,`user_id`),
-  KEY `post_id` (`post_id`),
-  KEY `media_id` (`media_id`),
-  KEY `user_id` (`user_id`),
-  KEY `idx_viewed_at` (`viewed_at`),
-  CONSTRAINT `post_media_views_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_media_views_ibfk_2` FOREIGN KEY (`media_id`) REFERENCES `post_media` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_media_views_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=44 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.post_shares
-CREATE TABLE IF NOT EXISTS `post_shares` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `user_id` int NOT NULL COMMENT 'User who is sharing the post',
-  `share_id` int NOT NULL COMMENT 'User ID of the person the post is shared with',
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `post_id` (`post_id`),
-  KEY `user_id` (`user_id`),
-  KEY `share_id` (`share_id`),
-  KEY `idx_status` (`status`),
-  KEY `idx_created_at` (`created_at`),
-  CONSTRAINT `post_shares_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_shares_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_shares_ibfk_3` FOREIGN KEY (`share_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.post_views
-CREATE TABLE IF NOT EXISTS `post_views` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `viewed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_view` (`post_id`,`user_id`),
-  KEY `post_id` (`post_id`),
-  KEY `user_id` (`user_id`),
-  KEY `idx_viewed_at` (`viewed_at`),
-  CONSTRAINT `post_views_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_views_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.posts
-CREATE TABLE IF NOT EXISTS `posts` (
+-- Dumping structure for table Hero_ZSSC_Final.base_questions
+CREATE TABLE IF NOT EXISTS `base_questions` (
   `id` int NOT NULL AUTO_INCREMENT,
   `category_id` int NOT NULL,
-  `role_id` int NOT NULL DEFAULT '1',
-  `title` varchar(255) NOT NULL,
-  `content` text,
-  `hashtags` text,
-  `thumbnail_type` enum('portrait','landscape') DEFAULT 'landscape',
-  `likes_count` int NOT NULL DEFAULT '0',
-  `comments_count` int NOT NULL DEFAULT '0',
-  `views_count` int NOT NULL DEFAULT '0',
-  `shares_count` int NOT NULL DEFAULT '0',
-  `quiz_active` tinyint(1) NOT NULL DEFAULT '0',
-  `my_course` tinyint(1) NOT NULL DEFAULT '0',
-  `status` enum('active','inactive') DEFAULT 'active',
+  `assignment_id` int DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `status` enum('Active','Inactive') DEFAULT 'Active',
+  PRIMARY KEY (`id`),
+  KEY `category_id` (`category_id`),
+  KEY `fk_base_questions_assignment` (`assignment_id`),
+  CONSTRAINT `base_questions_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_base_questions_assignment` FOREIGN KEY (`assignment_id`) REFERENCES `test_assignments` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=61 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table Hero_ZSSC_Final.categories
+CREATE TABLE IF NOT EXISTS `categories` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `status` enum('Active','Inactive') DEFAULT 'Active',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table Hero_ZSSC_Final.dealers
+CREATE TABLE IF NOT EXISTS `dealers` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `dealer_code` varchar(50) NOT NULL,
+  `dealer_name` varchar(255) NOT NULL,
+  `dealer_location` varchar(255) DEFAULT NULL,
+  `area_office` varchar(255) DEFAULT NULL,
+  `zone` varchar(100) DEFAULT NULL,
+  `status` enum('Active','Inactive') DEFAULT 'Active',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `category_id` (`category_id`),
-  KEY `idx_role_id` (`role_id`),
-  CONSTRAINT `fk_posts_role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `posts_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=56 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `dealer_code` (`dealer_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=245 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
--- Dumping structure for table insta_style_lms.quiz_questions
-CREATE TABLE IF NOT EXISTS `quiz_questions` (
+-- Dumping structure for table Hero_ZSSC_Final.designations
+CREATE TABLE IF NOT EXISTS `designations` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `question_text` text NOT NULL,
-  `question_media_url` varchar(500) DEFAULT NULL,
-  `option_a` varchar(500) NOT NULL,
-  `option_b` varchar(500) NOT NULL,
-  `option_c` varchar(500) DEFAULT NULL,
-  `option_d` varchar(500) DEFAULT NULL,
-  `correct_option` enum('A','B','C','D') NOT NULL,
-  `marks` int NOT NULL DEFAULT '1',
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `post_id` (`post_id`),
-  CONSTRAINT `quiz_questions_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.roles
-CREATE TABLE IF NOT EXISTS `roles` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
+  `name` varchar(255) NOT NULL,
+  `status` enum('Active','Inactive') DEFAULT 'Active',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
--- Dumping structure for table insta_style_lms.user_media_progress
-CREATE TABLE IF NOT EXISTS `user_media_progress` (
+-- Dumping structure for table Hero_ZSSC_Final.languages
+CREATE TABLE IF NOT EXISTS `languages` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `post_id` int NOT NULL,
-  `total_media_count` int NOT NULL DEFAULT '0',
-  `viewed_media_count` int NOT NULL DEFAULT '0',
-  `view_percentage` decimal(5,2) NOT NULL DEFAULT '0.00',
-  `last_viewed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `name` varchar(50) NOT NULL,
+  `translate_name` varchar(100) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `status` enum('Active','Inactive') DEFAULT 'Active',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table Hero_ZSSC_Final.login_logs
+CREATE TABLE IF NOT EXISTS `login_logs` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int DEFAULT NULL,
+  `login_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `user_agent` text,
+  `login_method` enum('huid','whatsapp') DEFAULT NULL,
+  `status` enum('success','failed') DEFAULT NULL,
+  `failure_reason` varchar(255) DEFAULT NULL,
+  `device_info` text,
+  `location` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `login_time` (`login_time`),
+  CONSTRAINT `login_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=827 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table Hero_ZSSC_Final.question_designations
+CREATE TABLE IF NOT EXISTS `question_designations` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `base_question_id` int NOT NULL,
+  `designation_id` int NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_user_post_progress` (`user_id`,`post_id`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_post_id` (`post_id`),
-  KEY `idx_view_percentage` (`view_percentage`),
-  CONSTRAINT `user_media_progress_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `user_media_progress_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `unique_question_designation` (`base_question_id`,`designation_id`),
+  KEY `designation_id` (`designation_id`),
+  CONSTRAINT `question_designations_ibfk_1` FOREIGN KEY (`base_question_id`) REFERENCES `base_questions` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `question_designations_ibfk_2` FOREIGN KEY (`designation_id`) REFERENCES `designations` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=61 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
--- Dumping structure for table insta_style_lms.user_notification_reads
-CREATE TABLE IF NOT EXISTS `user_notification_reads` (
+-- Dumping structure for table Hero_ZSSC_Final.question_options
+CREATE TABLE IF NOT EXISTS `question_options` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `notification_id` int NOT NULL,
-  `is_read` tinyint(1) DEFAULT '0',
-  `read_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_user_notification` (`user_id`,`notification_id`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_notification_id` (`notification_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.user_quiz_answers
-CREATE TABLE IF NOT EXISTS `user_quiz_answers` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `post_id` int NOT NULL,
-  `question_id` int NOT NULL,
-  `selected_option` enum('A','B','C','D') NOT NULL,
-  `is_correct` tinyint(1) DEFAULT '0',
+  `translation_id` int NOT NULL,
+  `base_question_id` int NOT NULL,
+  `option_text` text,
+  `option_image_path` varchar(255) DEFAULT NULL,
+  `marks` int DEFAULT '0',
+  `original_order` int DEFAULT '0',
+  `status` enum('Active','Inactive') DEFAULT 'Active',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_answer` (`user_id`,`post_id`,`question_id`),
-  KEY `user_id` (`user_id`),
-  KEY `post_id` (`post_id`),
-  KEY `question_id` (`question_id`),
-  CONSTRAINT `user_quiz_answers_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `user_quiz_answers_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `user_quiz_answers_ibfk_3` FOREIGN KEY (`question_id`) REFERENCES `quiz_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `translation_id` (`translation_id`),
+  KEY `base_question_id` (`base_question_id`),
+  CONSTRAINT `question_options_ibfk_1` FOREIGN KEY (`translation_id`) REFERENCES `question_translations` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `question_options_ibfk_2` FOREIGN KEY (`base_question_id`) REFERENCES `base_questions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2881 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
--- Dumping structure for table insta_style_lms.user_quiz_completion
-CREATE TABLE IF NOT EXISTS `user_quiz_completion` (
+-- Dumping structure for table Hero_ZSSC_Final.question_translations
+CREATE TABLE IF NOT EXISTS `question_translations` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `post_id` int NOT NULL,
-  `score` int DEFAULT '0',
-  `completed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `base_question_id` int NOT NULL,
+  `language_id` int NOT NULL,
+  `question` text NOT NULL,
+  `question_media_path` varchar(255) DEFAULT NULL,
+  `short_content` text,
+  `long_content_text` text,
+  `long_content_file_path` varchar(255) DEFAULT NULL,
+  `long_content_audio_path` varchar(255) DEFAULT NULL,
+  `question_answer_audio_path` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `status` enum('Active','Inactive') DEFAULT 'Active',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_completion` (`user_id`,`post_id`),
-  KEY `user_id` (`user_id`),
-  KEY `post_id` (`post_id`),
-  CONSTRAINT `user_quiz_completion_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `user_quiz_completion_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `unique_question_translation` (`base_question_id`,`language_id`),
+  KEY `language_id` (`language_id`),
+  KEY `idx_base_question_id` (`base_question_id`),
+  CONSTRAINT `question_translations_ibfk_1` FOREIGN KEY (`base_question_id`) REFERENCES `base_questions` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `question_translations_ibfk_2` FOREIGN KEY (`language_id`) REFERENCES `languages` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=721 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
--- Dumping structure for table insta_style_lms.users
-CREATE TABLE IF NOT EXISTS `users` (
+-- Dumping structure for table Hero_ZSSC_Final.sn_codes
+CREATE TABLE IF NOT EXISTS `sn_codes` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `employee_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `phone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `gender` enum('male','female') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `role_id` int NOT NULL,
-  `dealer_id` int DEFAULT NULL,
-  `profile_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `fcm_token` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `device_type` enum('android','ios') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
+  `sn_code` varchar(50) NOT NULL,
+  `sn_name` varchar(255) NOT NULL,
+  `dealer_code` varchar(50) NOT NULL,
+  `dealer_name` varchar(255) NOT NULL,
+  `area_office` varchar(255) DEFAULT NULL,
+  `zone` varchar(100) DEFAULT NULL,
+  `tso` varchar(255) DEFAULT NULL,
+  `status` enum('Active','Inactive') DEFAULT 'Active',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`),
-  UNIQUE KEY `employee_id` (`employee_id`),
-  KEY `idx_email` (`email`),
-  KEY `idx_employee_id` (`employee_id`),
-  KEY `idx_status` (`status`),
-  KEY `idx_role_id` (`role_id`),
-  KEY `idx_dealer_id` (`dealer_id`),
-  CONSTRAINT `fk_users_dealer_id` FOREIGN KEY (`dealer_id`) REFERENCES `dealers` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `fk_users_role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  UNIQUE KEY `sn_code` (`sn_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=60 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
--- Dumping structure for trigger insta_style_lms.update_post_views_count
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='';
-DELIMITER //
-CREATE TRIGGER `update_post_views_count` AFTER INSERT ON `post_media_views` FOR EACH ROW BEGIN
-    DECLARE total_media_count INT DEFAULT 0;
-    DECLARE viewed_media_count INT DEFAULT 0;
-    DECLARE view_exists INT DEFAULT 0;
-    DECLARE view_percentage DECIMAL(5,2) DEFAULT 0.00;
-    DECLARE progress_exists INT DEFAULT 0;
-    
-    -- Get total media count for this post
-    SELECT COUNT(*) INTO total_media_count
-    FROM post_media
-    WHERE post_id = NEW.post_id;
-    
-    -- Only proceed if post has media
-    IF total_media_count > 0 THEN
-        
-        -- Get how many media this user has viewed for this post
-        SELECT COUNT(DISTINCT media_id) INTO viewed_media_count
-        FROM post_media_views
-        WHERE post_id = NEW.post_id AND user_id = NEW.user_id;
-        
-        -- Calculate percentage
-        SET view_percentage = (viewed_media_count / total_media_count) * 100;
-        
-        -- Check if progress record already exists
-        SELECT COUNT(*) INTO progress_exists
-        FROM user_media_progress
-        WHERE user_id = NEW.user_id AND post_id = NEW.post_id;
-        
-        -- Update existing or insert new record
-        IF progress_exists > 0 THEN
-            UPDATE user_media_progress 
-            SET 
-                viewed_media_count = viewed_media_count,
-                view_percentage = view_percentage,
-                total_media_count = total_media_count,
-                last_viewed_at = NOW()
-            WHERE user_id = NEW.user_id AND post_id = NEW.post_id;
-        ELSE
-            INSERT INTO user_media_progress (user_id, post_id, total_media_count, viewed_media_count, view_percentage, last_viewed_at)
-            VALUES (NEW.user_id, NEW.post_id, total_media_count, viewed_media_count, view_percentage, NOW());
-        END IF;
-        
-        -- Check if user has viewed all media
-        IF viewed_media_count = total_media_count THEN
-            
-            SELECT COUNT(*) INTO view_exists
-            FROM post_views
-            WHERE post_id = NEW.post_id AND user_id = NEW.user_id;
-            
-            IF view_exists = 0 THEN
-                INSERT INTO post_views (post_id, user_id, viewed_at)
-                VALUES (NEW.post_id, NEW.user_id, NOW());
-                
-                UPDATE posts 
-                SET views_count = views_count + 1 
-                WHERE id = NEW.post_id;
-            END IF;
-            
-        END IF;
-        
-    ELSE
-        -- For posts with no media
-        SELECT COUNT(*) INTO view_exists
-        FROM post_views
-        WHERE post_id = NEW.post_id AND user_id = NEW.user_id;
-        
-        IF view_exists = 0 THEN
-            INSERT INTO post_views (post_id, user_id, viewed_at)
-            VALUES (NEW.post_id, NEW.user_id, NOW());
-            
-            UPDATE posts 
-            SET views_count = views_count + 1 
-            WHERE id = NEW.post_id;
-            
-            SELECT COUNT(*) INTO progress_exists
-            FROM user_media_progress
-            WHERE user_id = NEW.user_id AND post_id = NEW.post_id;
-            
-            IF progress_exists > 0 THEN
-                UPDATE user_media_progress 
-                SET view_percentage = 100.00, last_viewed_at = NOW()
-                WHERE user_id = NEW.user_id AND post_id = NEW.post_id;
-            ELSE
-                INSERT INTO user_media_progress (user_id, post_id, total_media_count, viewed_media_count, view_percentage, last_viewed_at)
-                VALUES (NEW.user_id, NEW.post_id, 0, 0, 100.00, NOW());
-            END IF;
-        END IF;
-        
-    END IF;
-END//
-DELIMITER ;
-SET SQL_MODE=@OLDTMP_SQL_MODE;
+-- Dumping structure for table Hero_ZSSC_Final.test_assignments
+CREATE TABLE IF NOT EXISTS `test_assignments` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `is_completed` tinyint(1) DEFAULT '0',
+  `start_date` datetime DEFAULT NULL,
+  `end_date` datetime DEFAULT NULL,
+  `duration_minutes` int DEFAULT NULL,
+  `passing_score` int DEFAULT '60',
+  `shuffle_questions` tinyint(1) DEFAULT '0',
+  `status` enum('Active','Inactive') DEFAULT 'Active',
+  `total_marks` int DEFAULT '100',
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `shuffle_options` tinyint(1) DEFAULT '0',
+  `proctoring_auto_submit_enabled` tinyint(1) DEFAULT '1',
+  `proctoring_warning_limit` int DEFAULT '5',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table Hero_ZSSC_Final.user_assignment_completion
+CREATE TABLE IF NOT EXISTS `user_assignment_completion` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `assignment_id` int NOT NULL,
+  `is_completed` tinyint(1) DEFAULT '0',
+  `completed_at` timestamp NULL DEFAULT (now()),
+  `start_at` timestamp NULL DEFAULT (now()),
+  `face_movement_count` int DEFAULT '0',
+  `face_recognition_failure_count` int DEFAULT '0',
+  `multiple_face_count` int DEFAULT '0',
+  `tab_switch_count` int DEFAULT '0',
+  `screenshot_attempt_count` int DEFAULT '0',
+  `speech_detection_count` int DEFAULT '0',
+  `face_not_detected_count` int DEFAULT '0',
+  `status` enum('in_progress','user_submitted','auto_submit_timer','auto_submit_proctoring','locked') DEFAULT 'in_progress',
+  `time_left` int DEFAULT NULL COMMENT 'Time left in seconds when test was submitted/auto-submitted',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_id` (`user_id`,`assignment_id`),
+  KEY `assignment_id` (`assignment_id`),
+  CONSTRAINT `user_assignment_completion_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `user_assignment_completion_ibfk_2` FOREIGN KEY (`assignment_id`) REFERENCES `test_assignments` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=384 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table Hero_ZSSC_Final.user_responses
+CREATE TABLE IF NOT EXISTS `user_responses` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `base_question_id` int NOT NULL,
+  `assignment_id` int DEFAULT NULL,
+  `response_language_id` int DEFAULT NULL,
+  `selected_option_id` int DEFAULT NULL,
+  `marks_obtained` int DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `assignment_id` (`assignment_id`),
+  KEY `user_responses_ibfk_2` (`base_question_id`),
+  KEY `fk_response_language` (`response_language_id`),
+  KEY `idx_selected_option_id` (`selected_option_id`),
+  CONSTRAINT `fk_response_language` FOREIGN KEY (`response_language_id`) REFERENCES `languages` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_user_responses_option` FOREIGN KEY (`selected_option_id`) REFERENCES `question_options` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `user_responses_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `user_responses_ibfk_2` FOREIGN KEY (`base_question_id`) REFERENCES `base_questions` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `user_responses_ibfk_3` FOREIGN KEY (`assignment_id`) REFERENCES `test_assignments` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=3777 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table Hero_ZSSC_Final.users
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `huid` varchar(50) DEFAULT NULL,
+  `name` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `phone_number` varchar(20) DEFAULT NULL,
+  `whatsapp_number` varchar(20) DEFAULT NULL,
+  `dealer_id` int DEFAULT NULL,
+  `tm` varchar(255) DEFAULT NULL,
+  `designation_id` int DEFAULT NULL,
+  `area_office` varchar(255) DEFAULT NULL,
+  `zone` varchar(100) DEFAULT NULL,
+  `profile_image` varchar(255) DEFAULT NULL,
+  `face_id` varchar(255) DEFAULT NULL,
+  `front_adhaar` varchar(500) DEFAULT NULL,
+  `back_adhaar` varchar(500) DEFAULT NULL,
+  `status` enum('Active','Inactive') DEFAULT 'Active',
+  `created_at` timestamp NULL DEFAULT (now()),
+  `updated_at` timestamp NULL DEFAULT (now()),
+  `user_type` enum('Primary','Secondary') DEFAULT 'Primary',
+  `sn_code_id` int DEFAULT NULL,
+  `tshirt_size` enum('XS (36)','S (38)','M (40)','L (42)','XL (44)','2XL (46)','3XL (48)','4XL (50)') DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `huid` (`huid`),
+  KEY `fk_user_dealer` (`dealer_id`),
+  KEY `fk_user_designation` (`designation_id`),
+  KEY `fk_user_sn_code` (`sn_code_id`),
+  KEY `idx_users_face_id` (`face_id`),
+  CONSTRAINT `fk_user_dealer` FOREIGN KEY (`dealer_id`) REFERENCES `dealers` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_user_designation` FOREIGN KEY (`designation_id`) REFERENCES `designations` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_user_sn_code` FOREIGN KEY (`sn_code_id`) REFERENCES `sn_codes` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
