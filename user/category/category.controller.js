@@ -37,6 +37,7 @@ exports.ActiveUsersCategoriesComments = async (req, res) => {
                     ), 0) as total_views
                  FROM categories c
                  WHERE c.status = 'active'
+                 HAVING total_posts > 0
                  ORDER BY c.id ASC`,
                 [userRoleId, userId, userRoleId]
             );
