@@ -22,6 +22,7 @@ exports.ActiveUsersCategoriesComments = async (req, res) => {
                         FROM posts p
                         WHERE p.status = 'active' 
                         AND p.role_id = ?
+                        AND p.my_course = 0
                         AND (c.id = 1 OR p.category_id = c.id)
                     ), 0) as total_posts,
                     COALESCE((
@@ -31,6 +32,7 @@ exports.ActiveUsersCategoriesComments = async (req, res) => {
                         WHERE pv.user_id = ?
                         AND p.status = 'active'
                         AND p.role_id = ?
+                        AND p.my_course = 0
                         AND (c.id = 1 OR p.category_id = c.id)
                     ), 0) as total_views
                  FROM categories c
