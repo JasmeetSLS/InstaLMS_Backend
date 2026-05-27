@@ -28,7 +28,6 @@ exports.getMyCourses = async (req, res) => {
                  LEFT JOIN user_media_progress ump ON p.id = ump.post_id AND ump.user_id = ?
                  WHERE p.status = 'active' 
                  AND p.role_id = ?
-                 AND p.my_course = 0
                  AND p.my_course = 1
                  ORDER BY p.id ASC`,
                 [userId, userId, userId, userId, userId, userRoleId]
