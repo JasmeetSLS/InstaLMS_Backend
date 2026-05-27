@@ -2,9 +2,19 @@ const { pool } = require('../../config/db');
 
 exports.getPostsByCategory = async (req, res) => {
     try {
-        const { limit = 10, category_id } = req.query;
+        const { 
+            limit = 10, 
+            page = 1,
+            category_id 
+        } = req.query;
+        
         const userId = req.user.userId;
-        const userRoleId = req.user.role_id; 
+        const userRoleId = req.user.role_id;
+        
+        // Calculate offset for pagination
+        const parsedLimit = parseInt(limit);
+        const parsedPage = parseInt(page);
+        const offset = (parsedPage - 1) * parsedLimit;
 
         if (!category_id) {
             return res.status(400).json({
@@ -37,8 +47,27 @@ exports.getPostsByCategory = async (req, res) => {
                 queryParams.push(category_id);
             }
 
-            queryParams.push(parseInt(limit));
+            // Clone params for count query (without limit/offset)
+            let countParams = [...queryParams];
+            
+            // Add limit and offset for pagination
+            queryParams.push(parsedLimit, offset);
 
+            // Get total count for pagination metadata
+            const [countResult] = await connection.query(
+                `SELECT COUNT(*) as total 
+                 FROM posts p
+                 WHERE p.status = 'active' 
+                 AND p.role_id = ?  
+                 AND p.my_course = 0
+                 ${categoryFilter}`,
+                countParams.slice(5) // Remove user-specific params for count
+            );
+            
+            const totalItems = countResult[0].total;
+            const totalPages = Math.ceil(totalItems / parsedLimit);
+
+            // Get paginated posts
             const [posts] = await connection.query(
                 `SELECT p.*, 
                         c.name as category_name,
@@ -61,7 +90,7 @@ exports.getPostsByCategory = async (req, res) => {
                  AND p.my_course = 0
                  ${categoryFilter}
                  ORDER BY p.id ASC
-                 LIMIT ?`,
+                 LIMIT ? OFFSET ?`,
                 queryParams
             );
 
@@ -95,7 +124,14 @@ exports.getPostsByCategory = async (req, res) => {
                 success: true,
                 data: {
                     posts: posts,
-                    count: posts.length
+                    pagination: {
+                        current_page: parsedPage,
+                        per_page: parsedLimit,
+                        total_items: totalItems,
+                        total_pages: totalPages,
+                        has_next_page: parsedPage < totalPages,
+                        has_previous_page: parsedPage > 1
+                    }
                 }
             });
 
