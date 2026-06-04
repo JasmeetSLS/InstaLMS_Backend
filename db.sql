@@ -195,7 +195,7 @@ CREATE TABLE IF NOT EXISTS `post_media_views` (
   CONSTRAINT `post_media_views_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
   CONSTRAINT `post_media_views_ibfk_2` FOREIGN KEY (`media_id`) REFERENCES `post_media` (`id`) ON DELETE CASCADE,
   CONSTRAINT `post_media_views_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -314,7 +314,7 @@ CREATE TABLE IF NOT EXISTS `user_media_progress` (
   KEY `idx_view_percentage` (`view_percentage`),
   CONSTRAINT `user_media_progress_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_media_progress_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -339,7 +339,7 @@ CREATE TABLE IF NOT EXISTS `user_media_tracking` (
   UNIQUE KEY `unique_user_media` (`user_id`,`media_id`),
   KEY `idx_media_id` (`media_id`),
   KEY `idx_post_id` (`post_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -427,6 +427,59 @@ CREATE TABLE IF NOT EXISTS `users` (
 
 -- Data exporting was unselected.
 
+-- Dumping structure for trigger insta_style_lms.add_post_view_on_insert_progress
+SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+DELIMITER //
+CREATE TRIGGER `add_post_view_on_insert_progress` AFTER INSERT ON `user_media_progress` FOR EACH ROW BEGIN
+    DECLARE view_exists INT DEFAULT 0;
+    
+    IF NEW.view_percentage = 100.00 THEN
+        
+        SELECT COUNT(*) INTO view_exists
+        FROM post_views
+        WHERE post_id = NEW.post_id AND user_id = NEW.user_id;
+        
+        IF view_exists = 0 THEN
+            INSERT INTO post_views (post_id, user_id, viewed_at)
+            VALUES (NEW.post_id, NEW.user_id, NOW());
+            
+            UPDATE posts 
+            SET views_count = views_count + 1 
+            WHERE id = NEW.post_id;
+        END IF;
+        
+    END IF;
+END//
+DELIMITER ;
+SET SQL_MODE=@OLDTMP_SQL_MODE;
+
+-- Dumping structure for trigger insta_style_lms.add_post_view_on_update_progress
+SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+DELIMITER //
+CREATE TRIGGER `add_post_view_on_update_progress` AFTER UPDATE ON `user_media_progress` FOR EACH ROW BEGIN
+    DECLARE view_exists INT DEFAULT 0;
+    
+    IF (OLD.view_percentage != 100.00 AND NEW.view_percentage = 100.00) OR 
+       (NEW.view_percentage = 100.00 AND OLD.view_percentage != 100.00) THEN
+        
+        SELECT COUNT(*) INTO view_exists
+        FROM post_views
+        WHERE post_id = NEW.post_id AND user_id = NEW.user_id;
+        
+        IF view_exists = 0 THEN
+            INSERT INTO post_views (post_id, user_id, viewed_at)
+            VALUES (NEW.post_id, NEW.user_id, NOW());
+            
+            UPDATE posts 
+            SET views_count = views_count + 1 
+            WHERE id = NEW.post_id;
+        END IF;
+        
+    END IF;
+END//
+DELIMITER ;
+SET SQL_MODE=@OLDTMP_SQL_MODE;
+
 -- Dumping structure for trigger insta_style_lms.update_user_media_progress_on_insert
 SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 DELIMITER //
@@ -470,6 +523,12 @@ CREATE TRIGGER `update_user_media_progress_on_insert` AFTER INSERT ON `user_medi
     ELSE
         INSERT INTO user_media_progress (user_id, post_id, total_media_count, view_percentage, last_viewed_at)
         VALUES (NEW.user_id, NEW.post_id, total_media_count, avg_percentage, NOW());
+    END IF;
+    
+    -- NEW: If media is 100% complete, add to post_media_views
+    IF NEW.percentage >= 100 OR NEW.completed = 1 THEN
+        INSERT IGNORE INTO post_media_views (post_id, media_id, user_id, viewed_at)
+        VALUES (NEW.post_id, NEW.media_id, NEW.user_id, NOW());
     END IF;
     
 END//
@@ -522,6 +581,15 @@ CREATE TRIGGER `update_user_media_progress_on_update` AFTER UPDATE ON `user_medi
         ELSE
             INSERT INTO user_media_progress (user_id, post_id, total_media_count, view_percentage, last_viewed_at)
             VALUES (NEW.user_id, NEW.post_id, total_media_count, avg_percentage, NOW());
+        END IF;
+        
+        -- NEW: If media became 100% complete, add to post_media_views
+        IF (NEW.percentage >= 100 OR NEW.completed = 1) AND 
+           (OLD.percentage < 100 AND OLD.completed = 0) THEN
+            
+            INSERT IGNORE INTO post_media_views (post_id, media_id, user_id, viewed_at)
+            VALUES (NEW.post_id, NEW.media_id, NEW.user_id, NOW());
+            
         END IF;
         
     END IF;

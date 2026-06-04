@@ -7,10 +7,8 @@ function timeToSeconds(time) {
     if (typeof time === 'string') {
         const parts = time.split(':');
         if (parts.length === 2) {
-            // MM:SS format
             return (parseInt(parts[0]) * 60) + parseInt(parts[1]);
         } else if (parts.length === 3) {
-            // HH:MM:SS format
             return (parseInt(parts[0]) * 3600) + (parseInt(parts[1]) * 60) + parseInt(parts[2]);
         }
     }
@@ -23,21 +21,35 @@ exports.trackImageView = async (req, res) => {
         const { media_id, post_id } = req.body;
         const user_id = req.user.userId;
 
-        await pool.query(
-            `INSERT INTO user_media_tracking (user_id, media_id, post_id, media_type, viewed_at, completed, percentage)
-             VALUES (?, ?, ?, 'image', NOW(), 1, 100)
-             ON DUPLICATE KEY UPDATE 
-             viewed_at = NOW(), 
-             completed = 1, 
-             percentage = 100`,
-            [user_id, media_id, post_id]
+        // Check if already completed
+        const [check] = await pool.query(
+            `SELECT completed FROM user_media_tracking WHERE user_id = ? AND media_id = ? AND completed = 1`,
+            [user_id, media_id]
+        );
+        if (check.length > 0) {
+            return res.json({ success: true, message: 'Already completed' });
+        }
+
+        // Check if record exists
+        const [existing] = await pool.query(
+            `SELECT id FROM user_media_tracking WHERE user_id = ? AND media_id = ?`,
+            [user_id, media_id]
         );
 
-        await pool.query(
-            `INSERT IGNORE INTO post_media_views (post_id, media_id, user_id)
-             VALUES (?, ?, ?)`,
-            [post_id, media_id, user_id]
-        );
+        if (existing.length > 0) {
+            await pool.query(
+                `UPDATE user_media_tracking 
+                 SET viewed_at = NOW(), completed = 1, percentage = 100, updated_at = NOW()
+                 WHERE user_id = ? AND media_id = ?`,
+                [user_id, media_id]
+            );
+        } else {
+            await pool.query(
+                `INSERT INTO user_media_tracking (user_id, media_id, post_id, media_type, viewed_at, completed, percentage)
+                 VALUES (?, ?, ?, 'image', NOW(), 1, 100)`,
+                [user_id, media_id, post_id]
+            );
+        }
 
         res.json({ success: true, message: 'Image view recorded' });
     } catch (error) {
@@ -46,20 +58,19 @@ exports.trackImageView = async (req, res) => {
     }
 };
 
-// Track video progress (with VARCHAR)
+// Track video progress
 exports.trackVideoProgress = async (req, res) => {
     try {
         const { media_id, post_id, total_minutes, viewed_minutes } = req.body;
         const user_id = req.user.userId;
 
-        // Convert MM:SS to seconds for percentage calculation
-        function timeToSeconds(timeStr) {
-            if (!timeStr) return 0;
-            const parts = timeStr.split(':');
-            if (parts.length === 2) {
-                return (parseInt(parts[0]) * 60) + parseInt(parts[1]);
-            }
-            return 0;
+        // Check if already completed
+        const [check] = await pool.query(
+            `SELECT completed FROM user_media_tracking WHERE user_id = ? AND media_id = ? AND completed = 1`,
+            [user_id, media_id]
+        );
+        if (check.length > 0) {
+            return res.json({ success: true, message: 'Already completed' });
         }
 
         const totalSeconds = timeToSeconds(total_minutes);
@@ -69,21 +80,23 @@ exports.trackVideoProgress = async (req, res) => {
         percentage = Math.min(percentage, 100);
         let completed = percentage >= 90 ? 1 : 0;
 
-        await pool.query(
-            `INSERT INTO user_media_tracking (user_id, media_id, post_id, media_type, total_minutes, viewed_minutes, percentage, completed)
-             VALUES (?, ?, ?, 'video', ?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE 
-             viewed_minutes = VALUES(viewed_minutes),
-             percentage = VALUES(percentage),
-             completed = VALUES(completed)`,
-            [user_id, media_id, post_id, total_minutes, viewed_minutes, percentage, completed]
+        const [existing] = await pool.query(
+            `SELECT id FROM user_media_tracking WHERE user_id = ? AND media_id = ?`,
+            [user_id, media_id]
         );
 
-        if (completed) {
+        if (existing.length > 0) {
             await pool.query(
-                `INSERT IGNORE INTO post_media_views (post_id, media_id, user_id)
-                 VALUES (?, ?, ?)`,
-                [post_id, media_id, user_id]
+                `UPDATE user_media_tracking 
+                 SET viewed_minutes = ?, percentage = ?, completed = ?, updated_at = NOW()
+                 WHERE user_id = ? AND media_id = ?`,
+                [viewed_minutes, percentage, completed, user_id, media_id]
+            );
+        } else {
+            await pool.query(
+                `INSERT INTO user_media_tracking (user_id, media_id, post_id, media_type, total_minutes, viewed_minutes, percentage, completed)
+                 VALUES (?, ?, ?, 'video', ?, ?, ?, ?)`,
+                [user_id, media_id, post_id, total_minutes, viewed_minutes, percentage, completed]
             );
         }
 
@@ -100,25 +113,36 @@ exports.trackPdfProgress = async (req, res) => {
         const { media_id, post_id, total_slides, viewed_slides } = req.body;
         const user_id = req.user.userId;
 
+        // Check if already completed
+        const [check] = await pool.query(
+            `SELECT completed FROM user_media_tracking WHERE user_id = ? AND media_id = ? AND completed = 1`,
+            [user_id, media_id]
+        );
+        if (check.length > 0) {
+            return res.json({ success: true, message: 'Already completed' });
+        }
+
         let percentage = (viewed_slides / total_slides) * 100;
         percentage = Math.min(percentage, 100);
         let completed = viewed_slides >= total_slides ? 1 : 0;
 
-        await pool.query(
-            `INSERT INTO user_media_tracking (user_id, media_id, post_id, media_type, total_slides, viewed_slides, percentage, completed)
-             VALUES (?, ?, ?, 'pdf', ?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE 
-             viewed_slides = VALUES(viewed_slides),
-             percentage = VALUES(percentage),
-             completed = VALUES(completed)`,
-            [user_id, media_id, post_id, total_slides, viewed_slides, percentage, completed]
+        const [existing] = await pool.query(
+            `SELECT id FROM user_media_tracking WHERE user_id = ? AND media_id = ?`,
+            [user_id, media_id]
         );
 
-        if (completed) {
+        if (existing.length > 0) {
             await pool.query(
-                `INSERT IGNORE INTO post_media_views (post_id, media_id, user_id)
-                 VALUES (?, ?, ?)`,
-                [post_id, media_id, user_id]
+                `UPDATE user_media_tracking 
+                 SET viewed_slides = ?, percentage = ?, completed = ?, updated_at = NOW()
+                 WHERE user_id = ? AND media_id = ?`,
+                [viewed_slides, percentage, completed, user_id, media_id]
+            );
+        } else {
+            await pool.query(
+                `INSERT INTO user_media_tracking (user_id, media_id, post_id, media_type, total_slides, viewed_slides, percentage, completed)
+                 VALUES (?, ?, ?, 'pdf', ?, ?, ?, ?)`,
+                [user_id, media_id, post_id, total_slides, viewed_slides, percentage, completed]
             );
         }
 
@@ -135,6 +159,15 @@ exports.saveWbtData = async (req, res) => {
         const { media_id, post_id, wbt_json } = req.body;
         const user_id = req.user.userId;
 
+        // Check if already completed
+        const [check] = await pool.query(
+            `SELECT completed FROM user_media_tracking WHERE user_id = ? AND media_id = ? AND completed = 1`,
+            [user_id, media_id]
+        );
+        if (check.length > 0) {
+            return res.json({ success: true, message: 'Already completed' });
+        }
+
         let percentage = 100;
         let completed = 1;
         
@@ -144,21 +177,23 @@ exports.saveWbtData = async (req, res) => {
             completed = percentage >= 100 ? 1 : 0;
         }
 
-        await pool.query(
-            `INSERT INTO user_media_tracking (user_id, media_id, post_id, media_type, wbt_json, completed, percentage)
-             VALUES (?, ?, ?, 'wbt', ?, ?, ?)
-             ON DUPLICATE KEY UPDATE 
-             wbt_json = VALUES(wbt_json),
-             completed = VALUES(completed),
-             percentage = VALUES(percentage)`,
-            [user_id, media_id, post_id, JSON.stringify(wbt_json), completed, percentage]
+        const [existing] = await pool.query(
+            `SELECT id FROM user_media_tracking WHERE user_id = ? AND media_id = ?`,
+            [user_id, media_id]
         );
 
-        if (completed === 1) {
+        if (existing.length > 0) {
             await pool.query(
-                `INSERT IGNORE INTO post_media_views (post_id, media_id, user_id)
-                 VALUES (?, ?, ?)`,
-                [post_id, media_id, user_id]
+                `UPDATE user_media_tracking 
+                 SET wbt_json = ?, completed = ?, percentage = ?, updated_at = NOW()
+                 WHERE user_id = ? AND media_id = ?`,
+                [JSON.stringify(wbt_json), completed, percentage, user_id, media_id]
+            );
+        } else {
+            await pool.query(
+                `INSERT INTO user_media_tracking (user_id, media_id, post_id, media_type, wbt_json, completed, percentage)
+                 VALUES (?, ?, ?, 'wbt', ?, ?, ?)`,
+                [user_id, media_id, post_id, JSON.stringify(wbt_json), completed, percentage]
             );
         }
 
@@ -179,21 +214,34 @@ exports.trackYouTubeView = async (req, res) => {
         const { media_id, post_id } = req.body;
         const user_id = req.user.userId;
 
-        await pool.query(
-            `INSERT INTO user_media_tracking (user_id, media_id, post_id, media_type, viewed_at, completed, percentage)
-             VALUES (?, ?, ?, 'youtube', NOW(), 1, 100)
-             ON DUPLICATE KEY UPDATE 
-             viewed_at = NOW(), 
-             completed = 1, 
-             percentage = 100`,
-            [user_id, media_id, post_id]
+        // Check if already completed
+        const [check] = await pool.query(
+            `SELECT completed FROM user_media_tracking WHERE user_id = ? AND media_id = ? AND completed = 1`,
+            [user_id, media_id]
+        );
+        if (check.length > 0) {
+            return res.json({ success: true, message: 'Already completed' });
+        }
+
+        const [existing] = await pool.query(
+            `SELECT id FROM user_media_tracking WHERE user_id = ? AND media_id = ?`,
+            [user_id, media_id]
         );
 
-        await pool.query(
-            `INSERT IGNORE INTO post_media_views (post_id, media_id, user_id)
-             VALUES (?, ?, ?)`,
-            [post_id, media_id, user_id]
-        );
+        if (existing.length > 0) {
+            await pool.query(
+                `UPDATE user_media_tracking 
+                 SET viewed_at = NOW(), completed = 1, percentage = 100, updated_at = NOW()
+                 WHERE user_id = ? AND media_id = ?`,
+                [user_id, media_id]
+            );
+        } else {
+            await pool.query(
+                `INSERT INTO user_media_tracking (user_id, media_id, post_id, media_type, viewed_at, completed, percentage)
+                 VALUES (?, ?, ?, 'youtube', NOW(), 1, 100)`,
+                [user_id, media_id, post_id]
+            );
+        }
 
         res.json({ 
             success: true, 
