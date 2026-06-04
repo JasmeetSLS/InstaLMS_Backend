@@ -10,9 +10,11 @@ router.post('/media/image/view', userTrackingController.trackImageView);
 router.post('/media/video/progress', userTrackingController.trackVideoProgress);
 
 // PPT
-router.post('/media/ppt/progress', userTrackingController.trackPptProgress);
+router.post('/media/pdf/progress', userTrackingController.trackPdfProgress);
 
 // WBT (JSON only)
 router.post('/media/wbt/save', userTrackingController.saveWbtData);
+
+router.post('/media/youtube/progress', userTrackingController.trackYouTubeView);
 
 module.exports = router;
