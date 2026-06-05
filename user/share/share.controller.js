@@ -145,12 +145,25 @@ exports.getSharedPostsToUser = async (req, res) => {
             let commentMap = {};
 
             if (postIds.length > 0) {
-                // ✅ MEDIA (1 query)
+                // ✅ MEDIA with ALL user_media_tracking data (1 query)
                 const [allMedia] = await connection.query(
-                    `SELECT id, post_id, media_type, media_url, thumbnail_url
-                     FROM post_media
-                     WHERE post_id IN (?)`,
-                    [postIds]
+                    `SELECT pm.id, pm.post_id, pm.media_type, pm.media_url, pm.thumbnail_url,
+                            COALESCE(umt.id, 0) as tracking_id,
+                            umt.user_id as tracking_user_id,
+                            umt.viewed_at,
+                            umt.total_minutes,
+                            umt.viewed_minutes,
+                            umt.total_slides,
+                            umt.viewed_slides,
+                            umt.wbt_json,
+                            COALESCE(umt.percentage, 0) as user_percentage,
+                            COALESCE(umt.completed, 0) as user_completed,
+                            umt.created_at as tracking_created_at,
+                            umt.updated_at as tracking_updated_at
+                     FROM post_media pm
+                     LEFT JOIN user_media_tracking umt ON pm.id = umt.media_id AND umt.user_id = ?
+                     WHERE pm.post_id IN (?)`,
+                    [userId, postIds]
                 );
 
                 allMedia.forEach(m => {

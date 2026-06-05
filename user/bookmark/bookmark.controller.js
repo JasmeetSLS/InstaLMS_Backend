@@ -138,15 +138,28 @@ exports.getUserBookmarks = async (req, res) => {
                 [userId, userId, userId, userId, userId, userId]
             );
             
-            // Get media and comments for each post
+            // Get media, tracking data, and comments for each post
             for (let post of bookmarkedPosts) {
-                // Get media
+                // Get media with ALL data from user_media_tracking
                 const [media] = await connection.query(
-                    `SELECT id, media_type, media_url, thumbnail_url 
-                     FROM post_media 
-                     WHERE post_id = ? 
-                     ORDER BY id ASC`,
-                    [post.id]
+                    `SELECT pm.id, pm.media_type, pm.media_url, pm.thumbnail_url,
+                            COALESCE(umt.id, 0) as tracking_id,
+                            umt.user_id as tracking_user_id,
+                            umt.viewed_at,
+                            umt.total_minutes,
+                            umt.viewed_minutes,
+                            umt.total_slides,
+                            umt.viewed_slides,
+                            umt.wbt_json,
+                            COALESCE(umt.percentage, 0) as user_percentage,
+                            COALESCE(umt.completed, 0) as user_completed,
+                            umt.created_at as tracking_created_at,
+                            umt.updated_at as tracking_updated_at
+                     FROM post_media pm
+                     LEFT JOIN user_media_tracking umt ON pm.id = umt.media_id AND umt.user_id = ?
+                     WHERE pm.post_id = ? 
+                     ORDER BY pm.id ASC`,
+                    [userId, post.id]
                 );
                 
                 post.media = media;
@@ -164,6 +177,7 @@ exports.getUserBookmarks = async (req, res) => {
                     [userId, post.id]
                 );
                 post.comments = comments;
+                post.comments_count = comments.length;
             }
             
             res.status(200).json({
