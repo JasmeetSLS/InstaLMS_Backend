@@ -16,6 +16,7 @@ const adminPostRoutes = require('./admin/post/post.routes');
 const adminRoleRoutes = require('./admin/role/role.routes');
 const adminQuizRoutes = require('./admin/quiz/quiz.routes');
 const adminNotificationRoutes = require('./admin/notification/notification.routes');
+const adminDashboardRoutes = require('./admin/dashboard/dashboard.routes');
 const userLikeRoutes = require('./user/like/like.routes');
 const userCommentRoutes = require('./user/comment/comment.routes');
 const userViewRoutes = require('./user/view/view.routes');
@@ -75,6 +76,7 @@ app.use('/api/admin' ,authenticateToken, requireAdmin, adminCmsRoutes);
 app.use('/api/admin', authenticateToken, requireAdmin, adminQuizRoutes);
 app.use('/api/admin', authenticateToken, requireAdmin, adminNotificationRoutes);
 app.use('/api/admin', authenticateToken, requireAdmin, adminRoleRoutes);
+app.use('/api/admin', authenticateToken, requireAdmin, adminDashboardRoutes);
 
 // Test route
 app.get('/api', (req, res) => {
