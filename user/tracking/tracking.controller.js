@@ -64,7 +64,6 @@ exports.trackVideoProgress = async (req, res) => {
         const { media_id, post_id, total_minutes, viewed_minutes } = req.body;
         const user_id = req.user.userId;
 
-        // Check if already completed
         const [check] = await pool.query(
             `SELECT completed FROM user_media_tracking WHERE user_id = ? AND media_id = ? AND completed = 1`,
             [user_id, media_id]
@@ -75,16 +74,32 @@ exports.trackVideoProgress = async (req, res) => {
 
         const totalSeconds = timeToSeconds(total_minutes);
         const viewedSeconds = timeToSeconds(viewed_minutes);
-        
+
+        // --- CHANGE: fetch existing progress columns ---
+        const [existing] = await pool.query(
+            `SELECT id, viewed_minutes, percentage, completed FROM user_media_tracking 
+             WHERE user_id = ? AND media_id = ?`,
+            [user_id, media_id]
+        );
+
+        // --- CHANGE: compare and skip if not greater ---
+        let existingSeconds = 0;
+        if (existing.length > 0) {
+            existingSeconds = timeToSeconds(existing[0].viewed_minutes);
+            if (viewedSeconds <= existingSeconds) {
+                return res.json({
+                    success: true,
+                    message: 'No progress increase',
+                    data: { percentage: existing[0].percentage, completed: existing[0].completed }
+                });
+            }
+        }
+
         let percentage = (viewedSeconds / totalSeconds) * 100;
         percentage = Math.min(percentage, 100);
         let completed = percentage >= 90 ? 1 : 0;
 
-        const [existing] = await pool.query(
-            `SELECT id FROM user_media_tracking WHERE user_id = ? AND media_id = ?`,
-            [user_id, media_id]
-        );
-
+        // The rest is identical – using `existing` for existence check
         if (existing.length > 0) {
             await pool.query(
                 `UPDATE user_media_tracking 
@@ -113,7 +128,6 @@ exports.trackPdfProgress = async (req, res) => {
         const { media_id, post_id, total_slides, viewed_slides } = req.body;
         const user_id = req.user.userId;
 
-        // Check if already completed
         const [check] = await pool.query(
             `SELECT completed FROM user_media_tracking WHERE user_id = ? AND media_id = ? AND completed = 1`,
             [user_id, media_id]
@@ -122,27 +136,43 @@ exports.trackPdfProgress = async (req, res) => {
             return res.json({ success: true, message: 'Already completed' });
         }
 
-        let percentage = (viewed_slides / total_slides) * 100;
-        percentage = Math.min(percentage, 100);
-        let completed = viewed_slides >= total_slides ? 1 : 0;
-
+        // --- CHANGE: fetch existing progress columns ---
         const [existing] = await pool.query(
-            `SELECT id FROM user_media_tracking WHERE user_id = ? AND media_id = ?`,
+            `SELECT id, viewed_slides, percentage, completed FROM user_media_tracking 
+             WHERE user_id = ? AND media_id = ?`,
             [user_id, media_id]
         );
+
+        const newViewed = Math.min(parseInt(viewed_slides, 10), parseInt(total_slides, 10));
+
+        // --- CHANGE: compare and skip if not greater ---
+        if (existing.length > 0) {
+            const existingViewed = parseInt(existing[0].viewed_slides, 10) || 0;
+            if (newViewed <= existingViewed) {
+                return res.json({
+                    success: true,
+                    message: 'No progress increase',
+                    data: { percentage: existing[0].percentage, completed: existing[0].completed }
+                });
+            }
+        }
+
+        let percentage = (newViewed / total_slides) * 100;
+        percentage = Math.min(percentage, 100);
+        let completed = newViewed >= total_slides ? 1 : 0;
 
         if (existing.length > 0) {
             await pool.query(
                 `UPDATE user_media_tracking 
                  SET viewed_slides = ?, percentage = ?, completed = ?, updated_at = NOW()
                  WHERE user_id = ? AND media_id = ?`,
-                [viewed_slides, percentage, completed, user_id, media_id]
+                [newViewed, percentage, completed, user_id, media_id]
             );
         } else {
             await pool.query(
                 `INSERT INTO user_media_tracking (user_id, media_id, post_id, media_type, total_slides, viewed_slides, percentage, completed)
                  VALUES (?, ?, ?, 'pdf', ?, ?, ?, ?)`,
-                [user_id, media_id, post_id, total_slides, viewed_slides, percentage, completed]
+                [user_id, media_id, post_id, total_slides, newViewed, percentage, completed]
             );
         }
 
@@ -159,7 +189,6 @@ exports.saveWbtData = async (req, res) => {
         const { media_id, post_id, wbt_json } = req.body;
         const user_id = req.user.userId;
 
-        // Check if already completed
         const [check] = await pool.query(
             `SELECT completed FROM user_media_tracking WHERE user_id = ? AND media_id = ? AND completed = 1`,
             [user_id, media_id]
@@ -168,37 +197,65 @@ exports.saveWbtData = async (req, res) => {
             return res.json({ success: true, message: 'Already completed' });
         }
 
-        let percentage = 100;
-        let completed = 1;
-        
-        if (wbt_json && wbt_json.totalSlides && wbt_json.completedSlides !== undefined) {
-            percentage = (wbt_json.completedSlides / wbt_json.totalSlides) * 100;
-            percentage = Math.min(percentage, 100);
-            completed = percentage >= 100 ? 1 : 0;
-        }
-
+        // Fetch existing record (wbt_json is already parsed as object)
         const [existing] = await pool.query(
-            `SELECT id FROM user_media_tracking WHERE user_id = ? AND media_id = ?`,
+            `SELECT id, wbt_json, percentage, completed FROM user_media_tracking 
+             WHERE user_id = ? AND media_id = ?`,
             [user_id, media_id]
         );
+
+        // Extract existing completedSlides (direct access, no JSON.parse)
+        let existingCompleted = 0;
+        if (existing.length > 0 && existing[0].wbt_json) {
+            existingCompleted = parseInt(existing[0].wbt_json.completedSlides, 10) || 0;
+        }
+
+        if (!wbt_json || typeof wbt_json !== 'object') {
+            return res.status(400).json({ success: false, error: 'Invalid wbt_json' });
+        }
+        const totalSlides = parseInt(wbt_json.totalSlides, 10) || 0;
+        const completedSlides = parseInt(wbt_json.completedSlides, 10) || 0;
+        if (totalSlides <= 0) {
+            return res.status(400).json({ success: false, error: 'Invalid total slides in WBT' });
+        }
+        const newCompleted = Math.min(completedSlides, totalSlides);
+
+        // Skip update if progress not increased
+        if (newCompleted <= existingCompleted) {
+            return res.json({
+                success: true,
+                message: 'No progress increase',
+                data: {
+                    percentage: existing[0]?.percentage || 0,
+                    completed: existing[0]?.completed || 0
+                }
+            });
+        }
+
+        let percentage = (newCompleted / totalSlides) * 100;
+        percentage = Math.min(percentage, 100);
+        let completed = newCompleted >= totalSlides ? 1 : 0;
+
+        // Write: use JSON.stringify to store as valid JSON
+        const jsonString = JSON.stringify(wbt_json);
 
         if (existing.length > 0) {
             await pool.query(
                 `UPDATE user_media_tracking 
                  SET wbt_json = ?, completed = ?, percentage = ?, updated_at = NOW()
                  WHERE user_id = ? AND media_id = ?`,
-                [JSON.stringify(wbt_json), completed, percentage, user_id, media_id]
+                [jsonString, completed, percentage, user_id, media_id]
             );
         } else {
             await pool.query(
                 `INSERT INTO user_media_tracking (user_id, media_id, post_id, media_type, wbt_json, completed, percentage)
                  VALUES (?, ?, ?, 'wbt', ?, ?, ?)`,
-                [user_id, media_id, post_id, JSON.stringify(wbt_json), completed, percentage]
+                [user_id, media_id, post_id, jsonString, completed, percentage]
             );
         }
 
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             message: 'WBT data saved',
             data: { percentage, completed }
         });
