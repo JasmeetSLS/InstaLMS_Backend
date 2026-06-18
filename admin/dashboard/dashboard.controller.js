@@ -639,6 +639,7 @@ exports.getLearningProgress = async (req, res) => {
         if (dealerId) { userFilters.push('u.dealer_id = ?'); filterParams.push(dealerId); }
         if (cityId) { userFilters.push('u.city_id = ?'); filterParams.push(cityId); }
         if (roleId) { userFilters.push('u.role_id = ?'); filterParams.push(roleId); }
+        if (userId) { userFilters.push('u.id = ?'); filterParams.push(userId); }
         const userWhere = userFilters.length ? 'AND ' + userFilters.join(' AND ') : '';
 
         // ---------- Get filtered users ----------
@@ -651,10 +652,10 @@ exports.getLearningProgress = async (req, res) => {
         `, filterParams);
 
         const userIds = filteredUsers.map(u => u.id);
-        const userRoleMap = new Map(filteredUsers.map(u => [u.id, u.role_id]));
 
         // ============================================================
         // 1. MYCOURSE STATS (role‑aware per user)
+        //    Completed course = 100% media progress OR quiz completed
         // ============================================================
         let mycoursePerUser = [];
         if (userIds.length > 0) {
@@ -662,31 +663,34 @@ exports.getLearningProgress = async (req, res) => {
                 SELECT 
                     u.id AS user_id,
                     COUNT(DISTINCT p.id) AS available_courses,
-                    COUNT(DISTINCT pv.post_id) AS completed_courses
+                    COUNT(DISTINCT CASE 
+                        WHEN (ump.view_percentage = 100) OR (uqc.user_id IS NOT NULL) 
+                        THEN p.id 
+                        ELSE NULL 
+                    END) AS completed_courses
                 FROM users u
                 LEFT JOIN posts p ON p.my_course = 1 AND p.status = 'active' AND p.role_id = u.role_id
-                LEFT JOIN post_views pv ON pv.user_id = u.id AND pv.post_id = p.id
+                LEFT JOIN user_media_progress ump ON ump.user_id = u.id AND ump.post_id = p.id
+                LEFT JOIN user_quiz_completion uqc ON uqc.user_id = u.id AND uqc.post_id = p.id
                 WHERE u.id IN (?)
                 GROUP BY u.id
             `, [userIds]);
             mycoursePerUser = rows;
         }
 
-        let totalAvailableCourses = 0, totalCompletedSum = 0;
-        const userCoursePcts = [];
+        let totalCompletedSum = 0;
+        let usersCompletedAllCourses = 0;
         for (const row of mycoursePerUser) {
-            const avail = parseInt(row.available_courses) || 0;
             const comp = parseInt(row.completed_courses) || 0;
-            totalAvailableCourses += avail;
             totalCompletedSum += comp;
-            const pct = avail > 0 ? (comp / avail) * 100 : 0;
-            userCoursePcts.push(pct);
+            const avail = parseInt(row.available_courses) || 0;
+            if (avail > 0 && comp === avail) {
+                usersCompletedAllCourses++;
+            }
         }
-        const avgCoursePct = userCoursePcts.length > 0
-            ? (userCoursePcts.reduce((a, b) => a + b, 0) / userCoursePcts.length)
-            : 0;
+        const userCount = mycoursePerUser.length;
 
-        // Total courses for the filtered group (role‑aware)
+        // Total distinct courses for the filtered group (role‑aware)
         let totalCoursesForGroup = 0;
         if (roleId) {
             const [[{ count }]] = await connection.query(
@@ -701,53 +705,19 @@ exports.getLearningProgress = async (req, res) => {
             totalCoursesForGroup = count;
         }
 
-        // ============================================================
-        // 2. QUIZ (ASSESSMENT) STATS (role‑aware per user)
-        // ============================================================
-        let quizPerUser = [];
-        if (userIds.length > 0) {
-            const [rows] = await connection.query(`
-                SELECT 
-                    u.id AS user_id,
-                    COUNT(DISTINCT p.id) AS available_quizzes,
-                    COUNT(DISTINCT qc.post_id) AS completed_quizzes
-                FROM users u
-                LEFT JOIN posts p ON p.my_course = 1 AND p.quiz_active = 1 AND p.status = 'active' AND p.role_id = u.role_id
-                LEFT JOIN user_quiz_completion qc ON qc.user_id = u.id AND qc.post_id = p.id
-                WHERE u.id IN (?)
-                GROUP BY u.id
-            `, [userIds]);
-            quizPerUser = rows;
-        }
+        // Average completed courses per user
+        const avgCompletedCourses = userCount > 0 ? totalCompletedSum / userCount : 0;
 
-        let totalAvailableQuizzes = 0, totalQuizCompletedSum = 0;
-        const userQuizPcts = [];
-        for (const row of quizPerUser) {
-            const avail = parseInt(row.available_quizzes) || 0;
-            const comp = parseInt(row.completed_quizzes) || 0;
-            totalAvailableQuizzes += avail;
-            totalQuizCompletedSum += comp;
-            const pct = avail > 0 ? (comp / avail) * 100 : 0;
-            userQuizPcts.push(pct);
-        }
-        const avgQuizPct = userQuizPcts.length > 0
-            ? (userQuizPcts.reduce((a, b) => a + b, 0) / userQuizPcts.length)
+        // Overall completion percentage (based on average)
+        const completionPercentage = (userCount > 0 && totalCoursesForGroup > 0)
+            ? (totalCompletedSum / (userCount * totalCoursesForGroup)) * 100
             : 0;
 
-        // Total quizzes for the filtered group
-        let totalQuizzesForGroup = 0;
-        if (roleId) {
-            const [[{ count }]] = await connection.query(
-                'SELECT COUNT(*) AS count FROM posts WHERE my_course = 1 AND quiz_active = 1 AND status = "active" AND role_id = ?',
-                [roleId]
-            );
-            totalQuizzesForGroup = count;
-        } else {
-            const [[{ count }]] = await connection.query(
-                'SELECT COUNT(*) AS count FROM posts WHERE my_course = 1 AND quiz_active = 1 AND status = "active"'
-            );
-            totalQuizzesForGroup = count;
-        }
+        // ============================================================
+        // 2. MYCOURSE CERTIFIED & MYCOURSE ASSESSMENT (same as above)
+        // ============================================================
+        const totalCertifiedCourses = totalCoursesForGroup;
+        const completionPercentageCertified = completionPercentage;
 
         // ============================================================
         // 3. QUIZ SCORE AGGREGATE STATS (filtered users)
@@ -891,19 +861,9 @@ exports.getLearningProgress = async (req, res) => {
         // ============================================================
         // 5. USER‑SPECIFIC DETAILS (if userId given)
         // ============================================================
-        let userCompletedCourses = 0, userCompletedQuizzes = 0;
         let userDetails = null;
 
         if (userId) {
-            const myData = mycoursePerUser.find(row => row.user_id === userId);
-            if (myData) {
-                userCompletedCourses = parseInt(myData.completed_courses) || 0;
-            }
-            const quizData = quizPerUser.find(row => row.user_id === userId);
-            if (quizData) {
-                userCompletedQuizzes = parseInt(quizData.completed_quizzes) || 0;
-            }
-
             // ---- A) MyCourse progress ----
             const [myCoursePosts] = await connection.query(`
                 SELECT id, title
@@ -923,26 +883,28 @@ exports.getLearningProgress = async (req, res) => {
                 progressMap.set(row.post_id, parseFloat(row.view_percentage));
             }
 
-            const [viewRows] = await connection.query(`
+            // Get quiz completion status for the user
+            const [quizCompletionRows] = await connection.query(`
                 SELECT post_id
-                FROM post_views
+                FROM user_quiz_completion
                 WHERE user_id = ?
             `, [userId]);
-            const viewedSet = new Set(viewRows.map(r => r.post_id));
+            const quizCompletedSet = new Set(quizCompletionRows.map(r => r.post_id));
 
             const mycourseDetails = myCoursePosts.map(post => {
-                const viewed = viewedSet.has(post.id);
                 const progress = progressMap.get(post.id) || 0;
+                const completed = (progress >= 100) || quizCompletedSet.has(post.id);
+                const viewed = progress > 0 || quizCompletedSet.has(post.id);
                 return {
                     post_id: post.id,
                     title: post.title,
                     viewed: viewed,
                     progress_percentage: progress,
-                    completed: progress >= 100
+                    completed: completed
                 };
             });
 
-            // ---- B) Certificates = MyCourse posts with 100% progress ----
+            // ---- B) Certificates = MyCourse posts with completed = true ----
             const certificates = mycourseDetails.filter(p => p.completed);
 
             // ---- C) Assessments (quizzes) ----
@@ -958,7 +920,6 @@ exports.getLearningProgress = async (req, res) => {
             let totalMarksMap = new Map();
             let completionMap = new Map();
 
-            // Only run these queries if there are quizzes
             if (quizIdsDetail.length > 0) {
                 const [marksRows] = await connection.query(`
                     SELECT post_id, SUM(marks) AS total_marks
@@ -1003,20 +964,23 @@ exports.getLearningProgress = async (req, res) => {
 
         // ============================================================
         // 6. BUILD FINAL RESPONSE
+        //    completed_course = average completed courses per user
         // ============================================================
         const responseData = {
             mycourse: {
                 total_courses_available: totalCoursesForGroup,
-                avg_completion_percentage: parseFloat(avgCoursePct.toFixed(2))
+                completion_percentage: parseFloat(completionPercentage.toFixed(2)),
+                completed_course: parseFloat(avgCompletedCourses.toFixed(2))
             },
             mycourse_certified: {
-                total_courses_available: totalCoursesForGroup,
-                avg_completion_percentage: parseFloat(avgCoursePct.toFixed(2))
+                total_courses_available: totalCertifiedCourses,
+                completion_percentage: parseFloat(completionPercentageCertified.toFixed(2)),
+                completed_course: parseFloat(avgCompletedCourses.toFixed(2))
             },
-            Assessment: {
-                total_Assessment_available: totalQuizzesForGroup,
-                avg_completion_percentage: parseFloat(avgQuizPct.toFixed(2)),
-                user_completed_assessment: userCompletedQuizzes
+            mycourse_assessment: {
+                total_courses_available: totalCoursesForGroup,
+                completion_percentage: parseFloat(completionPercentage.toFixed(2)),
+                completed_course: parseFloat(avgCompletedCourses.toFixed(2))
             },
             quiz_score: {
                 quizzes_average_total_score: avgMaxPerQuiz.toFixed(2),
@@ -1027,8 +991,6 @@ exports.getLearningProgress = async (req, res) => {
         };
 
         if (userId) {
-            responseData.mycourse.user_completed_courses = userCompletedCourses;
-            responseData.mycourse_certified.user_completed_courses = userCompletedCourses;
             responseData.user_details = userDetails;
         }
 
