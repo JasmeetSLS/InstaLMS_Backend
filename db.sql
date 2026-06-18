@@ -68,6 +68,149 @@ CREATE TABLE IF NOT EXISTS `cities` (
 
 -- Data exporting was unselected.
 
+-- Dumping structure for table insta_style_lms.cms_assessment_options
+CREATE TABLE IF NOT EXISTS `cms_assessment_options` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `question_id` int NOT NULL,
+  `option_text` varchar(1000) NOT NULL,
+  `is_correct` tinyint(1) DEFAULT '0',
+  `sort_order` int DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `fk_option_question` (`question_id`),
+  CONSTRAINT `fk_option_question` FOREIGN KEY (`question_id`) REFERENCES `cms_assessment_questions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table insta_style_lms.cms_assessment_questions
+CREATE TABLE IF NOT EXISTS `cms_assessment_questions` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `assessment_id` int NOT NULL,
+  `question_text` longtext NOT NULL,
+  `question_type` enum('mcq','match_following','fill_blank','order_following','true_false','this_or_that') NOT NULL,
+  `marks` int DEFAULT '1',
+  `sort_order` int DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `fk_question_assessment` (`assessment_id`),
+  CONSTRAINT `fk_question_assessment` FOREIGN KEY (`assessment_id`) REFERENCES `cms_assessments` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table insta_style_lms.cms_assessments
+CREATE TABLE IF NOT EXISTS `cms_assessments` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `section_id` int NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `description` text,
+  `assessment_type` enum('mcq','match_following','fill_blank','order_following','true_false','this_or_that') NOT NULL,
+  `passing_percentage` decimal(5,2) DEFAULT '0.00',
+  `status` enum('active','inactive') DEFAULT 'active',
+  `sort_order` int DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `fk_assessment_section` (`section_id`),
+  CONSTRAINT `fk_assessment_section` FOREIGN KEY (`section_id`) REFERENCES `cms_sections` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table insta_style_lms.cms_categories
+CREATE TABLE IF NOT EXISTS `cms_categories` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) NOT NULL,
+  `icon_url` varchar(500) DEFAULT NULL,
+  `content` longtext,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `sort_order` int DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table insta_style_lms.cms_content_images
+CREATE TABLE IF NOT EXISTS `cms_content_images` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `content_id` int NOT NULL,
+  `image_url` varchar(1000) NOT NULL,
+  `sort_order` int DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `fk_content_images` (`content_id`),
+  CONSTRAINT `fk_content_images` FOREIGN KEY (`content_id`) REFERENCES `cms_contents` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table insta_style_lms.cms_contents
+CREATE TABLE IF NOT EXISTS `cms_contents` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `section_id` int NOT NULL,
+  `content_type` enum('image_text','multiple_image','video','image_text_side','pdf_extract','url_extract') NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `description` longtext,
+  `media_url` varchar(1000) DEFAULT NULL,
+  `thumbnail_url` varchar(1000) DEFAULT NULL,
+  `pdf_url` varchar(1000) DEFAULT NULL,
+  `source_url` varchar(1000) DEFAULT NULL,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `sort_order` int DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `fk_content_section` (`section_id`),
+  CONSTRAINT `fk_content_section` FOREIGN KEY (`section_id`) REFERENCES `cms_sections` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table insta_style_lms.cms_fill_blanks
+CREATE TABLE IF NOT EXISTS `cms_fill_blanks` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `question_id` int NOT NULL,
+  `answer` varchar(500) NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `question_id` (`question_id`),
+  CONSTRAINT `cms_fill_blanks_ibfk_1` FOREIGN KEY (`question_id`) REFERENCES `cms_assessment_questions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table insta_style_lms.cms_match_following
+CREATE TABLE IF NOT EXISTS `cms_match_following` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `question_id` int NOT NULL,
+  `left_text` varchar(500) NOT NULL,
+  `right_text` varchar(500) NOT NULL,
+  `sort_order` int DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `question_id` (`question_id`),
+  CONSTRAINT `cms_match_following_ibfk_1` FOREIGN KEY (`question_id`) REFERENCES `cms_assessment_questions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table insta_style_lms.cms_order_following
+CREATE TABLE IF NOT EXISTS `cms_order_following` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `question_id` int NOT NULL,
+  `item_text` varchar(500) NOT NULL,
+  `correct_position` int NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `question_id` (`question_id`),
+  CONSTRAINT `cms_order_following_ibfk_1` FOREIGN KEY (`question_id`) REFERENCES `cms_assessment_questions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
 -- Dumping structure for table insta_style_lms.cms_pages
 CREATE TABLE IF NOT EXISTS `cms_pages` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -83,7 +226,43 @@ CREATE TABLE IF NOT EXISTS `cms_pages` (
   KEY `idx_status` (`status`),
   KEY `idx_title` (`title`),
   KEY `idx_image_url` (`image_url`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table insta_style_lms.cms_sections
+CREATE TABLE IF NOT EXISTS `cms_sections` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `stream_id` int NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `description` text,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `sort_order` int DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `fk_section_stream` (`stream_id`),
+  CONSTRAINT `fk_section_stream` FOREIGN KEY (`stream_id`) REFERENCES `cms_streams` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table insta_style_lms.cms_streams
+CREATE TABLE IF NOT EXISTS `cms_streams` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `category_id` int NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `language` varchar(100) DEFAULT NULL,
+  `icon_url` varchar(500) DEFAULT NULL,
+  `content` longtext,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `sort_order` int DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `fk_stream_category` (`category_id`),
+  CONSTRAINT `fk_stream_category` FOREIGN KEY (`category_id`) REFERENCES `cms_categories` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
