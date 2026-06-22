@@ -116,7 +116,7 @@ exports.getSectionsByStream = async (req, res) => {
                 });
             }
 
-            // Fetch sections with counts of contents and assessments
+            // Fetch sections with counts of contents and questions (formerly assessments)
             const [sections] = await connection.query(
                 `SELECT 
                     s.id,
@@ -127,7 +127,7 @@ exports.getSectionsByStream = async (req, res) => {
                     s.created_at,
                     s.updated_at,
                     (SELECT COUNT(*) FROM cms_contents WHERE section_id = s.id AND status = 'active') AS contents_count,
-                    (SELECT COUNT(*) FROM cms_assessments WHERE section_id = s.id AND status = 'active') AS assessments_count
+                    (SELECT COUNT(*) FROM cms_questions WHERE section_id = s.id) AS assessments_count
                 FROM cms_sections s
                 WHERE s.stream_id = ? AND s.status = 'active'
                 ORDER BY s.sort_order ASC, s.id ASC`,

@@ -15,7 +15,7 @@ const adminCmsCategoryRoutes = require('./admin/content/cmscategory/cmscategory.
 const adminCmsStreamRoutes = require('./admin/content/cmsStream/cmsStream.routes');
 const adminCmsSectionRoutes = require('./admin/content/csmSection/csmSection.routes');
 const adminCmsContentRoutes = require('./admin/content/cmsContent/cmsContent.routes');
-const adminCmsAssessmentRoutes = require('./admin/content/cmsAssessment/cmsAssessment.routes');
+const adminCmsQuestionRoutes = require('./admin/content/cmsQuestion/cmscmsQuestion.routes');
 // Admin CMS Routes End
 const userCategoryRoutes = require('./user/category/category.routes'); // Add user category routes
 const adminCmsRoutes = require('./admin/cms/cms.routes');
@@ -90,7 +90,7 @@ app.use('/api/admin', authenticateToken, requireAdmin, adminCmsCategoryRoutes);
 app.use('/api/admin', authenticateToken, requireAdmin, adminCmsStreamRoutes );
 app.use('/api/admin', authenticateToken, requireAdmin, adminCmsSectionRoutes );
 app.use('/api/admin', authenticateToken, requireAdmin, adminCmsContentRoutes );
-app.use('/api/admin', authenticateToken, requireAdmin, adminCmsAssessmentRoutes );
+app.use('/api/admin', authenticateToken, requireAdmin, adminCmsQuestionRoutes );
 
 // Test route
 app.get('/api', (req, res) => {
