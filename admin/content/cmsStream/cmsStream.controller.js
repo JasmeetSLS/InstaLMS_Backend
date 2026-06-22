@@ -133,7 +133,7 @@ exports.getStreamsByCategory = async (req, res) => {
         const connection = await pool.getConnection();
 
         try {
-            // First, verify the category exists and is active
+            // Verify the category exists and is active
             const [categoryCheck] = await connection.query(
                 'SELECT id FROM cms_categories WHERE id = ? AND status = "active"',
                 [categoryId]
@@ -146,7 +146,7 @@ exports.getStreamsByCategory = async (req, res) => {
                 });
             }
 
-            // Fetch streams with counts of sections, contents, and assessments
+            // Fetch streams with counts of sections, contents, and questions
             const [streams] = await connection.query(
                 `SELECT 
                     s.id,
@@ -161,8 +161,8 @@ exports.getStreamsByCategory = async (req, res) => {
                     (SELECT COUNT(*) FROM cms_sections WHERE stream_id = s.id AND status = 'active') AS sections_count,
                     (SELECT COUNT(*) FROM cms_contents WHERE section_id IN 
                         (SELECT id FROM cms_sections WHERE stream_id = s.id) AND status = 'active') AS contents_count,
-                    (SELECT COUNT(*) FROM cms_assessments WHERE section_id IN 
-                        (SELECT id FROM cms_sections WHERE stream_id = s.id) AND status = 'active') AS assessments_count
+                    (SELECT COUNT(*) FROM cms_questions WHERE section_id IN 
+                        (SELECT id FROM cms_sections WHERE stream_id = s.id)) AS questions_count
                 FROM cms_streams s
                 WHERE s.category_id = ? AND s.status = 'active'
                 ORDER BY s.sort_order ASC, s.id ASC`,
