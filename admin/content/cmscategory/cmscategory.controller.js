@@ -5,7 +5,7 @@ const path = require('path');
 // Create a new CMS category
 exports.createCmsCategory = async (req, res) => {
     try {
-        const { title, content, status } = req.body;
+        const { title, content } = req.body;  // <-- status removed
         const icon = req.file;
 
         if (!title) {
@@ -18,7 +18,7 @@ exports.createCmsCategory = async (req, res) => {
         const connection = await pool.getConnection();
 
         try {
-            // Check if category with same title exists
+            // Check for duplicate title
             const [existing] = await connection.query(
                 'SELECT id FROM cms_categories WHERE title = ?',
                 [title]
@@ -31,12 +31,12 @@ exports.createCmsCategory = async (req, res) => {
                 });
             }
 
-            // Insert category (without sort_order)
+            // Always set status to 'active'
             const [result] = await connection.query(
                 `INSERT INTO cms_categories 
                  (title, content, status, icon_url) 
                  VALUES (?, ?, ?, ?)`,
-                [title, content || null, status || 'active', null]
+                [title, content || null, 'active', null]  // <-- hardcoded 'active'
             );
 
             const categoryId = result.insertId;
@@ -56,7 +56,6 @@ exports.createCmsCategory = async (req, res) => {
                 fs.renameSync(icon.path, newPath);
                 iconUrl = `/uploads/cmscategory/${categoryId}/${filename}`;
 
-                // Update category with icon URL
                 await connection.query(
                     'UPDATE cms_categories SET icon_url = ? WHERE id = ?',
                     [iconUrl, categoryId]
@@ -70,7 +69,7 @@ exports.createCmsCategory = async (req, res) => {
                     id: categoryId,
                     title,
                     content,
-                    status,
+                    status: 'active',  // always active
                     icon_url: iconUrl
                 }
             });
