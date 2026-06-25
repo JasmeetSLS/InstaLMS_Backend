@@ -56,7 +56,8 @@ exports.getContentById = async (req, res) => {
         const connection = await pool.getConnection();
 
         try {
-            const [rows] = await connection.query(
+            // 1. Fetch content
+            const [contentRows] = await connection.query(
                 `SELECT id, section_id, content_type, title, description, 
                         media_url, thumbnail_url, pdf_url, source_url, 
                         status, sort_order, created_at, updated_at
@@ -65,16 +66,34 @@ exports.getContentById = async (req, res) => {
                 [contentId]
             );
 
-            if (rows.length === 0) {
+            if (contentRows.length === 0) {
                 return res.status(404).json({
                     success: false,
                     error: 'Content not found or inactive'
                 });
             }
 
+            const content = contentRows[0];
+
+            // 2. Fetch all slides in a single UNION query (already ordered)
+            const [slidesRows] = await connection.query(
+                `SELECT 'image' AS type, image_url AS content, sort_order
+                 FROM cms_content_images
+                 WHERE content_id = ?
+                 UNION ALL
+                 SELECT 'text' AS type, text_content AS content, sort_order
+                 FROM cms_content_text
+                 WHERE content_id = ?
+                 ORDER BY sort_order ASC`,
+                [contentId, contentId]
+            );
+
+            // 3. Attach slides (remove sort_order)
+            content.slides = slidesRows.map(({ type, content }) => ({ type, content }));
+
             res.json({
                 success: true,
-                data: rows[0]
+                data: content
             });
 
         } finally {
