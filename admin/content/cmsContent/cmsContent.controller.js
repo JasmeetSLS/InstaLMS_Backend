@@ -59,7 +59,7 @@ exports.getContentById = async (req, res) => {
             // 1. Fetch content
             const [contentRows] = await connection.query(
                 `SELECT id, section_id, content_type, title, description, 
-                        media_url, thumbnail_url, pdf_url, source_url, 
+                        media_url, thumbnail_url, pdf_url,pdf_text, source_url, 
                         status, sort_order, created_at, updated_at
                  FROM cms_contents 
                  WHERE id = ? AND status = 'active'`,
