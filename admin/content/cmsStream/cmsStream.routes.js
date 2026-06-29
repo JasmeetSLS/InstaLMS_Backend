@@ -7,6 +7,10 @@ const upload = require('../../../middleware/upload.middleware');
 router.get('/streams/:categoryId', cmsStreamController.getStreamsByCategory);
 
 router.post('/add-stream', upload.single('icon'), cmsStreamController.createStream);
+// GET a single stream by ID
+router.get('/stream/:streamId', cmsStreamController.getStreamById);
 
+// PUT update a stream (only title, language, content, icon)
+router.put('/stream/:streamId', upload.single('icon'), cmsStreamController.updateStream);
 
 module.exports = router;

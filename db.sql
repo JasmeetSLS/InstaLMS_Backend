@@ -122,6 +122,7 @@ CREATE TABLE IF NOT EXISTS `cms_contents` (
   `media_url` varchar(1000) DEFAULT NULL,
   `thumbnail_url` varchar(1000) DEFAULT NULL,
   `pdf_url` varchar(1000) DEFAULT NULL,
+  `pdf_text` longtext,
   `source_url` varchar(1000) DEFAULT NULL,
   `status` enum('active','inactive') DEFAULT 'active',
   `sort_order` int DEFAULT '0',
