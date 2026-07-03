@@ -1,4 +1,4 @@
-const admin = require("../config/firebase");
+const { messaging } = require("../config/firebase");
 const { pool } = require("../config/db");
 
 exports.sendNotificationToAllUsers = async (title, body, data = {}) => {
@@ -8,26 +8,26 @@ exports.sendNotificationToAllUsers = async (title, body, data = {}) => {
         connection = await pool.getConnection();
 
         const [users] = await connection.query(`
-            SELECT id, name, fcm_token
+            SELECT id,name,fcm_token
             FROM users
-            WHERE status = 'active'
+            WHERE status='active'
             AND fcm_token IS NOT NULL
-            AND fcm_token != ''
+            AND fcm_token <> ''
         `);
 
-        if (users.length === 0) {
-            console.log("❌ No active users with FCM token found.");
-            return;
-        }
-
-        const tokens = users.map(user => user.fcm_token);
+        const tokens = users.map(x => x.fcm_token);
 
         console.log("====================================");
         console.log("Push Notification Started");
         console.log("Total Users :", users.length);
         console.log("Total Tokens:", tokens.length);
 
-        const message = {
+        if (!tokens.length) {
+            return;
+        }
+
+        const response = await messaging.sendEachForMulticast({
+            tokens,
             notification: {
                 title,
                 body,
@@ -43,43 +43,22 @@ exports.sendNotificationToAllUsers = async (title, body, data = {}) => {
                     },
                 },
             },
-            tokens,
-        };
+        });
 
-        const response = await admin
-            .messaging()
-            .sendEachForMulticast(message);
-
-        console.log("====================================");
         console.log("Success :", response.successCount);
-        console.log("Failed  :", response.failureCount);
+        console.log("Failure :", response.failureCount);
 
-        response.responses.forEach((result, index) => {
-            if (result.success) {
-                console.log(
-                    `✅ User ${users[index].id} (${users[index].name}) -> Notification Sent`
-                );
-            } else {
-                console.log(
-                    `❌ User ${users[index].id} (${users[index].name})`
-                );
-                console.log("Token :", users[index].fcm_token);
-                console.log("Code  :", result.error.code);
-                console.log("Error :", result.error.message);
-                console.log("------------------------------------");
+        response.responses.forEach((r, i) => {
+            if (!r.success) {
+                console.log(users[i].id);
+                console.log(r.error.code);
+                console.log(r.error.message);
             }
         });
 
-        console.log("====================================");
-
-        return response;
-
-    } catch (error) {
-        console.error("Firebase Notification Error:");
-        console.error(error);
+    } catch (err) {
+        console.error(err);
     } finally {
-        if (connection) {
-            connection.release();
-        }
+        if (connection) connection.release();
     }
 };
