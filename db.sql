@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS `cms_content_images` (
   KEY `idx_content_id` (`content_id`),
   KEY `idx_sort_order` (`sort_order`),
   CONSTRAINT `fk_cms_content_images_content` FOREIGN KEY (`content_id`) REFERENCES `cms_contents` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS `cms_content_text` (
   KEY `idx_content_id` (`content_id`),
   KEY `idx_sort_order` (`sort_order`),
   CONSTRAINT `fk_cms_content_text_content` FOREIGN KEY (`content_id`) REFERENCES `cms_contents` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -131,7 +131,7 @@ CREATE TABLE IF NOT EXISTS `cms_contents` (
   PRIMARY KEY (`id`),
   KEY `fk_content_section` (`section_id`),
   CONSTRAINT `fk_content_section` FOREIGN KEY (`section_id`) REFERENCES `cms_sections` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -142,9 +142,9 @@ CREATE TABLE IF NOT EXISTS `cms_fill_blanks` (
   `answer` varchar(500) NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `question_id` (`question_id`),
-  CONSTRAINT `cms_fill_blanks_ibfk_1` FOREIGN KEY (`question_id`) REFERENCES `cms_assessment_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `fk_fill_blanks_question` (`question_id`),
+  CONSTRAINT `fk_fill_blanks_question` FOREIGN KEY (`question_id`) REFERENCES `cms_questions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -157,9 +157,9 @@ CREATE TABLE IF NOT EXISTS `cms_match_following` (
   `sort_order` int DEFAULT '0',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `question_id` (`question_id`),
-  CONSTRAINT `cms_match_following_ibfk_1` FOREIGN KEY (`question_id`) REFERENCES `cms_assessment_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `fk_match_following_question` (`question_id`),
+  CONSTRAINT `fk_match_following_question` FOREIGN KEY (`question_id`) REFERENCES `cms_questions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -174,7 +174,7 @@ CREATE TABLE IF NOT EXISTS `cms_options` (
   PRIMARY KEY (`id`),
   KEY `fk_option_question` (`question_id`),
   CONSTRAINT `fk_option_question` FOREIGN KEY (`question_id`) REFERENCES `cms_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -186,9 +186,9 @@ CREATE TABLE IF NOT EXISTS `cms_order_following` (
   `correct_position` int NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `question_id` (`question_id`),
-  CONSTRAINT `cms_order_following_ibfk_1` FOREIGN KEY (`question_id`) REFERENCES `cms_assessment_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `fk_order_following_question` (`question_id`),
+  CONSTRAINT `fk_order_following_question` FOREIGN KEY (`question_id`) REFERENCES `cms_questions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -223,7 +223,7 @@ CREATE TABLE IF NOT EXISTS `cms_questions` (
   PRIMARY KEY (`id`),
   KEY `fk_question_section` (`section_id`),
   CONSTRAINT `fk_question_section` FOREIGN KEY (`section_id`) REFERENCES `cms_sections` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -240,7 +240,7 @@ CREATE TABLE IF NOT EXISTS `cms_sections` (
   PRIMARY KEY (`id`),
   KEY `fk_section_stream` (`stream_id`),
   CONSTRAINT `fk_section_stream` FOREIGN KEY (`stream_id`) REFERENCES `cms_streams` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -259,7 +259,7 @@ CREATE TABLE IF NOT EXISTS `cms_streams` (
   PRIMARY KEY (`id`),
   KEY `fk_stream_category` (`category_id`),
   CONSTRAINT `fk_stream_category` FOREIGN KEY (`category_id`) REFERENCES `cms_categories` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 

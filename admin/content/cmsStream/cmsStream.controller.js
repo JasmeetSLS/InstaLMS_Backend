@@ -119,9 +119,11 @@ exports.createStream = async (req, res) => {
 };
 
 // Get streams by category ID
+// Get streams by category ID with optional search
 exports.getStreamsByCategory = async (req, res) => {
     try {
         const { categoryId } = req.params;
+        const { search } = req.query; // e.g., ?search=design
 
         if (!categoryId || isNaN(categoryId)) {
             return res.status(400).json({
@@ -146,9 +148,9 @@ exports.getStreamsByCategory = async (req, res) => {
                 });
             }
 
-            // Fetch streams with counts of sections, contents, and questions
-            const [streams] = await connection.query(
-                `SELECT 
+            // Base query with counts
+            let query = `
+                SELECT 
                     s.id,
                     s.title,
                     s.language,
@@ -165,9 +167,19 @@ exports.getStreamsByCategory = async (req, res) => {
                         (SELECT id FROM cms_sections WHERE stream_id = s.id)) AS questions_count
                 FROM cms_streams s
                 WHERE s.category_id = ? AND s.status = 'active'
-                ORDER BY s.sort_order ASC, s.id ASC`,
-                [categoryId]
-            );
+            `;
+            const params = [categoryId];
+
+            // Add search condition if provided
+            if (search && search.trim() !== '') {
+                query += ` AND (s.title LIKE ? OR s.language LIKE ? OR s.content LIKE ?)`;
+                const like = `%${search.trim()}%`;
+                params.push(like, like, like);
+            }
+
+            query += ` ORDER BY s.sort_order ASC, s.id ASC`;
+
+            const [streams] = await connection.query(query, params);
 
             res.json({
                 success: true,

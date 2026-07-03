@@ -87,18 +87,29 @@ exports.createCmsCategory = async (req, res) => {
     }
 };
 
-// Get all CMS categories
 exports.getAllCmsCategories = async (req, res) => {
     try {
+        const { search } = req.query; // e.g., ?search=design
+
         const connection = await pool.getConnection();
 
         try {
-            const [categories] = await connection.query(
-                `SELECT id, title, icon_url, content, status, 
-                        created_at, updated_at 
-                 FROM cms_categories 
-                 ORDER BY id ASC`
-            );
+            let query = `
+                SELECT id, title, icon_url, content, status, 
+                       created_at, updated_at 
+                FROM cms_categories
+            `;
+            const params = [];
+
+            if (search && search.trim() !== '') {
+                query += ` WHERE title LIKE ? OR content LIKE ?`;
+                const like = `%${search.trim()}%`;
+                params.push(like, like);
+            }
+
+            query += ` ORDER BY id ASC`;
+
+            const [categories] = await connection.query(query, params);
 
             res.json({
                 success: true,
