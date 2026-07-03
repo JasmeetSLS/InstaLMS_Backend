@@ -1,8 +1,8 @@
 const { pool } = require('../../config/db');
 const fs = require('fs');
 const path = require('path');
+const { sendNotificationToAllUsers } = require('../../services/notification.service');
 
-// Create a new category
 exports.createCategory = async (req, res) => {
     try {
         const { name } = req.body;
@@ -18,7 +18,7 @@ exports.createCategory = async (req, res) => {
         const connection = await pool.getConnection();
 
         try {
-            // Check if category exists
+
             const [existing] = await connection.query(
                 'SELECT id FROM categories WHERE name = ?',
                 [name]
@@ -27,11 +27,10 @@ exports.createCategory = async (req, res) => {
             if (existing.length > 0) {
                 return res.status(409).json({
                     success: false,
-                    error: 'Category name already exists'
+                    error: 'Category already exists'
                 });
             }
 
-            // Insert category first
             const [result] = await connection.query(
                 'INSERT INTO categories (name, icon_url) VALUES (?, ?)',
                 [name, null]
@@ -39,39 +38,60 @@ exports.createCategory = async (req, res) => {
 
             const categoryId = result.insertId;
 
-            // Handle icon upload if provided
             let iconUrl = null;
+
             if (icon) {
-                // Create category folder
-                const categoryDir = path.join('uploads', 'category', categoryId.toString());
+
+                const categoryDir = path.join(
+                    'uploads',
+                    'category',
+                    categoryId.toString()
+                );
+
                 if (!fs.existsSync(categoryDir)) {
                     fs.mkdirSync(categoryDir, { recursive: true });
                 }
 
-                // Get file extension
-                const ext = path.extname(icon.originalname);
                 const filename = icon.filename;
-                const newPath = path.join(categoryDir, filename);
 
-                // Move file to category folder
+                const newPath = path.join(
+                    categoryDir,
+                    filename
+                );
+
                 fs.renameSync(icon.path, newPath);
+
                 iconUrl = `/uploads/category/${categoryId}/${filename}`;
 
-                // Update category with icon URL
                 await connection.query(
-                    'UPDATE categories SET icon_url = ? WHERE id = ?',
+                    'UPDATE categories SET icon_url=? WHERE id=?',
                     [iconUrl, categoryId]
                 );
+
             }
 
+            // Return response immediately
             res.status(201).json({
                 success: true,
                 message: 'Category created successfully',
                 data: {
                     id: categoryId,
-                    name: name,
+                    name,
                     icon_url: iconUrl
                 }
+            });
+
+            // Send push notification in background
+            sendNotificationToAllUsers(
+                '📚 New Category',
+                `${name} category has been added.`,
+                {
+                    type: 'category',
+                    categoryId: categoryId.toString(),
+                    categoryName: name
+                }
+            ).catch(err => {
+                console.error('Push Notification Error:', err);
             });
 
         } finally {
@@ -79,7 +99,8 @@ exports.createCategory = async (req, res) => {
         }
 
     } catch (error) {
-        console.error('Create category error:', error);
+        console.error(error);
+
         res.status(500).json({
             success: false,
             error: 'Internal server error'
