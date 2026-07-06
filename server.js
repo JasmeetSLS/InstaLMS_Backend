@@ -22,7 +22,7 @@ const adminCmsRoutes = require('./admin/cms/cms.routes');
 const adminPostRoutes = require('./admin/post/post.routes');
 const adminRoleRoutes = require('./admin/role/role.routes');
 const adminQuizRoutes = require('./admin/quiz/quiz.routes');
-const adminNotificationRoutes = require('./admin/notification/notification.routes');
+const adminNotificationRoutes = require('./user/notification/notification.routes');
 const adminDashboardRoutes = require('./admin/dashboard/dashboard.routes');
 const userLikeRoutes = require('./user/like/like.routes');
 const userCommentRoutes = require('./user/comment/comment.routes');
@@ -35,6 +35,7 @@ const userCMSRoutes = require('./user/cms/cms.routes');
 const userMyCourseRoutes = require('./user/mycourse/mycourse.routes');
 const userProfileRoutes = require('./user/profile/profile.routes');
 const userTrackingRoutes = require('./user/tracking/tracking.routes');
+const userNotificationRoutes = require('./user/notification/notification.routes');
 
 const { authenticateToken, requireAdmin, requireUser } = require('./middleware/auth.middleware');
 
@@ -74,6 +75,7 @@ app.use('/api/user', authenticateToken, requireUser, userCMSRoutes);
 app.use('/api/user', authenticateToken, requireUser, userMyCourseRoutes);
 app.use('/api/user', authenticateToken, requireUser, userProfileRoutes);
 app.use('/api/user', authenticateToken, requireUser, userTrackingRoutes);
+app.use('/api/user', authenticateToken, requireUser, userNotificationRoutes);
 
 
 app.use('/api/admin', authenticateToken, requireAdmin, adminUserRoutes);

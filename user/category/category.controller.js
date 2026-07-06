@@ -1,16 +1,14 @@
 const { pool } = require('../../config/db');
 
-// Get all active categories, active users, and active comments
+// Get all active categories, active users, active comments, and unread notifications
 exports.ActiveUsersCategoriesComments = async (req, res) => {
     try {
         const connection = await pool.getConnection();
-        
-        // Get logged-in user ID and role_id from token
         const userId = req.user.userId;
         const userRoleId = req.user.role_id;
 
         try {
-            // Get active categories with total posts and total views based on user role
+            // 1. Active categories with posts & views (unchanged)
             const [categories] = await connection.query(
                 `SELECT 
                     c.id, 
@@ -42,7 +40,7 @@ exports.ActiveUsersCategoriesComments = async (req, res) => {
                 [userRoleId, userId, userRoleId]
             );
 
-            // Get active users except the logged-in user
+            // 2. Active users (except logged-in user) – unchanged
             const [users] = await connection.query(
                 `SELECT id, email, employee_id, name, phone, gender, role_id, profile_url, status, created_at 
                  FROM users 
@@ -51,7 +49,7 @@ exports.ActiveUsersCategoriesComments = async (req, res) => {
                 [userId]
             );
 
-            // Get all active comments
+            // 3. Active comments – unchanged
             const [comments] = await connection.query(
                 `SELECT id, comment, status, created_at 
                  FROM comments 
@@ -59,7 +57,8 @@ exports.ActiveUsersCategoriesComments = async (req, res) => {
                  ORDER BY id ASC`
             );
 
-            const [notificationCount] = await connection.query(
+            // 4. Unread notification count
+            const [countResult] = await connection.query(
                 `SELECT COUNT(*) as count
                  FROM notifications n
                  LEFT JOIN user_notification_reads unr 
@@ -67,7 +66,21 @@ exports.ActiveUsersCategoriesComments = async (req, res) => {
                  WHERE unr.id IS NULL`,
                 [userId]
             );
+            const unreadCount = countResult[0].count || 0;
 
+            // 5. Fetch the actual unread notifications (latest 10)
+            const [unreadNotifications] = await connection.query(
+                `SELECT n.id, n.title, n.message, n.created_at
+                 FROM notifications n
+                 LEFT JOIN user_notification_reads unr 
+                    ON n.id = unr.notification_id AND unr.user_id = ?
+                 WHERE unr.id IS NULL
+                 ORDER BY n.created_at DESC
+                 LIMIT 10`,
+                [userId]
+            );
+
+            // 6. Send response with notifications data
             res.json({
                 success: true,
                 categories: {
@@ -83,7 +96,8 @@ exports.ActiveUsersCategoriesComments = async (req, res) => {
                     data: comments
                 },
                 notifications: {
-                    unread_count: notificationCount[0].count || 0
+                    unread_count: unreadCount,
+                    data: unreadNotifications   // <-- actual bell notifications
                 }
             });
 
@@ -92,7 +106,7 @@ exports.ActiveUsersCategoriesComments = async (req, res) => {
         }
 
     } catch (error) {
-        console.error('Get active categories error:', error);
+        console.error('Dashboard error:', error);
         res.status(500).json({
             success: false,
             error: 'Internal server error'
