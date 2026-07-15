@@ -15,881 +15,895 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 
--- Dumping database structure for insta_style_lms
-CREATE DATABASE IF NOT EXISTS `insta_style_lms` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `insta_style_lms`;
+-- Dumping database structure for school_erp
+CREATE DATABASE IF NOT EXISTS `testing` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `testing`;
 
--- Dumping structure for table insta_style_lms.admins
-CREATE TABLE IF NOT EXISTS `admins` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `username` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `role` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'admin',
-  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
+-- Dumping structure for table school_erp.book_issues
+CREATE TABLE IF NOT EXISTS `book_issues` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `book_id` bigint unsigned NOT NULL,
+  `student_id` bigint unsigned NOT NULL,
+  `issue_date` date NOT NULL,
+  `due_date` date NOT NULL,
+  `return_date` date DEFAULT NULL,
+  `fine_amount` decimal(10,2) DEFAULT '0.00',
+  `status` enum('issued','returned','overdue') DEFAULT 'issued',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `book_id` (`book_id`),
+  KEY `student_id` (`student_id`),
+  CONSTRAINT `book_issues_ibfk_1` FOREIGN KEY (`book_id`) REFERENCES `books` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `book_issues_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Data exporting was unselected.
+-- Dumping data for table school_erp.book_issues: ~2 rows (approximately)
+INSERT INTO `book_issues` (`id`, `book_id`, `student_id`, `issue_date`, `due_date`, `return_date`, `fine_amount`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 1, 2, '2026-07-09', '2026-07-23', '2026-07-04', 0.00, 'returned', '2026-07-04 11:04:41', '2026-07-04 11:05:46'),
+	(2, 1, 2, '2026-07-10', '2026-07-23', '2026-07-04', 0.00, 'returned', '2026-07-04 11:18:16', '2026-07-04 11:18:35');
 
--- Dumping structure for table insta_style_lms.categories
-CREATE TABLE IF NOT EXISTS `categories` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `icon_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
+-- Dumping structure for table school_erp.books
+CREATE TABLE IF NOT EXISTS `books` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `title` varchar(200) NOT NULL,
+  `author` varchar(100) NOT NULL,
+  `isbn` varchar(20) DEFAULT NULL,
+  `quantity` int unsigned NOT NULL DEFAULT '1',
+  `available` int unsigned NOT NULL DEFAULT '1',
+  `status` enum('active','inactive') DEFAULT 'active',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `name` (`name`),
-  KEY `idx_status` (`status`),
-  KEY `idx_name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  UNIQUE KEY `isbn` (`isbn`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Data exporting was unselected.
+-- Dumping data for table school_erp.books: ~2 rows (approximately)
+INSERT INTO `books` (`id`, `title`, `author`, `isbn`, `quantity`, `available`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 's', 'as', 'sas', 1, 1, 'active', '2026-07-04 11:04:23', '2026-07-04 11:18:35'),
+	(2, 'Sample', 'Sample', 'sds', 1, 1, 'active', '2026-07-05 06:48:04', '2026-07-05 06:48:04');
 
--- Dumping structure for table insta_style_lms.cities
-CREATE TABLE IF NOT EXISTS `cities` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `dealer_id` int NOT NULL,
-  `city_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `state` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_dealer_id` (`dealer_id`),
-  KEY `idx_status` (`status`),
-  CONSTRAINT `fk_cities_dealer_id` FOREIGN KEY (`dealer_id`) REFERENCES `dealers` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_categories
-CREATE TABLE IF NOT EXISTS `cms_categories` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL,
-  `icon_url` varchar(500) DEFAULT NULL,
-  `content` longtext,
+-- Dumping structure for table school_erp.calendar_events
+CREATE TABLE IF NOT EXISTS `calendar_events` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `title` varchar(200) NOT NULL,
+  `description` text,
+  `event_type` varchar(50) NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL,
+  `start_time` time DEFAULT NULL,
+  `end_time` time DEFAULT NULL,
+  `location` varchar(255) DEFAULT NULL,
+  `color` varchar(7) DEFAULT '#3B82F6',
+  `attachment` varchar(255) DEFAULT NULL,
   `status` enum('active','inactive') DEFAULT 'active',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_content_images
-CREATE TABLE IF NOT EXISTS `cms_content_images` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `content_id` int NOT NULL,
-  `image_url` varchar(1000) NOT NULL,
-  `sort_order` int NOT NULL DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_content_id` (`content_id`),
-  KEY `idx_sort_order` (`sort_order`),
-  CONSTRAINT `fk_cms_content_images_content` FOREIGN KEY (`content_id`) REFERENCES `cms_contents` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_content_text
-CREATE TABLE IF NOT EXISTS `cms_content_text` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `content_id` int NOT NULL,
-  `text_content` longtext NOT NULL,
-  `sort_order` int NOT NULL DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_content_id` (`content_id`),
-  KEY `idx_sort_order` (`sort_order`),
-  CONSTRAINT `fk_cms_content_text_content` FOREIGN KEY (`content_id`) REFERENCES `cms_contents` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_contents
-CREATE TABLE IF NOT EXISTS `cms_contents` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `section_id` int NOT NULL,
-  `content_type` enum('video','pdf_extract','url_extract','multiple_image_text') NOT NULL,
-  `title` varchar(255) DEFAULT NULL,
-  `description` longtext,
-  `media_url` varchar(1000) DEFAULT NULL,
-  `thumbnail_url` varchar(1000) DEFAULT NULL,
-  `pdf_url` varchar(1000) DEFAULT NULL,
-  `pdf_text` longtext,
-  `source_url` varchar(1000) DEFAULT NULL,
-  `status` enum('active','inactive') DEFAULT 'active',
-  `sort_order` int DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fk_content_section` (`section_id`),
-  CONSTRAINT `fk_content_section` FOREIGN KEY (`section_id`) REFERENCES `cms_sections` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_fill_blanks
-CREATE TABLE IF NOT EXISTS `cms_fill_blanks` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `question_id` int NOT NULL,
-  `answer` varchar(500) NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fk_fill_blanks_question` (`question_id`),
-  CONSTRAINT `fk_fill_blanks_question` FOREIGN KEY (`question_id`) REFERENCES `cms_questions` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Data exporting was unselected.
+-- Dumping data for table school_erp.calendar_events: ~1 rows (approximately)
+INSERT INTO `calendar_events` (`id`, `title`, `description`, `event_type`, `start_date`, `end_date`, `start_time`, `end_time`, `location`, `color`, `attachment`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 'Testing', 'Testing', 'Holiday', '2026-07-04', '2026-07-04', '12:07:00', '18:07:00', 'Testing', '#3B82F6', '/uploads/calendar/1/event-1783147077735.pdf', 'active', '2026-07-04 06:37:57', '2026-07-04 06:37:57');
 
--- Dumping structure for table insta_style_lms.cms_match_following
-CREATE TABLE IF NOT EXISTS `cms_match_following` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `question_id` int NOT NULL,
-  `left_text` varchar(500) NOT NULL,
-  `right_text` varchar(500) NOT NULL,
-  `sort_order` int DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fk_match_following_question` (`question_id`),
-  CONSTRAINT `fk_match_following_question` FOREIGN KEY (`question_id`) REFERENCES `cms_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_options
-CREATE TABLE IF NOT EXISTS `cms_options` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `question_id` int NOT NULL,
-  `option_text` varchar(1000) NOT NULL,
-  `is_correct` tinyint(1) DEFAULT '0',
-  `sort_order` int DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fk_option_question` (`question_id`),
-  CONSTRAINT `fk_option_question` FOREIGN KEY (`question_id`) REFERENCES `cms_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_order_following
-CREATE TABLE IF NOT EXISTS `cms_order_following` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `question_id` int NOT NULL,
-  `item_text` varchar(500) NOT NULL,
-  `correct_position` int NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fk_order_following_question` (`question_id`),
-  CONSTRAINT `fk_order_following_question` FOREIGN KEY (`question_id`) REFERENCES `cms_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_pages
-CREATE TABLE IF NOT EXISTS `cms_pages` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `slug` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
+-- Dumping structure for table school_erp.class_teachers
+CREATE TABLE IF NOT EXISTS `class_teachers` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `teacher_id` bigint unsigned NOT NULL,
+  `class_id` bigint unsigned NOT NULL,
+  `section_id` bigint unsigned NOT NULL,
+  `academic_year` varchar(20) NOT NULL,
+  `status` enum('active','inactive') DEFAULT 'active',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `slug` (`slug`),
-  KEY `idx_status` (`status`),
-  KEY `idx_title` (`title`),
-  KEY `idx_image_url` (`image_url`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `teacher_id` (`teacher_id`),
+  KEY `class_id` (`class_id`),
+  KEY `section_id` (`section_id`),
+  CONSTRAINT `class_teachers_ibfk_1` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `class_teachers_ibfk_2` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `class_teachers_ibfk_3` FOREIGN KEY (`section_id`) REFERENCES `sections` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Data exporting was unselected.
+-- Dumping data for table school_erp.class_teachers: ~2 rows (approximately)
+INSERT INTO `class_teachers` (`id`, `teacher_id`, `class_id`, `section_id`, `academic_year`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 3, 1, 1, '2026-2027', 'active', '2026-07-01 05:22:20', '2026-07-01 05:22:20'),
+	(2, 3, 1, 2, '2026-2027', 'active', '2026-07-01 05:25:25', '2026-07-01 05:25:25');
 
--- Dumping structure for table insta_style_lms.cms_questions
-CREATE TABLE IF NOT EXISTS `cms_questions` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `section_id` int NOT NULL,
-  `question_text` longtext NOT NULL,
-  `question_type` enum('mcq','match_following','fill_blank','order_following','true_false','this_or_that') NOT NULL,
-  `marks` int DEFAULT '1',
-  `sort_order` int DEFAULT '0',
+-- Dumping structure for table school_erp.classes
+CREATE TABLE IF NOT EXISTS `classes` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL,
+  `status` enum('active','inactive') DEFAULT 'active',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `fk_question_section` (`section_id`),
-  CONSTRAINT `fk_question_section` FOREIGN KEY (`section_id`) REFERENCES `cms_sections` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `uk_name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Data exporting was unselected.
+-- Dumping data for table school_erp.classes: ~2 rows (approximately)
+INSERT INTO `classes` (`id`, `name`, `status`, `created_at`, `updated_at`) VALUES
+	(1, '1', 'active', '2026-06-28 10:08:29', '2026-06-28 10:08:29'),
+	(2, '2', 'active', '2026-06-28 10:10:09', '2026-06-28 10:10:09');
 
--- Dumping structure for table insta_style_lms.cms_sections
-CREATE TABLE IF NOT EXISTS `cms_sections` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `stream_id` int NOT NULL,
-  `title` varchar(255) NOT NULL,
+-- Dumping structure for table school_erp.events
+CREATE TABLE IF NOT EXISTS `events` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `title` varchar(200) NOT NULL,
   `description` text,
+  `event_type` varchar(50) NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL,
+  `venue` varchar(200) DEFAULT NULL,
+  `attachment` varchar(255) DEFAULT NULL,
   `status` enum('active','inactive') DEFAULT 'active',
-  `sort_order` int DEFAULT '0',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fk_section_stream` (`stream_id`),
-  CONSTRAINT `fk_section_stream` FOREIGN KEY (`stream_id`) REFERENCES `cms_streams` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_streams
-CREATE TABLE IF NOT EXISTS `cms_streams` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `category_id` int NOT NULL,
-  `title` varchar(255) NOT NULL,
-  `language` varchar(100) DEFAULT NULL,
-  `icon_url` varchar(500) DEFAULT NULL,
-  `content` longtext,
-  `status` enum('active','inactive') DEFAULT 'active',
-  `sort_order` int DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fk_stream_category` (`category_id`),
-  CONSTRAINT `fk_stream_category` FOREIGN KEY (`category_id`) REFERENCES `cms_categories` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.comments
-CREATE TABLE IF NOT EXISTS `comments` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `comment` text NOT NULL,
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.curriculum_posts
-CREATE TABLE IF NOT EXISTS `curriculum_posts` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `curriculum_id` int NOT NULL,
-  `post_id` int NOT NULL,
-  `level` enum('1','2','3') NOT NULL,
-  `sort_order` int DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `curriculum_id` (`curriculum_id`),
-  KEY `post_id` (`post_id`),
-  CONSTRAINT `curriculum_posts_ibfk_1` FOREIGN KEY (`curriculum_id`) REFERENCES `curriculums` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `curriculum_posts_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.curriculums
-CREATE TABLE IF NOT EXISTS `curriculums` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL,
-  `description` text,
-  `role_id` int NOT NULL,
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `role_id` (`role_id`),
-  CONSTRAINT `curriculums_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Data exporting was unselected.
+-- Dumping data for table school_erp.events: ~1 rows (approximately)
+INSERT INTO `events` (`id`, `title`, `description`, `event_type`, `start_date`, `end_date`, `venue`, `attachment`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 'Testing', 'Testing', 'Sports Day', '2026-07-17', '2026-07-22', 'Etsting', '/uploads/events/1/event-1783165494271.jpg', 'active', '2026-07-04 11:44:54', '2026-07-04 11:44:54');
 
--- Dumping structure for table insta_style_lms.dealers
-CREATE TABLE IF NOT EXISTS `dealers` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `dealer_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `dealer_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `dealer_location` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `zone` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `dealer_code` (`dealer_code`),
-  KEY `idx_dealer_code` (`dealer_code`),
-  KEY `idx_zone` (`zone`),
-  KEY `idx_status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.notifications
-CREATE TABLE IF NOT EXISTS `notifications` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.post_bookmarks
-CREATE TABLE IF NOT EXISTS `post_bookmarks` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_bookmark` (`post_id`,`user_id`),
-  KEY `post_id` (`post_id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `post_bookmarks_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_bookmarks_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=44 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.post_comments
-CREATE TABLE IF NOT EXISTS `post_comments` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `comment_text` text NOT NULL,
+-- Dumping structure for table school_erp.exam_marks
+CREATE TABLE IF NOT EXISTS `exam_marks` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `exam_id` bigint unsigned NOT NULL,
+  `student_id` bigint unsigned NOT NULL,
+  `marks_obtained` decimal(5,2) DEFAULT NULL,
+  `grade` varchar(5) DEFAULT NULL,
+  `remarks` text,
   `status` enum('active','inactive') DEFAULT 'active',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `post_id` (`post_id`),
-  KEY `user_id` (`user_id`),
-  KEY `idx_status` (`status`),
-  KEY `idx_created_at` (`created_at`),
-  CONSTRAINT `post_comments_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_comments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  UNIQUE KEY `uk_exam_student` (`exam_id`,`student_id`),
+  KEY `student_id` (`student_id`),
+  CONSTRAINT `exam_marks_ibfk_1` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `exam_marks_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table school_erp.exam_marks: ~0 rows (approximately)
+INSERT INTO `exam_marks` (`id`, `exam_id`, `student_id`, `marks_obtained`, `grade`, `remarks`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 1, 2, 100.00, 'A+', 'Top', 'active', '2026-07-03 11:30:02', '2026-07-03 11:30:02');
+
+-- Dumping structure for table school_erp.exams
+CREATE TABLE IF NOT EXISTS `exams` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `exam_type` varchar(50) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `class_id` bigint unsigned NOT NULL,
+  `section_id` bigint unsigned NOT NULL,
+  `subject_id` bigint unsigned NOT NULL,
+  `academic_year` varchar(20) NOT NULL,
+  `max_marks` decimal(5,2) NOT NULL DEFAULT '100.00',
+  `passing_marks` decimal(5,2) NOT NULL DEFAULT '35.00',
+  `exam_date` date DEFAULT NULL,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `class_id` (`class_id`),
+  KEY `section_id` (`section_id`),
+  KEY `subject_id` (`subject_id`),
+  CONSTRAINT `exams_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `exams_ibfk_2` FOREIGN KEY (`section_id`) REFERENCES `sections` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `exams_ibfk_3` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table school_erp.exams: ~1 rows (approximately)
+INSERT INTO `exams` (`id`, `exam_type`, `name`, `class_id`, `section_id`, `subject_id`, `academic_year`, `max_marks`, `passing_marks`, `exam_date`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 'Mid Term', 'MID TERM 2026-2027', 1, 1, 5, '2026-2027', 100.00, 35.00, '2026-07-10', 'active', '2026-07-03 11:29:48', '2026-07-12 15:05:11');
+
+-- Dumping structure for table school_erp.grades
+CREATE TABLE IF NOT EXISTS `grades` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `grade` varchar(5) NOT NULL,
+  `min_marks` decimal(5,2) NOT NULL,
+  `max_marks` decimal(5,2) NOT NULL,
+  `description` varchar(100) DEFAULT NULL,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_grade` (`grade`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table school_erp.grades: ~7 rows (approximately)
+INSERT INTO `grades` (`id`, `grade`, `min_marks`, `max_marks`, `description`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 'A+', 90.00, 100.00, 'Outstanding', 'active', '2026-07-03 10:32:08', '2026-07-03 10:32:08'),
+	(2, 'A', 80.00, 89.00, 'Excellent', 'active', '2026-07-03 10:32:08', '2026-07-03 10:32:08'),
+	(3, 'B+', 70.00, 79.00, 'Very Good', 'active', '2026-07-03 10:32:08', '2026-07-03 10:32:08'),
+	(4, 'B', 60.00, 69.00, 'Good', 'active', '2026-07-03 10:32:08', '2026-07-03 10:32:08'),
+	(5, 'C', 50.00, 59.00, 'Average', 'active', '2026-07-03 10:32:08', '2026-07-03 10:32:08'),
+	(6, 'D', 35.00, 49.00, 'Below Average', 'active', '2026-07-03 10:32:08', '2026-07-03 10:32:08'),
+	(7, 'F', 0.00, 34.00, 'Fail', 'active', '2026-07-03 10:32:08', '2026-07-03 10:32:08');
+
+-- Dumping structure for table school_erp.homework
+CREATE TABLE IF NOT EXISTS `homework` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `class_id` bigint unsigned NOT NULL,
+  `section_id` bigint unsigned NOT NULL,
+  `subject_id` bigint unsigned NOT NULL,
+  `teacher_id` bigint unsigned NOT NULL,
+  `title` varchar(200) NOT NULL,
+  `description` text,
+  `due_date` date NOT NULL,
+  `attachment` varchar(255) DEFAULT NULL,
+  `academic_year` varchar(20) NOT NULL DEFAULT '2026-27',
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `class_id` (`class_id`),
+  KEY `section_id` (`section_id`),
+  KEY `subject_id` (`subject_id`),
+  KEY `teacher_id` (`teacher_id`),
+  CONSTRAINT `homework_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `homework_ibfk_2` FOREIGN KEY (`section_id`) REFERENCES `sections` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `homework_ibfk_3` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `homework_ibfk_4` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table school_erp.homework: ~1 rows (approximately)
+INSERT INTO `homework` (`id`, `class_id`, `section_id`, `subject_id`, `teacher_id`, `title`, `description`, `due_date`, `attachment`, `academic_year`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 1, 1, 5, 3, 'Testing', 'Testing', '2026-07-03', '/uploads/homework/1/attachment-1782971633832.pdf', '2026-27', 'active', '2026-07-02 05:53:53', '2026-07-05 16:19:20');
+
+-- Dumping structure for table school_erp.homework_submissions
+CREATE TABLE IF NOT EXISTS `homework_submissions` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `homework_id` bigint unsigned NOT NULL,
+  `student_id` bigint unsigned NOT NULL,
+  `submission_text` text,
+  `attachment` varchar(255) DEFAULT NULL,
+  `submitted_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `status` enum('Pending','Submitted','Evaluated') DEFAULT 'Pending',
+  `marks` decimal(5,2) DEFAULT NULL,
+  `teacher_remarks` text,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_homework_student` (`homework_id`,`student_id`),
+  KEY `student_id` (`student_id`),
+  CONSTRAINT `homework_submissions_ibfk_1` FOREIGN KEY (`homework_id`) REFERENCES `homework` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `homework_submissions_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table school_erp.homework_submissions: ~1 rows (approximately)
+INSERT INTO `homework_submissions` (`id`, `homework_id`, `student_id`, `submission_text`, `attachment`, `submitted_at`, `status`, `marks`, `teacher_remarks`, `created_at`, `updated_at`) VALUES
+	(1, 1, 2, 'My answer here', '/uploads/homework_submissions/1/sub-2-1783842431796.pdf', '2026-07-12 07:47:11', 'Submitted', 9.00, 'Good', '2026-07-12 07:47:11', '2026-07-12 08:16:29');
+
+-- Dumping structure for table school_erp.modules
+CREATE TABLE IF NOT EXISTS `modules` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `module_code` varchar(50) NOT NULL,
+  `module_name` varchar(100) NOT NULL,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `module_code` (`module_code`)
 ) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Data exporting was unselected.
+-- Dumping data for table school_erp.modules: ~24 rows (approximately)
+INSERT INTO `modules` (`id`, `module_code`, `module_name`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 'STUDENT', 'Student Management', 'active', '2026-06-21 10:29:30', '2026-06-21 10:29:30'),
+	(2, 'TEACHER', 'Teacher Management', 'active', '2026-06-21 11:07:49', '2026-06-21 11:07:49'),
+	(3, 'STUDENT_ATTENDANCE', 'Student Attendance', 'active', '2026-06-21 11:21:09', '2026-06-21 11:21:09'),
+	(4, 'TEACHER_ATTENDANCE', 'Teacher Attendance', 'active', '2026-06-21 11:26:03', '2026-06-21 11:26:03'),
+	(5, 'ROLE_PERMISSION', 'Role & Permission', 'active', '2026-06-21 15:32:25', '2026-06-21 15:32:25'),
+	(6, 'TIMETABLE', 'Timetable Management', 'active', '2026-06-23 10:10:49', '2026-07-01 06:44:43'),
+	(7, 'CLASS_SECTION', 'Class & Section Management', 'active', '2026-06-23 10:13:56', '2026-06-28 10:05:47'),
+	(8, 'SUBJECTS', 'Subjects Management', 'active', '2026-06-28 09:25:44', '2026-06-28 15:33:39'),
+	(9, 'CLASS_TEACHERS', 'Class Teachers', 'active', '2026-06-28 15:34:05', '2026-06-28 15:34:06'),
+	(10, 'ONLINE_MEET_LINKS', 'Online Meet Links', 'active', '2026-07-01 12:06:09', '2026-07-01 12:06:09'),
+	(11, 'HOMEWORK', 'Homework Management', 'active', '2026-07-02 05:32:07', '2026-07-02 05:32:07'),
+	(12, 'STUDY_MATERIAL', 'Study Material', 'active', '2026-07-02 06:10:53', '2026-07-02 06:10:53'),
+	(13, 'EXAM', 'Exam Management', 'active', '2026-07-02 08:54:10', '2026-07-03 10:33:16'),
+	(14, 'RESULT', 'Result Management', 'active', '2026-07-02 10:22:45', '2026-07-03 10:33:30'),
+	(15, 'NOTICE', 'Notice Board', 'active', '2026-07-04 06:15:44', '2026-07-04 06:15:44'),
+	(16, 'CALENDAR', 'Calendar', 'active', '2026-07-04 06:33:32', '2026-07-04 06:33:32'),
+	(17, 'TRANSPORT', 'Transport Management', 'active', '2026-07-04 06:42:00', '2026-07-04 08:12:36'),
+	(18, 'STUDENT_TRANSPORT', 'Student Transport', 'active', '2026-07-04 06:42:00', '2026-07-04 08:12:25'),
+	(19, 'BOOKS', 'Books', 'active', '2026-07-04 09:52:00', '2026-07-04 10:24:45'),
+	(20, 'BOOK_ISSUE', 'Book Issue', 'active', '2026-07-04 09:52:00', '2026-07-04 10:24:40'),
+	(21, 'BOOK_RECORD', 'Book Record', 'active', '2026-07-04 10:24:04', '2026-07-04 10:24:04'),
+	(22, 'ACHIEVEMENT', 'Student Achievements', 'active', '2026-07-04 11:19:39', '2026-07-04 11:19:39'),
+	(24, 'EVENT', 'Events', 'active', '2026-07-04 11:41:20', '2026-07-04 11:41:20'),
+	(25, 'LEAVE', 'Student Leave', 'active', '2026-07-04 11:51:52', '2026-07-04 11:51:52');
 
--- Dumping structure for table insta_style_lms.post_likes
-CREATE TABLE IF NOT EXISTS `post_likes` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_like` (`post_id`,`user_id`),
-  KEY `post_id` (`post_id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `post_likes_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_likes_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.post_media
-CREATE TABLE IF NOT EXISTS `post_media` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `media_type` enum('image','video','gif','youtube','wbt','pdf','ppt') NOT NULL,
-  `media_url` varchar(500) NOT NULL,
-  `role_id` int NOT NULL DEFAULT '1',
-  `thumbnail_url` varchar(500) DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `post_id` (`post_id`),
-  KEY `fk_post_media_role_id` (`role_id`),
-  CONSTRAINT `fk_post_media_role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `post_media_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=92 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.post_media_views
-CREATE TABLE IF NOT EXISTS `post_media_views` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `media_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `viewed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_media_view` (`post_id`,`media_id`,`user_id`),
-  KEY `post_id` (`post_id`),
-  KEY `media_id` (`media_id`),
-  KEY `user_id` (`user_id`),
-  KEY `idx_viewed_at` (`viewed_at`),
-  CONSTRAINT `post_media_views_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_media_views_ibfk_2` FOREIGN KEY (`media_id`) REFERENCES `post_media` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_media_views_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.post_shares
-CREATE TABLE IF NOT EXISTS `post_shares` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `user_id` int NOT NULL COMMENT 'User who is sharing the post',
-  `share_id` int NOT NULL COMMENT 'User ID of the person the post is shared with',
+-- Dumping structure for table school_erp.notices
+CREATE TABLE IF NOT EXISTS `notices` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `title` varchar(200) NOT NULL,
+  `description` text,
+  `type` varchar(50) NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL,
+  `attachment` varchar(255) DEFAULT NULL,
   `status` enum('active','inactive') DEFAULT 'active',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `post_id` (`post_id`),
-  KEY `user_id` (`user_id`),
-  KEY `share_id` (`share_id`),
-  KEY `idx_status` (`status`),
-  KEY `idx_created_at` (`created_at`),
-  CONSTRAINT `post_shares_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_shares_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_shares_ibfk_3` FOREIGN KEY (`share_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Data exporting was unselected.
+-- Dumping data for table school_erp.notices: ~1 rows (approximately)
+INSERT INTO `notices` (`id`, `title`, `description`, `type`, `start_date`, `end_date`, `attachment`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 'Testing', 'Testing', 'Holiday', '2026-07-15', '2026-07-30', '/uploads/notices/1/notice-1783146037835.pdf', 'active', '2026-07-04 06:20:37', '2026-07-04 06:20:37');
 
--- Dumping structure for table insta_style_lms.post_views
-CREATE TABLE IF NOT EXISTS `post_views` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `viewed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_view` (`post_id`,`user_id`),
-  KEY `post_id` (`post_id`),
-  KEY `user_id` (`user_id`),
-  KEY `idx_viewed_at` (`viewed_at`),
-  CONSTRAINT `post_views_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_views_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=182 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.posts
-CREATE TABLE IF NOT EXISTS `posts` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `category_id` int NOT NULL,
-  `role_id` int NOT NULL DEFAULT '1',
-  `title` varchar(255) NOT NULL,
-  `content` text,
-  `hashtags` text,
-  `thumbnail_type` enum('portrait','landscape') DEFAULT 'landscape',
-  `likes_count` int NOT NULL DEFAULT '0',
-  `comments_count` int NOT NULL DEFAULT '0',
-  `views_count` int NOT NULL DEFAULT '0',
-  `shares_count` int NOT NULL DEFAULT '0',
-  `quiz_active` tinyint(1) NOT NULL DEFAULT '0',
-  `my_course` tinyint(1) NOT NULL DEFAULT '0',
+-- Dumping structure for table school_erp.permissions
+CREATE TABLE IF NOT EXISTS `permissions` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `role_id` bigint unsigned NOT NULL,
+  `module_id` bigint unsigned NOT NULL,
+  `can_view` tinyint(1) DEFAULT '0',
+  `can_create` tinyint(1) DEFAULT '0',
+  `can_update` tinyint(1) DEFAULT '0',
+  `can_delete` tinyint(1) DEFAULT '0',
   `status` enum('active','inactive') DEFAULT 'active',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `category_id` (`category_id`),
-  KEY `idx_role_id` (`role_id`),
-  CONSTRAINT `fk_posts_role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `posts_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=56 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `uk_role_module` (`role_id`,`module_id`),
+  KEY `module_id` (`module_id`),
+  CONSTRAINT `permissions_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `permissions_ibfk_2` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=105 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Data exporting was unselected.
+-- Dumping data for table school_erp.permissions: ~71 rows (approximately)
+INSERT INTO `permissions` (`id`, `role_id`, `module_id`, `can_view`, `can_create`, `can_update`, `can_delete`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 1, 22, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(2, 1, 20, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(3, 1, 21, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(4, 1, 19, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(5, 1, 16, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(6, 1, 7, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(7, 1, 9, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(8, 1, 13, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(9, 1, 11, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(10, 1, 15, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(11, 1, 10, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(12, 1, 14, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(13, 1, 5, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(14, 1, 1, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(15, 1, 3, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(16, 1, 18, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(17, 1, 12, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(18, 1, 8, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(19, 1, 2, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(20, 1, 4, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(21, 1, 6, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(22, 1, 17, 1, 1, 1, 1, 'active', '2026-07-04 11:23:31', '2026-07-04 11:23:31'),
+	(32, 1, 24, 1, 1, 1, 1, 'active', '2026-07-04 11:41:32', '2026-07-04 11:41:32'),
+	(33, 1, 25, 1, 1, 1, 1, 'active', '2026-07-04 11:52:04', '2026-07-04 11:52:04'),
+	(58, 3, 20, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(59, 3, 21, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(60, 3, 19, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(61, 3, 16, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(62, 3, 7, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(63, 3, 9, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(64, 3, 24, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(65, 3, 13, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(66, 3, 11, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(67, 3, 15, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(68, 3, 14, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(69, 3, 5, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(70, 3, 22, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(71, 3, 3, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(72, 3, 25, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(73, 3, 1, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(74, 3, 18, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(75, 3, 12, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(76, 3, 8, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(77, 3, 4, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(78, 3, 2, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(79, 3, 6, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(80, 3, 17, 1, 0, 0, 0, 'active', '2026-07-05 16:18:46', '2026-07-05 16:18:46'),
+	(81, 4, 20, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(82, 4, 21, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(83, 4, 19, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(84, 4, 16, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(85, 4, 7, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(86, 4, 9, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(87, 4, 24, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(88, 4, 13, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(89, 4, 11, 1, 1, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(90, 4, 15, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(91, 4, 10, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(92, 4, 14, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(93, 4, 5, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(94, 4, 22, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(95, 4, 3, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(96, 4, 25, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(97, 4, 1, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(98, 4, 18, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(99, 4, 12, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(100, 4, 8, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(101, 4, 4, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(102, 4, 2, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(103, 4, 6, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09'),
+	(104, 4, 17, 1, 0, 0, 0, 'active', '2026-07-12 07:47:09', '2026-07-12 07:47:09');
 
--- Dumping structure for table insta_style_lms.quiz_categories
-CREATE TABLE IF NOT EXISTS `quiz_categories` (
-  `id` int NOT NULL AUTO_INCREMENT,
+-- Dumping structure for table school_erp.roles
+CREATE TABLE IF NOT EXISTS `roles` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `role_name` varchar(100) NOT NULL,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `role_name` (`role_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table school_erp.roles: ~6 rows (approximately)
+INSERT INTO `roles` (`id`, `role_name`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 'Super Admin', 'active', '2026-06-21 10:29:30', '2026-06-21 10:29:30'),
+	(2, 'Admin', 'active', '2026-06-21 10:29:30', '2026-06-21 10:29:30'),
+	(3, 'Teacher', 'active', '2026-06-21 10:29:30', '2026-06-21 10:29:30'),
+	(4, 'Student', 'active', '2026-06-21 10:29:30', '2026-06-21 10:29:30'),
+	(5, 'Librarian', 'active', '2026-06-21 10:29:30', '2026-06-21 10:29:30'),
+	(6, 'Transport', 'active', '2026-06-21 10:29:30', '2026-06-21 10:29:30');
+
+-- Dumping structure for table school_erp.sections
+CREATE TABLE IF NOT EXISTS `sections` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `class_id` bigint unsigned NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_class_section` (`class_id`,`name`),
+  CONSTRAINT `sections_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table school_erp.sections: ~4 rows (approximately)
+INSERT INTO `sections` (`id`, `class_id`, `name`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 1, 'A', 'active', '2026-06-28 10:09:59', '2026-06-28 10:09:59'),
+	(2, 1, 'B', 'active', '2026-06-28 10:10:04', '2026-06-28 10:10:04'),
+	(3, 2, 'A', 'active', '2026-06-28 10:10:15', '2026-06-28 10:10:15'),
+	(4, 2, 'B', 'active', '2026-06-28 10:10:20', '2026-06-28 10:10:20'),
+	(5, 1, 'C', 'active', '2026-06-28 10:15:21', '2026-06-28 10:15:21');
+
+-- Dumping structure for table school_erp.student_achievements
+CREATE TABLE IF NOT EXISTS `student_achievements` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `student_id` bigint unsigned NOT NULL,
+  `achievement_type` varchar(50) NOT NULL,
+  `title` varchar(200) NOT NULL,
+  `description` text,
+  `achievement_date` date NOT NULL,
+  `level` varchar(50) DEFAULT NULL,
+  `attachment` varchar(255) DEFAULT NULL,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `student_id` (`student_id`),
+  CONSTRAINT `student_achievements_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table school_erp.student_achievements: ~0 rows (approximately)
+INSERT INTO `student_achievements` (`id`, `student_id`, `achievement_type`, `title`, `description`, `achievement_date`, `level`, `attachment`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 2, 'Award', 'Testing', 'Testing', '2026-07-04', 'School', '/uploads/achievements/1/ach-1783164465087.png', 'active', '2026-07-04 11:27:45', '2026-07-04 11:27:45');
+
+-- Dumping structure for table school_erp.student_attendance
+CREATE TABLE IF NOT EXISTS `student_attendance` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `student_id` bigint unsigned NOT NULL,
+  `attendance_date` date NOT NULL,
+  `academic_year` varchar(20) NOT NULL DEFAULT '2026-27',
+  `status` enum('Present','Absent','Late','Leave') NOT NULL,
+  `remarks` text,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_student_date` (`student_id`,`attendance_date`),
+  CONSTRAINT `student_attendance_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=53 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table school_erp.student_attendance: ~52 rows (approximately)
+INSERT INTO `student_attendance` (`id`, `student_id`, `attendance_date`, `academic_year`, `status`, `remarks`, `created_at`, `updated_at`) VALUES
+	(1, 2, '2026-05-01', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(2, 2, '2026-05-02', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(3, 2, '2026-05-03', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(4, 2, '2026-05-04', '2026-27', 'Absent', 'Fever', '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(5, 2, '2026-05-05', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(6, 2, '2026-05-06', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(7, 2, '2026-05-07', '2026-27', 'Late', 'Traffic', '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(8, 2, '2026-05-08', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(9, 2, '2026-05-09', '2026-27', 'Leave', 'Family function', '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(10, 2, '2026-05-10', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(11, 2, '2026-05-11', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(12, 2, '2026-05-12', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(13, 2, '2026-05-13', '2026-27', 'Absent', 'Medical appointment', '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(14, 2, '2026-05-14', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(15, 2, '2026-05-15', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(16, 2, '2026-05-16', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(17, 2, '2026-05-17', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(18, 2, '2026-05-18', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(19, 2, '2026-05-19', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(20, 2, '2026-05-20', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(21, 2, '2026-06-01', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(22, 2, '2026-06-02', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(23, 2, '2026-06-03', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(24, 2, '2026-06-04', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(25, 2, '2026-06-05', '2026-27', 'Absent', 'Sick', '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(26, 2, '2026-06-06', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(27, 2, '2026-06-07', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(28, 2, '2026-06-08', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(29, 2, '2026-06-09', '2026-27', 'Late', 'Heavy rain', '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(30, 2, '2026-06-10', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(31, 2, '2026-06-11', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(32, 2, '2026-06-12', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(33, 2, '2026-06-13', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(34, 2, '2026-06-14', '2026-27', 'Leave', 'Sibling wedding', '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(35, 2, '2026-06-15', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(36, 2, '2026-06-16', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(37, 2, '2026-06-17', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(38, 2, '2026-06-18', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(39, 2, '2026-06-19', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(40, 2, '2026-06-20', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(41, 2, '2026-07-01', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(42, 2, '2026-07-02', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(43, 2, '2026-07-03', '2026-27', 'Absent', 'Fever', '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(44, 2, '2026-07-04', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(45, 2, '2026-07-05', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(46, 2, '2026-07-06', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(47, 2, '2026-07-07', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(48, 2, '2026-07-08', '2026-27', 'Late', 'Traffic', '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(49, 2, '2026-07-09', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(50, 2, '2026-07-10', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(51, 2, '2026-07-11', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25'),
+	(52, 2, '2026-07-12', '2026-27', 'Present', NULL, '2026-07-12 14:44:25', '2026-07-12 14:44:25');
+
+-- Dumping structure for table school_erp.student_details
+CREATE TABLE IF NOT EXISTS `student_details` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned NOT NULL,
+  `class_id` bigint unsigned DEFAULT NULL,
+  `section_id` bigint unsigned DEFAULT NULL,
+  `father_name` varchar(100) DEFAULT NULL,
+  `mother_name` varchar(100) DEFAULT NULL,
+  `dob` date DEFAULT NULL,
+  `gender` enum('Male','Female','Other') DEFAULT NULL,
+  `blood_group` varchar(10) DEFAULT NULL,
+  `profile_picture` varchar(255) DEFAULT NULL,
+  `roll_number` varchar(20) DEFAULT NULL,
+  `admission_date` date DEFAULT NULL,
+  `address` text,
+  `father_phone` varchar(20) DEFAULT NULL,
+  `father_occupation` varchar(100) DEFAULT NULL,
+  `mother_phone` varchar(20) DEFAULT NULL,
+  `mother_occupation` varchar(100) DEFAULT NULL,
+  `sibling_details` text,
+  `academic_year` varchar(20) NOT NULL DEFAULT '2026-27',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_academic_year` (`user_id`,`academic_year`),
+  KEY `fk_student_class` (`class_id`),
+  KEY `fk_student_section` (`section_id`),
+  CONSTRAINT `fk_student_class` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_student_details_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_student_section` FOREIGN KEY (`section_id`) REFERENCES `sections` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table school_erp.student_details: ~8 rows (approximately)
+INSERT INTO `student_details` (`id`, `user_id`, `class_id`, `section_id`, `father_name`, `mother_name`, `dob`, `gender`, `blood_group`, `profile_picture`, `roll_number`, `admission_date`, `address`, `father_phone`, `father_occupation`, `mother_phone`, `mother_occupation`, `sibling_details`, `academic_year`) VALUES
+	(1, 2, 1, 1, 'Bittu', 'Rekha', '2002-06-22', 'Male', NULL, '/uploads/students/3/profile-1782208792109.jpg', 'R001', '2026-06-01', '123 Main Street, City', '9876543210', NULL, '9876543211', NULL, NULL, '2026-27'),
+	(2, 4, 1, 2, 'Deepak', 'Sunita', '2026-06-15', 'Male', NULL, '/uploads/students/3/profile-1782208792109.jpg', 'R002', '2026-06-15', '456 Park Avenue, Town', '9876543212', NULL, '9876543213', NULL, NULL, '2026-27'),
+	(3, 9, 1, 5, 'Easter', 'Rekha', '2009-06-16', 'Male', NULL, '/uploads/students/3/profile-1782208792109.jpg', '20', '2026-06-16', 'A-909,Rajiv Chowk', '2323232', NULL, '12121212', NULL, NULL, '2026-27'),
+	(5, 10, 2, 3, 'sdsd', 'dsd', '2006-06-28', 'Male', 'A', '/uploads/students/3/profile-1782208792109.jpg', '14', '2026-06-28', 'sas', '212132', 'sdsd', '2323', 'dsd', 'ewe', '2026-27'),
+	(7, 11, 2, 4, 'sdsd', 'ssdsd', '2009-06-08', 'Male', 'o+', '/uploads/students/11/profile-1782641805600.jpg', '23', '2026-06-26', 'ddsdsd', '212121212', 'dsdsd', '2121212', 'wewewe', 'wewe', '2026-27'),
+	(8, 2, 2, 1, 'Bittu', 'Rekha', '2002-06-22', 'Male', NULL, '/uploads/students/3/profile-1782208792109.jpg', 'R001', '2026-06-01', '123 Main Street, City', '9876543210', NULL, '9876543211', NULL, NULL, '2027-28'),
+	(9, 4, 2, 2, 'Deepak', 'Sunita', '2026-06-15', 'Male', NULL, '/uploads/students/3/profile-1782208792109.jpg', 'R001', '2026-06-15', '456 Park Avenue, Town', '9876543212', NULL, '9876543213', NULL, NULL, '2027-28'),
+	(10, 9, 2, 5, 'Easter', 'Rekha', '2009-06-16', 'Male', NULL, '/uploads/students/3/profile-1782208792109.jpg', 'R001', '2026-06-16', 'A-909,Rajiv Chowk', '2323232', NULL, '12121212', NULL, NULL, '2027-28');
+
+-- Dumping structure for table school_erp.student_leaves
+CREATE TABLE IF NOT EXISTS `student_leaves` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `student_id` bigint unsigned NOT NULL,
+  `leave_type` varchar(50) NOT NULL,
+  `from_date` date NOT NULL,
+  `to_date` date NOT NULL,
+  `academic_year` varchar(20) NOT NULL DEFAULT '2026-27',
+  `reason` text,
+  `leave_status` enum('Pending','Approved','Rejected') DEFAULT 'Pending',
+  `applied_date` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `approved_by` bigint unsigned DEFAULT NULL,
+  `approved_date` date DEFAULT NULL,
+  `remarks` text,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `student_id` (`student_id`),
+  KEY `approved_by` (`approved_by`),
+  CONSTRAINT `student_leaves_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `student_leaves_ibfk_2` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table school_erp.student_leaves: ~6 rows (approximately)
+INSERT INTO `student_leaves` (`id`, `student_id`, `leave_type`, `from_date`, `to_date`, `academic_year`, `reason`, `leave_status`, `applied_date`, `approved_by`, `approved_date`, `remarks`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 2, 'Sick', '2026-05-04', '2026-05-04', '2026-27', 'Fever', 'Approved', '2026-05-02 18:30:00', 3, '2026-05-03', 'Approved', 'active', '2026-07-12 14:44:41', '2026-07-12 14:44:41'),
+	(2, 2, 'Casual', '2026-05-09', '2026-05-09', '2026-27', 'Family function', 'Approved', '2026-05-07 18:30:00', 3, '2026-05-08', 'Approved', 'active', '2026-07-12 14:44:41', '2026-07-12 14:44:41'),
+	(3, 2, 'Sick', '2026-06-05', '2026-06-05', '2026-27', 'Sick', 'Approved', '2026-06-03 18:30:00', 3, '2026-06-04', 'Approved', 'active', '2026-07-12 14:44:41', '2026-07-12 14:44:41'),
+	(4, 2, 'Emergency', '2026-06-14', '2026-06-14', '2026-27', 'Sibling wedding', 'Pending', '2026-06-11 18:30:00', NULL, NULL, NULL, 'active', '2026-07-12 14:44:41', '2026-07-12 14:44:41'),
+	(5, 2, 'Sick', '2026-07-03', '2026-07-03', '2026-27', 'Fever', 'Approved', '2026-07-01 18:30:00', 3, '2026-07-02', 'Approved', 'active', '2026-07-12 14:44:41', '2026-07-12 14:44:41'),
+	(6, 2, 'Casual', '2026-07-15', '2026-07-16', '2026-27', 'Family trip', 'Pending', '2026-07-11 18:30:00', NULL, NULL, NULL, 'active', '2026-07-12 14:44:41', '2026-07-12 14:44:41');
+
+-- Dumping structure for table school_erp.student_transports
+CREATE TABLE IF NOT EXISTS `student_transports` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `student_id` bigint unsigned NOT NULL,
+  `transport_id` bigint unsigned NOT NULL,
+  `pickup_point` varchar(100) DEFAULT NULL,
+  `drop_point` varchar(100) DEFAULT NULL,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_student_transport` (`student_id`,`transport_id`),
+  KEY `transport_id` (`transport_id`),
+  CONSTRAINT `student_transports_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `student_transports_ibfk_2` FOREIGN KEY (`transport_id`) REFERENCES `transports` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table school_erp.student_transports: ~2 rows (approximately)
+INSERT INTO `student_transports` (`id`, `student_id`, `transport_id`, `pickup_point`, `drop_point`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 2, 1, 'Testing', 'Testing', 'active', '2026-07-04 08:17:39', '2026-07-04 08:17:39'),
+	(2, 4, 1, 'asaasa', 'sas', 'active', '2026-07-04 08:19:54', '2026-07-04 08:19:54');
+
+-- Dumping structure for table school_erp.study_materials
+CREATE TABLE IF NOT EXISTS `study_materials` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `class_id` bigint unsigned NOT NULL,
+  `section_id` bigint unsigned NOT NULL,
+  `subject_id` bigint unsigned NOT NULL,
+  `teacher_id` bigint unsigned NOT NULL,
+  `title` varchar(200) NOT NULL,
+  `description` text,
+  `type` enum('pdf','note','video','ppt','lecture','ebook','link') NOT NULL,
+  `file_path` varchar(255) DEFAULT NULL,
+  `link_url` varchar(255) DEFAULT NULL,
+  `academic_year` varchar(20) NOT NULL DEFAULT '2026-27',
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `class_id` (`class_id`),
+  KEY `section_id` (`section_id`),
+  KEY `subject_id` (`subject_id`),
+  KEY `teacher_id` (`teacher_id`),
+  CONSTRAINT `study_materials_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `study_materials_ibfk_2` FOREIGN KEY (`section_id`) REFERENCES `sections` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `study_materials_ibfk_3` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `study_materials_ibfk_4` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table school_erp.study_materials: ~2 rows (approximately)
+INSERT INTO `study_materials` (`id`, `class_id`, `section_id`, `subject_id`, `teacher_id`, `title`, `description`, `type`, `file_path`, `link_url`, `academic_year`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 1, 1, 5, 1, 'Testing', 'Testing', 'pdf', '/uploads/study_materials/1/file-1782974893085.pdf', '', '2026-27', 'active', '2026-07-02 06:48:13', '2026-07-02 06:48:13'),
+	(2, 2, 3, 7, 1, 'Tesrtig', 'Tesrtig', 'video', '/uploads/study_materials/2/file-1782975127618.mp4', '', '2026-27', 'active', '2026-07-02 06:52:07', '2026-07-02 06:52:07');
+
+-- Dumping structure for table school_erp.subjects
+CREATE TABLE IF NOT EXISTS `subjects` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,
   `status` enum('active','inactive') DEFAULT 'active',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `name` (`name`)
+  UNIQUE KEY `uk_name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table school_erp.subjects: ~8 rows (approximately)
+INSERT INTO `subjects` (`id`, `name`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 'English', 'active', '2026-07-01 10:26:12', '2026-07-01 10:26:12'),
+	(2, 'Mathematics', 'active', '2026-07-01 10:26:12', '2026-07-01 10:26:12'),
+	(3, 'EVS', 'active', '2026-07-01 10:26:12', '2026-07-01 10:26:12'),
+	(4, 'Hindi', 'active', '2026-07-01 10:26:12', '2026-07-01 10:26:12'),
+	(5, 'Art', 'active', '2026-07-01 10:26:12', '2026-07-01 10:26:12'),
+	(6, 'Music', 'active', '2026-07-01 10:26:12', '2026-07-01 10:26:12'),
+	(7, 'Computer', 'active', '2026-07-01 10:26:12', '2026-07-01 10:26:12'),
+	(8, 'General', 'active', '2026-07-01 10:26:12', '2026-07-01 10:26:12');
+
+-- Dumping structure for table school_erp.teacher_attendance
+CREATE TABLE IF NOT EXISTS `teacher_attendance` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `teacher_id` bigint unsigned NOT NULL,
+  `attendance_date` date NOT NULL,
+  `status` enum('Present','Absent','Late','Leave') DEFAULT 'Present',
+  `check_in_time` time DEFAULT NULL,
+  `check_out_time` time DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_teacher_date` (`teacher_id`,`attendance_date`),
+  CONSTRAINT `teacher_attendance_ibfk_1` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table school_erp.teacher_attendance: ~1 rows (approximately)
+INSERT INTO `teacher_attendance` (`id`, `teacher_id`, `attendance_date`, `status`, `check_in_time`, `check_out_time`, `created_at`, `updated_at`) VALUES
+	(1, 3, '2026-06-21', 'Present', '13:50:00', '00:00:00', '2026-06-21 11:32:12', '2026-06-21 17:20:06');
+
+-- Dumping structure for table school_erp.teacher_details
+CREATE TABLE IF NOT EXISTS `teacher_details` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned NOT NULL,
+  `qualification` varchar(100) DEFAULT NULL,
+  `gender` enum('Male','Female','Other') DEFAULT NULL,
+  `date_of_birth` date DEFAULT NULL,
+  `profile_picture` varchar(255) DEFAULT NULL,
+  `joining_date` date DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_id` (`user_id`),
+  CONSTRAINT `teacher_details_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Data exporting was unselected.
+-- Dumping data for table school_erp.teacher_details: ~5 rows (approximately)
+INSERT INTO `teacher_details` (`id`, `user_id`, `qualification`, `gender`, `date_of_birth`, `profile_picture`, `joining_date`) VALUES
+	(1, 3, 'B.sc', 'Male', '2002-06-23', '/uploads/teachers/8/profile-1782196790532.jpg', '2026-06-15'),
+	(2, 5, 'B.tech', 'Male', '2001-06-02', '/uploads/teachers/8/profile-1782196790532.jpg', '2026-06-09'),
+	(3, 6, 'B.Tech', 'Male', '1996-06-17', '/uploads/teachers/8/profile-1782196790532.jpg', '2026-06-16'),
+	(4, 7, 'B.sc', 'Male', '1990-06-09', '/uploads/teachers/8/profile-1782196790532.jpg', '2026-06-09'),
+	(5, 8, 'B.Tech', 'Male', '1990-06-09', '/uploads/teachers/8/profile-1782196790532.jpg', '2026-06-01');
 
--- Dumping structure for table insta_style_lms.quiz_questions
-CREATE TABLE IF NOT EXISTS `quiz_questions` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `category_id` int DEFAULT NULL,
-  `question_text` text NOT NULL,
-  `question_media_url` varchar(500) DEFAULT NULL,
-  `option_a` varchar(500) NOT NULL,
-  `option_b` varchar(500) NOT NULL,
-  `option_c` varchar(500) DEFAULT NULL,
-  `option_d` varchar(500) DEFAULT NULL,
-  `correct_option` enum('A','B','C','D') NOT NULL,
-  `marks` int NOT NULL DEFAULT '1',
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `post_id` (`post_id`),
-  KEY `idx_category_id` (`category_id`),
-  CONSTRAINT `fk_quiz_questions_category` FOREIGN KEY (`category_id`) REFERENCES `quiz_categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `quiz_questions_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.roles
-CREATE TABLE IF NOT EXISTS `roles` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.user_daily_activity
-CREATE TABLE IF NOT EXISTS `user_daily_activity` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `start_time` datetime NOT NULL,
-  `end_time` datetime NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_start_time` (`start_time`)
-) ENGINE=InnoDB AUTO_INCREMENT=144 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.user_media_progress
-CREATE TABLE IF NOT EXISTS `user_media_progress` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `post_id` int NOT NULL,
-  `total_media_count` int NOT NULL DEFAULT '0',
-  `view_percentage` decimal(5,2) NOT NULL DEFAULT '0.00',
-  `last_viewed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_user_post_progress` (`user_id`,`post_id`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_post_id` (`post_id`),
-  KEY `idx_view_percentage` (`view_percentage`),
-  CONSTRAINT `user_media_progress_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `user_media_progress_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.user_media_tracking
-CREATE TABLE IF NOT EXISTS `user_media_tracking` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `media_id` int NOT NULL,
-  `post_id` int NOT NULL,
-  `media_type` enum('image','video','pdf','wbt','youtube') NOT NULL,
-  `viewed_at` timestamp NULL DEFAULT NULL,
-  `total_minutes` varchar(10) DEFAULT NULL,
-  `viewed_minutes` varchar(10) DEFAULT NULL,
-  `total_slides` int DEFAULT '0',
-  `viewed_slides` int DEFAULT '0',
-  `wbt_json` json DEFAULT NULL,
-  `percentage` decimal(5,2) DEFAULT '0.00',
-  `completed` tinyint(1) DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_user_media` (`user_id`,`media_id`),
-  KEY `idx_media_id` (`media_id`),
-  KEY `idx_post_id` (`post_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.user_notification_reads
-CREATE TABLE IF NOT EXISTS `user_notification_reads` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `notification_id` int NOT NULL,
-  `is_read` tinyint(1) DEFAULT '0',
-  `read_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_user_notification` (`user_id`,`notification_id`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_notification_id` (`notification_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.user_quiz_answers
-CREATE TABLE IF NOT EXISTS `user_quiz_answers` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `post_id` int NOT NULL,
-  `question_id` int NOT NULL,
-  `selected_option` enum('A','B','C','D') NOT NULL,
-  `is_correct` tinyint(1) DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_answer` (`user_id`,`post_id`,`question_id`),
-  KEY `user_id` (`user_id`),
-  KEY `post_id` (`post_id`),
-  KEY `question_id` (`question_id`),
-  CONSTRAINT `user_quiz_answers_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `user_quiz_answers_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `user_quiz_answers_ibfk_3` FOREIGN KEY (`question_id`) REFERENCES `quiz_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=111 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.user_quiz_completion
-CREATE TABLE IF NOT EXISTS `user_quiz_completion` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `post_id` int NOT NULL,
-  `score` int DEFAULT '0',
-  `completed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_completion` (`user_id`,`post_id`),
-  KEY `user_id` (`user_id`),
-  KEY `post_id` (`post_id`),
-  CONSTRAINT `user_quiz_completion_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `user_quiz_completion_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.user_video_analysis
-CREATE TABLE IF NOT EXISTS `user_video_analysis` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `question_id` int NOT NULL,
-  `video_url` varchar(500) NOT NULL,
-  `uploaded_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_user_question` (`user_id`,`question_id`),
-  KEY `question_id` (`question_id`),
-  CONSTRAINT `user_video_analysis_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `user_video_analysis_ibfk_2` FOREIGN KEY (`question_id`) REFERENCES `video_analysis_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.users
-CREATE TABLE IF NOT EXISTS `users` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `employee_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `phone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `gender` enum('male','female') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `role_id` int NOT NULL,
-  `dealer_id` int DEFAULT NULL,
-  `city_id` int DEFAULT NULL,
-  `profile_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `fcm_token` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `device_type` enum('android','ios') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`),
-  UNIQUE KEY `employee_id` (`employee_id`),
-  KEY `idx_email` (`email`),
-  KEY `idx_employee_id` (`employee_id`),
-  KEY `idx_status` (`status`),
-  KEY `idx_role_id` (`role_id`),
-  KEY `idx_dealer_id` (`dealer_id`),
-  KEY `idx_city_id` (`city_id`),
-  CONSTRAINT `fk_users_city_id` FOREIGN KEY (`city_id`) REFERENCES `cities` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_users_dealer_id` FOREIGN KEY (`dealer_id`) REFERENCES `dealers` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `fk_users_role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.video_analysis_questions
-CREATE TABLE IF NOT EXISTS `video_analysis_questions` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `role_id` int NOT NULL,
-  `question_text` text NOT NULL,
-  `keywords` json DEFAULT NULL,
-  `start_date` date NOT NULL,
-  `end_date` date NOT NULL,
+-- Dumping structure for table school_erp.timetable
+CREATE TABLE IF NOT EXISTS `timetable` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `class_id` bigint unsigned NOT NULL,
+  `section_id` bigint unsigned NOT NULL,
+  `day_of_week` enum('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday') DEFAULT NULL,
+  `period_number` tinyint unsigned NOT NULL,
+  `subject_id` bigint unsigned NOT NULL,
+  `teacher_id` bigint unsigned NOT NULL,
+  `room` varchar(20) DEFAULT NULL,
+  `online_link` varchar(255) DEFAULT NULL,
+  `academic_year` varchar(20) NOT NULL,
   `status` enum('active','inactive') DEFAULT 'active',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
+  KEY `class_id` (`class_id`),
+  KEY `section_id` (`section_id`),
+  KEY `subject_id` (`subject_id`),
+  KEY `teacher_id` (`teacher_id`),
+  CONSTRAINT `timetable_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `timetable_ibfk_2` FOREIGN KEY (`section_id`) REFERENCES `sections` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `timetable_ibfk_3` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `timetable_ibfk_4` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=91 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table school_erp.timetable: ~48 rows (approximately)
+INSERT INTO `timetable` (`id`, `class_id`, `section_id`, `day_of_week`, `period_number`, `subject_id`, `teacher_id`, `room`, `online_link`, `academic_year`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 1, 1, 'Monday', 1, 1, 3, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:03', '2026-07-05 16:04:03'),
+	(2, 1, 1, 'Monday', 2, 2, 5, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:03', '2026-07-05 16:04:03'),
+	(3, 1, 1, 'Monday', 3, 3, 6, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:03', '2026-07-05 16:04:03'),
+	(4, 1, 1, 'Monday', 4, 4, 7, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:03', '2026-07-05 16:04:03'),
+	(5, 1, 1, 'Monday', 5, 5, 8, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:03', '2026-07-05 16:04:03'),
+	(6, 1, 1, 'Monday', 6, 6, 3, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:03', '2026-07-05 16:04:03'),
+	(7, 1, 1, 'Monday', 7, 7, 5, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:03', '2026-07-05 16:04:03'),
+	(8, 1, 1, 'Monday', 8, 8, 6, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:03', '2026-07-05 16:04:03'),
+	(16, 1, 1, 'Tuesday', 1, 2, 5, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:03', '2026-07-05 16:04:03'),
+	(17, 1, 1, 'Tuesday', 2, 1, 3, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:03', '2026-07-05 16:04:03'),
+	(18, 1, 1, 'Tuesday', 3, 4, 7, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:03', '2026-07-05 16:04:03'),
+	(19, 1, 1, 'Tuesday', 4, 3, 6, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:03', '2026-07-05 16:04:03'),
+	(20, 1, 1, 'Tuesday', 5, 7, 5, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:03', '2026-07-05 16:04:03'),
+	(21, 1, 1, 'Tuesday', 6, 5, 8, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:03', '2026-07-05 16:04:03'),
+	(22, 1, 1, 'Tuesday', 7, 6, 3, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:03', '2026-07-05 16:04:03'),
+	(23, 1, 1, 'Tuesday', 8, 8, 6, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:03', '2026-07-05 16:04:03'),
+	(31, 1, 1, 'Wednesday', 1, 3, 6, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(32, 1, 1, 'Wednesday', 2, 2, 5, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(33, 1, 1, 'Wednesday', 3, 1, 3, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(34, 1, 1, 'Wednesday', 4, 5, 8, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(35, 1, 1, 'Wednesday', 5, 4, 7, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(36, 1, 1, 'Wednesday', 6, 7, 5, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(37, 1, 1, 'Wednesday', 7, 8, 6, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(38, 1, 1, 'Wednesday', 8, 6, 3, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(46, 1, 1, 'Thursday', 1, 4, 7, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(47, 1, 1, 'Thursday', 2, 3, 6, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(48, 1, 1, 'Thursday', 3, 2, 5, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(49, 1, 1, 'Thursday', 4, 1, 3, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(50, 1, 1, 'Thursday', 5, 8, 6, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(51, 1, 1, 'Thursday', 6, 6, 3, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(52, 1, 1, 'Thursday', 7, 5, 8, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(53, 1, 1, 'Thursday', 8, 7, 5, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(61, 1, 1, 'Friday', 1, 7, 5, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(62, 1, 1, 'Friday', 2, 1, 3, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(63, 1, 1, 'Friday', 3, 2, 5, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(64, 1, 1, 'Friday', 4, 3, 6, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(65, 1, 1, 'Friday', 5, 4, 7, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(66, 1, 1, 'Friday', 6, 5, 8, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(67, 1, 1, 'Friday', 7, 8, 6, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(68, 1, 1, 'Friday', 8, 6, 3, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(76, 1, 1, 'Saturday', 1, 1, 3, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(77, 1, 1, 'Saturday', 2, 2, 5, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(78, 1, 1, 'Saturday', 3, 3, 6, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(79, 1, 1, 'Saturday', 4, 4, 7, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(80, 1, 1, 'Saturday', 5, 5, 8, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(81, 1, 1, 'Saturday', 6, 6, 3, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(82, 1, 1, 'Saturday', 7, 7, 5, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04'),
+	(83, 1, 1, 'Saturday', 8, 8, 6, 'Room 101', NULL, '2026-27', 'active', '2026-07-05 16:04:04', '2026-07-05 16:04:04');
+
+-- Dumping structure for table school_erp.transports
+CREATE TABLE IF NOT EXISTS `transports` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `route_name` varchar(100) NOT NULL,
+  `driver_name` varchar(100) NOT NULL,
+  `driver_phone` varchar(20) NOT NULL,
+  `pickup_time` time NOT NULL,
+  `drop_time` time NOT NULL,
+  `route_details` text,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table school_erp.transports: ~2 rows (approximately)
+INSERT INTO `transports` (`id`, `route_name`, `driver_name`, `driver_phone`, `pickup_time`, `drop_time`, `route_details`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 'Testing', 'Testing', '12121212', '13:47:00', '13:47:00', 'Testing', 'active', '2026-07-04 08:17:19', '2026-07-04 08:17:19'),
+	(2, 'sas', 'asa', '21212', '13:50:00', '01:50:00', 'sas', 'active', '2026-07-04 08:20:14', '2026-07-04 08:20:14');
+
+-- Dumping structure for table school_erp.user_roles
+CREATE TABLE IF NOT EXISTS `user_roles` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned NOT NULL,
+  `role_id` bigint unsigned NOT NULL,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_role` (`user_id`,`role_id`),
   KEY `role_id` (`role_id`),
-  CONSTRAINT `video_analysis_questions_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  CONSTRAINT `user_roles_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `user_roles_ibfk_2` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Data exporting was unselected.
+-- Dumping data for table school_erp.user_roles: ~11 rows (approximately)
+INSERT INTO `user_roles` (`id`, `user_id`, `role_id`, `status`, `created_at`) VALUES
+	(1, 1, 1, 'active', '2026-06-21 10:37:21'),
+	(2, 2, 4, 'active', '2026-06-21 10:39:21'),
+	(3, 3, 3, 'active', '2026-06-21 11:31:35'),
+	(4, 4, 4, 'active', '2026-06-21 17:42:50'),
+	(5, 5, 3, 'active', '2026-06-23 05:32:11'),
+	(6, 6, 3, 'active', '2026-06-23 06:06:55'),
+	(7, 7, 3, 'active', '2026-06-23 06:23:17'),
+	(8, 8, 3, 'active', '2026-06-23 06:39:50'),
+	(9, 9, 4, 'active', '2026-06-23 09:58:43'),
+	(10, 10, 4, 'active', '2026-06-28 07:54:57'),
+	(11, 11, 4, 'active', '2026-06-28 10:16:45');
 
--- Dumping structure for trigger insta_style_lms.add_post_view_on_insert_progress
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='';
-DELIMITER //
-CREATE TRIGGER `add_post_view_on_insert_progress` AFTER INSERT ON `user_media_progress` FOR EACH ROW BEGIN
-    DECLARE view_exists INT DEFAULT 0;
-    
-    IF NEW.view_percentage = 100.00 THEN
-        
-        SELECT COUNT(*) INTO view_exists
-        FROM post_views
-        WHERE post_id = NEW.post_id AND user_id = NEW.user_id;
-        
-        IF view_exists = 0 THEN
-            INSERT INTO post_views (post_id, user_id, viewed_at)
-            VALUES (NEW.post_id, NEW.user_id, NOW());
-            
-            UPDATE posts 
-            SET views_count = views_count + 1 
-            WHERE id = NEW.post_id;
-        END IF;
-        
-    END IF;
-END//
-DELIMITER ;
-SET SQL_MODE=@OLDTMP_SQL_MODE;
+-- Dumping structure for table school_erp.users
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `login_id` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `full_name` varchar(150) NOT NULL,
+  `email` varchar(150) DEFAULT NULL,
+  `mobile` varchar(20) DEFAULT NULL,
+  `fcm_token` varchar(255) DEFAULT NULL,
+  `device_type` enum('android','ios','web') DEFAULT 'web',
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `login_id` (`login_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping structure for trigger insta_style_lms.add_post_view_on_update_progress
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='';
-DELIMITER //
-CREATE TRIGGER `add_post_view_on_update_progress` AFTER UPDATE ON `user_media_progress` FOR EACH ROW BEGIN
-    DECLARE view_exists INT DEFAULT 0;
-    
-    IF (OLD.view_percentage != 100.00 AND NEW.view_percentage = 100.00) OR 
-       (NEW.view_percentage = 100.00 AND OLD.view_percentage != 100.00) THEN
-        
-        SELECT COUNT(*) INTO view_exists
-        FROM post_views
-        WHERE post_id = NEW.post_id AND user_id = NEW.user_id;
-        
-        IF view_exists = 0 THEN
-            INSERT INTO post_views (post_id, user_id, viewed_at)
-            VALUES (NEW.post_id, NEW.user_id, NOW());
-            
-            UPDATE posts 
-            SET views_count = views_count + 1 
-            WHERE id = NEW.post_id;
-        END IF;
-        
-    END IF;
-END//
-DELIMITER ;
-SET SQL_MODE=@OLDTMP_SQL_MODE;
-
--- Dumping structure for trigger insta_style_lms.update_user_media_progress_on_insert
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='';
-DELIMITER //
-CREATE TRIGGER `update_user_media_progress_on_insert` AFTER INSERT ON `user_media_tracking` FOR EACH ROW BEGIN
-    DECLARE total_media_count INT DEFAULT 0;
-    DECLARE total_percentage DECIMAL(10,2) DEFAULT 0.00;
-    DECLARE avg_percentage DECIMAL(5,2) DEFAULT 0.00;
-    DECLARE progress_exists INT DEFAULT 0;
-    
-    -- Get total media count for this post
-    SELECT COUNT(DISTINCT id) INTO total_media_count
-    FROM post_media
-    WHERE post_id = NEW.post_id;
-    
-    -- Calculate sum of all percentages for this user's media in this post
-    SELECT IFNULL(SUM(percentage), 0) INTO total_percentage
-    FROM user_media_tracking
-    WHERE post_id = NEW.post_id 
-      AND user_id = NEW.user_id;
-    
-    -- Calculate average percentage
-    IF total_media_count > 0 THEN
-        SET avg_percentage = total_percentage / total_media_count;
-    ELSE
-        SET avg_percentage = 100.00;
-    END IF;
-    
-    -- Check if progress record already exists
-    SELECT COUNT(*) INTO progress_exists
-    FROM user_media_progress
-    WHERE user_id = NEW.user_id AND post_id = NEW.post_id;
-    
-    -- Update existing or insert new record
-    IF progress_exists > 0 THEN
-        UPDATE user_media_progress 
-        SET 
-            total_media_count = total_media_count,
-            view_percentage = avg_percentage,
-            last_viewed_at = NOW()
-        WHERE user_id = NEW.user_id AND post_id = NEW.post_id;
-    ELSE
-        INSERT INTO user_media_progress (user_id, post_id, total_media_count, view_percentage, last_viewed_at)
-        VALUES (NEW.user_id, NEW.post_id, total_media_count, avg_percentage, NOW());
-    END IF;
-    
-    -- If media is 100% complete, add to post_media_views
-    IF NEW.percentage >= 100 OR NEW.completed = 1 THEN
-        INSERT INTO post_media_views (post_id, media_id, user_id, viewed_at)
-        VALUES (NEW.post_id, NEW.media_id, NEW.user_id, NOW());
-    END IF;
-    
-END//
-DELIMITER ;
-SET SQL_MODE=@OLDTMP_SQL_MODE;
-
--- Dumping structure for trigger insta_style_lms.update_user_media_progress_on_update
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='';
-DELIMITER //
-CREATE TRIGGER `update_user_media_progress_on_update` AFTER UPDATE ON `user_media_tracking` FOR EACH ROW BEGIN
-    DECLARE total_media_count INT DEFAULT 0;
-    DECLARE total_percentage DECIMAL(10,2) DEFAULT 0.00;
-    DECLARE avg_percentage DECIMAL(5,2) DEFAULT 0.00;
-    DECLARE progress_exists INT DEFAULT 0;
-    
-    -- Check if percentage or completed changed
-    IF (OLD.percentage != NEW.percentage) OR (OLD.completed != NEW.completed) THEN
-    
-        -- Get total media count for this post
-        SELECT COUNT(DISTINCT id) INTO total_media_count
-        FROM post_media
-        WHERE post_id = NEW.post_id;
-        
-        -- Calculate sum of all percentages for this user's media in this post
-        SELECT IFNULL(SUM(percentage), 0) INTO total_percentage
-        FROM user_media_tracking
-        WHERE post_id = NEW.post_id 
-          AND user_id = NEW.user_id;
-        
-        -- Calculate average percentage
-        IF total_media_count > 0 THEN
-            SET avg_percentage = total_percentage / total_media_count;
-        ELSE
-            SET avg_percentage = 100.00;
-        END IF;
-        
-        -- Check if progress record already exists
-        SELECT COUNT(*) INTO progress_exists
-        FROM user_media_progress
-        WHERE user_id = NEW.user_id AND post_id = NEW.post_id;
-        
-        -- Update existing or insert new record
-        IF progress_exists > 0 THEN
-            UPDATE user_media_progress 
-            SET 
-                total_media_count = total_media_count,
-                view_percentage = avg_percentage,
-                last_viewed_at = NOW()
-            WHERE user_id = NEW.user_id AND post_id = NEW.post_id;
-        ELSE
-            INSERT INTO user_media_progress (user_id, post_id, total_media_count, view_percentage, last_viewed_at)
-            VALUES (NEW.user_id, NEW.post_id, total_media_count, avg_percentage, NOW());
-        END IF;
-        
-        -- If media became 100% complete, add to post_media_views
-        IF (NEW.percentage >= 100 OR NEW.completed = 1) AND 
-           (OLD.percentage < 100 AND OLD.completed = 0) THEN
-            
-            INSERT INTO post_media_views (post_id, media_id, user_id, viewed_at)
-            VALUES (NEW.post_id, NEW.media_id, NEW.user_id, NOW());
-            
-        END IF;
-        
-    END IF;
-    
-END//
-DELIMITER ;
-SET SQL_MODE=@OLDTMP_SQL_MODE;
+-- Dumping data for table school_erp.users: ~11 rows (approximately)
+INSERT INTO `users` (`id`, `login_id`, `password`, `full_name`, `email`, `mobile`, `fcm_token`, `device_type`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 'SA001', '$2a$12$Em9Sg2K43D5LRPvEaVPQ0OPOtP3UiIWR0xivcHayBf34/KMiJvGdm', 'SuperAdmin', 'SuperAdmin@gmail.com', '989898989', 'abc123...', 'android', 'active', '2026-06-21 10:35:05', '2026-07-05 07:09:07'),
+	(2, 'STD001', '$2b$10$hyjwGey.ZV.9UCDUa6jkF.MkqjnTBnVvMKAM6H8TdyoGUAuAZB9xe', 'Nikhil', 'nikhil@gmail.com', '898989898', 'abc123...', 'android', 'active', '2026-06-21 10:39:21', '2026-07-05 06:41:05'),
+	(3, 'TC001', '$2b$10$W0diP0hFg7vCdSONWhR9euI8dWBL4e4QUVq5uomtTLxy6bHtfkKGW', 'Deepak', 'deepak@gmail.com', '212121212', 'abc123...', 'android', 'active', '2026-06-21 11:31:35', '2026-07-05 06:56:01'),
+	(4, 'STD002', '$2b$10$WUDRq5VJ3KMrhfDIQOnut.tjAnVf31i8nuTLKJAF.6rxTOSr7cthG', 'Rakesh', 'Rakesh@gmail.com', '676767676', 'abc123...', 'android', 'active', '2026-06-21 17:42:50', '2026-07-05 07:46:05'),
+	(5, 'TC002', '$2b$10$wNJ2Sekd9Wipj32PWNYNmOp9NgjlbWqtYZIgszAA6B0/RgWi7ZG7u', 'Chintu', 'chintu@gmail.com', '92393239', 'abc123...', 'android', 'active', '2026-06-23 05:32:11', '2026-07-05 16:19:44'),
+	(6, 'TC003', '$2b$10$Vgx.D33xAuTMVvCCy3Nw/eW5VtSYVkyxYsbeYFdkptrhnW22R0EFu', 'Gaurav', 'gaurav@gmail.com', '323232332', NULL, 'web', 'active', '2026-06-23 06:06:55', '2026-06-23 06:06:55'),
+	(7, 'TC004', '$2b$10$TlLkzmULZIx1hv5M/AoizOq6zdJDYFOt8Kt7rVDirTKwhxkQYx5ti', 'Rishi', 'rishi@gmail.com', '90909090', NULL, 'web', 'active', '2026-06-23 06:23:17', '2026-06-23 06:23:17'),
+	(8, 'TC005', '$2b$10$IyB56AGMg1xDWVc4svwsPempId5FnMs3gJ2W8oJC3Z7TovHid/jvq', 'Bittu', 'bittu@gmail.com', '787878787', NULL, 'web', 'active', '2026-06-23 06:39:50', '2026-06-23 06:39:50'),
+	(9, 'STD003', '$2b$10$rrq027zzuif2Q/.KfhUDj.W0i2EXEdC9qqf4i2CDFfnYVZaG0mVD6', 'Deepak', 'deepak@gmail.com', '2121212', 'abc123...', 'android', 'active', '2026-06-23 09:58:43', '2026-07-05 16:17:15'),
+	(10, 'STD004', '$2b$10$57yttniK2T3DcKEaQ875U.91Qb.VxtalDtwk/JCMyPwsMeQ/hk2SC', 'Chintu', 'chintu@gmail.com', '21212', 'abc123...', 'android', 'active', '2026-06-28 07:54:57', '2026-07-05 16:20:04'),
+	(11, 'STD005', '$2b$10$IGt5cT8.FaHNNdgQfDilCePU1VP1sPHIE3oKVH.lUQgyXgZY6M0sO', 'harsh', 'harsh@gmail.com', '89898989', NULL, 'web', 'active', '2026-06-28 10:16:45', '2026-06-28 10:16:45');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
