@@ -37,6 +37,7 @@ const userProfileRoutes = require('./user/profile/profile.routes');
 const userTrackingRoutes = require('./user/tracking/tracking.routes');
 const userNotificationRoutes = require('./user/notification/notification.routes');
 const userVideoAnalysisRoutes = require('./user/userVideoAnalysis/userVideoAnalysis.routes');
+const adminVideoAnalysisRoutes = require('./admin/videoAnalysis/videoAnalysis.routes');
 
 const { authenticateToken, requireAdmin, requireUser } = require('./middleware/auth.middleware');
 
@@ -95,6 +96,7 @@ app.use('/api/admin', authenticateToken, requireAdmin, adminCmsStreamRoutes );
 app.use('/api/admin', authenticateToken, requireAdmin, adminCmsSectionRoutes );
 app.use('/api/admin', authenticateToken, requireAdmin, adminCmsContentRoutes );
 app.use('/api/admin', authenticateToken, requireAdmin, adminCmsQuestionRoutes );
+app.use('/api/admin', authenticateToken, requireAdmin, adminVideoAnalysisRoutes);
 
 // Test route
 app.get('/api', (req, res) => {
