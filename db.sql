@@ -685,7 +685,7 @@ CREATE TABLE IF NOT EXISTS `user_video_analysis` (
   CONSTRAINT `user_video_analysis_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_video_analysis_ibfk_2` FOREIGN KEY (`assessment_id`) REFERENCES `video_analysis_assessments` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_video_analysis_ibfk_3` FOREIGN KEY (`question_id`) REFERENCES `video_assessment_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
