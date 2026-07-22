@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS `admins` (
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table insta_style_lms.admins: ~0 rows (approximately)
+-- Dumping data for table insta_style_lms.admins: ~1 rows (approximately)
 INSERT INTO `admins` (`id`, `username`, `password`, `email`, `role`, `status`, `created_at`, `updated_at`) VALUES
 	(1, 'Admin', '$2b$12$24vr9WK4g3VJRlDslopOBuIU5tsgIVNcfEx4jhgaYrcMszO5wqyzS', 'admin@admin.com', 'SuperAdmin', 'active', '2026-04-06 06:34:53', '2026-04-06 06:35:37');
 
@@ -125,10 +125,10 @@ CREATE TABLE IF NOT EXISTS `cms_content_images` (
 
 -- Dumping data for table insta_style_lms.cms_content_images: ~4 rows (approximately)
 INSERT INTO `cms_content_images` (`id`, `content_id`, `image_url`, `sort_order`, `created_at`) VALUES
-	(1, 1, '/uploads/cmscontent/1/slide_0_1782714928925_Chetak_C30_RACINGRED1777551678.webp', 0, '2026-06-29 06:34:53'),
-	(2, 1, '/uploads/cmscontent/1/slide_2_1782714928928_exterior_bajaj-chetak_front-left-view_930x620_v3.avif', 2, '2026-06-29 06:34:53'),
-	(14, 8, '/uploads/cmscontent/8/slide_0_1782970947178_ebony-black-bajaj-pulsar-150-neo-11562960918aqcrhcozk1_(1).png', 0, '2026-07-02 05:42:27'),
-	(15, 8, '/uploads/cmscontent/8/slide_2_1782970947180_cng-freedom-125-right-side-view-2.avif', 2, '2026-07-02 05:42:27');
+	(1, 1, '/uploads/cmscontent/1/slide_0_1782714928925_Chetak_C30_RACINGRED1777551678.avif', 0, '2026-06-29 06:34:53'),
+	(2, 1, '/uploads/cmscontent/1/slide_2_1782714928928_exterior_bajaj-chetak_front-left-view_930x620_v3.jpeg', 2, '2026-06-29 06:34:53'),
+	(14, 8, '/uploads/cmscontent/8/slide_0_1782970947180_cng-freedom-125-right-side-view-2.webp', 0, '2026-07-02 05:42:27'),
+	(15, 8, '/uploads/cmscontent/8/slide_2_1782970947178_ebony-black-bajaj-pulsar-150-neo-11562960918aqcrhcozk1.avif', 2, '2026-07-02 05:42:27');
 
 -- Dumping structure for table insta_style_lms.cms_content_text
 CREATE TABLE IF NOT EXISTS `cms_content_text` (
@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS `cms_content_text` (
   CONSTRAINT `fk_cms_content_text_content` FOREIGN KEY (`content_id`) REFERENCES `cms_contents` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table insta_style_lms.cms_content_text: ~2 rows (approximately)
+-- Dumping data for table insta_style_lms.cms_content_text: ~3 rows (approximately)
 INSERT INTO `cms_content_text` (`id`, `content_id`, `text_content`, `sort_order`, `created_at`) VALUES
 	(1, 1, 'Lorem', 1, '2026-06-29 06:34:53'),
 	(2, 1, 'Lorem', 3, '2026-06-29 06:35:28'),
@@ -170,11 +170,11 @@ CREATE TABLE IF NOT EXISTS `cms_contents` (
   CONSTRAINT `fk_content_section` FOREIGN KEY (`section_id`) REFERENCES `cms_sections` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table insta_style_lms.cms_contents: ~4 rows (approximately)
+-- Dumping data for table insta_style_lms.cms_contents: ~5 rows (approximately)
 INSERT INTO `cms_contents` (`id`, `section_id`, `content_type`, `title`, `description`, `media_url`, `thumbnail_url`, `pdf_url`, `pdf_text`, `source_url`, `status`, `sort_order`, `created_at`, `updated_at`) VALUES
-	(1, 1, 'multiple_image_text', 'Lorem Lorem', 'Lorem', NULL, '/uploads/cmscontent/1/slide_0_1782714928925_Chetak_C30_RACINGRED1777551678.webp', NULL, NULL, NULL, 'active', 0, '2026-06-29 06:34:53', '2026-06-29 06:35:28'),
+	(1, 1, 'multiple_image_text', 'Lorem Lorem', 'Lorem', NULL, 'http://localhost:5000/uploads/cmscontent/1/slide_0_1782714928925_Chetak_C30_RACINGRED1777551678.avif', NULL, NULL, NULL, 'active', 0, '2026-06-29 06:34:53', '2026-07-21 09:04:55'),
 	(2, 1, 'video', 'Lorem', 'Lorem', '/uploads/cmscontent/2/video_1782715031457_Recording_2026-05-05_100455.mp4', NULL, NULL, NULL, NULL, 'active', 0, '2026-06-29 06:36:48', '2026-06-29 06:37:11'),
-	(3, 1, 'pdf_extract', 'Lorem', 'Lorem', NULL, NULL, '/uploads/cmscontent/3/pdf_1782715135145_invoicesample.pdf', 'Denny Gunawan  221 Queen St Melbourne VIC 3000  $39.60 123 Somewhere St, Melbourne VIC 3000 (03) 1234 5678  Invoice Number: #20130304  Organic Items   Price/kg   Quantity(kg)   Subtotal  Apple   $5.00   1   $5.00 Orange   $1.99   2   $3.98 Watermelon   $1.69   3   $5.07 Mango   $9.56   2   $19.12 Peach   $2.99   1   $2.99  Subtotal   $36.00  GST (10%)   $3.60  Total   $39.60 * Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam sodales dapibus fermentum. Nunc adipiscing, magna sed scelerisque cursus, erat lectus dapibus urna, sed facilisis leo dui et ipsum.', NULL, 'active', 0, '2026-06-29 06:38:31', '2026-06-29 06:38:55'),
+	(3, 1, 'pdf_extract', 'Lorem', 'Lorem', NULL, NULL, '/uploads/cmscontent/3/sample.pdf', 'Sample PDF\r\nThis is a simple PDF file. Fun fun fun.\r\nLorem ipsum dolor sit amet, consectetuer adipiscing elit. Phasellus facilisis odio sed mi.\r\nCurabitur suscipit. Nullam vel nisi. Etiam semper ipsum ut lectus. Proin aliquam, erat eget\r\npharetra commodo, eros mi condimentum quam, sed commodo justo quam ut velit.\r\nInteger a erat. Cras laoreet ligula cursus enim. Aenean scelerisque velit et tellus.\r\nVestibulum dictum aliquet sem. Nulla facilisi. Vestibulum accumsan ante vitae elit. Nulla\r\nerat dolor, blandit in, rutrum quis, semper pulvinar, enim. Nullam varius congue risus.\r\nVivamus sollicitudin, metus ut interdum eleifend, nisi tellus pellentesque elit, tristique\r\naccumsan eros quam et risus. Suspendisse libero odio, mattis sit amet, aliquet eget,\r\nhendrerit vel, nulla. Sed vitae augue. Aliquam erat volutpat. Aliquam feugiat vulputate nisl.\r\nSuspendisse quis nulla pretium ante pretium mollis. Proin velit ligula, sagittis at, egestas a,\r\npulvinar quis, nisl.\r\nPellentesque sit amet lectus. Praesent pulvinar, nunc quis iaculis sagittis, justo quam\r\nlobortis tortor, sed vestibulum dui metus venenatis est. Nunc cursus ligula. Nulla facilisi.\r\nPhasellus ullamcorper consectetuer ante. Duis tincidunt, urna id condimentum luctus, nibh\r\nante vulputate sapien, id sagittis massa orci ut enim. Pellentesque vestibulum convallis\r\nsem. Nulla consequat quam ut nisl. Nullam est. Curabitur tincidunt dapibus lorem. Proin\r\nvelit turpis, scelerisque sit amet, iaculis nec, rhoncus ac, ipsum. Phasellus lorem arcu,\r\nfeugiat eu, gravida eu, consequat molestie, ipsum. Nullam vel est ut ipsum volutpat\r\nfeugiat. Aenean pellentesque.\r\n\r\nIn mauris. Pellentesque dui nisi, iaculis eu, rhoncus in, venenatis ac, ante. Ut odio justo,\r\nscelerisque vel, facilisis non, commodo a, pede. Cras nec massa sit amet tortor volutpat\r\nvarius. Donec lacinia, neque a luctus aliquet, pede massa imperdiet ante, at varius lorem\r\npede sed sapien. Fusce erat nibh, aliquet in, eleifend eget, commodo eget, erat. Fusce\r\nconsectetuer. Cras risus tortor, porttitor nec, tristique sed, convallis semper, eros. Fusce\r\nvulputate ipsum a mauris. Phasellus mollis. Curabitur sed urna. Aliquam nec sapien non\r\nnibh pulvinar convallis. Vivamus facilisis augue quis quam. Proin cursus aliquet metus.\r\nSuspendisse lacinia. Nulla at tellus ac turpis eleifend scelerisque. Maecenas a pede vitae\r\nenim commodo interdum. Donec odio. Sed sollicitudin dui vitae justo.\r\nMorbi elit nunc, facilisis a, mollis a, molestie at, lectus. Suspendisse eget mauris eu tellus\r\nmolestie cursus. Duis ut magna at justo dignissim condimentum. Cum sociis natoque\r\npenatibus et magnis dis parturient montes, nascetur ridiculus mus. Vivamus varius. Ut sit\r\namet diam suscipit mauris ornare aliquam. Sed varius. Duis arcu. Etiam tristique massa\r\neget dui. Phasellus congue. Aenean est erat, tincidunt eget, venenatis quis, commodo at,\r\nquam.', NULL, 'active', 0, '2026-06-29 06:38:31', '2026-07-21 09:03:11'),
 	(4, 1, 'url_extract', 'Lorem', 'Lorem', NULL, NULL, NULL, NULL, 'https://www.youtube.com/embed/MSHuhtbvITA?si=QmPzcOnZ2WRzHuB3', 'active', 0, '2026-06-29 06:39:18', '2026-06-29 06:39:34'),
 	(8, 1, 'multiple_image_text', 'Lorem', 'Lorem', NULL, '/uploads/cmscontent/8/slide_0_1782970947178_ebony-black-bajaj-pulsar-150-neo-11562960918aqcrhcozk1_(1).png', NULL, NULL, NULL, 'active', 0, '2026-07-02 05:42:27', '2026-07-13 05:38:30');
 
@@ -189,7 +189,7 @@ CREATE TABLE IF NOT EXISTS `cms_fill_blanks` (
   CONSTRAINT `fk_fill_blanks_question` FOREIGN KEY (`question_id`) REFERENCES `cms_questions` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table insta_style_lms.cms_fill_blanks: ~0 rows (approximately)
+-- Dumping data for table insta_style_lms.cms_fill_blanks: ~1 rows (approximately)
 INSERT INTO `cms_fill_blanks` (`id`, `question_id`, `answer`, `created_at`) VALUES
 	(1, 2, 'Ride Modes', '2026-06-29 09:36:43');
 
@@ -341,10 +341,10 @@ CREATE TABLE IF NOT EXISTS `cms_streams` (
 -- Dumping data for table insta_style_lms.cms_streams: ~5 rows (approximately)
 INSERT INTO `cms_streams` (`id`, `category_id`, `title`, `language`, `icon_url`, `content`, `status`, `sort_order`, `created_at`, `updated_at`) VALUES
 	(1, 1, '(Old) Mastering the Pulsar 220F', 'English', '/uploads/cmsstream/1/1.avif', 'Master the iconic Pulsar 220F', 'active', 0, '2026-06-18 09:34:23', '2026-06-26 11:14:53'),
-	(2, 1, '(Old) Inside the Chetak Range', 'English', '/uploads/cmsstream/2/1782716946064_images_(1).jpg', 'Discover the Chetak legacy', 'active', 0, '2026-06-22 05:38:06', '2026-06-29 07:09:06'),
+	(2, 1, '(Old) Inside the Chetak Range', 'English', '/uploads/cmsstream/2/2.avif', 'Discover the Chetak legacy', 'active', 0, '2026-06-22 05:38:06', '2026-07-21 07:28:35'),
 	(3, 1, '(Old) Pulsar 150 Smart Cluster Mastery', 'English', '/uploads/cmsstream/3/3.avif', 'Learn the Smart Cluster features', 'active', 0, '2026-06-22 05:45:11', '2026-06-22 05:56:21'),
-	(4, 1, 'Mastering Freedom 125', 'English', '/uploads/cmsstream/4/4.png', 'Explore Freedom 125 features', 'active', 0, '2026-06-22 05:48:22', '2026-06-22 09:00:59'),
-	(5, 1, 'Mastering the Pulsar NS400Z', 'English', '/uploads/cmsstream/5/1782717118996_bajaj-pulsar-ns400z-standard1776759948430.avif', 'Discover its features and performance', 'active', 0, '2026-06-29 07:11:58', '2026-06-29 07:11:58');
+	(4, 1, 'Mastering Freedom 125', 'English', '/uploads/cmsstream/4/4.webp', 'Explore Freedom 125 features', 'active', 0, '2026-06-22 05:48:22', '2026-07-21 07:30:36'),
+	(5, 1, 'Mastering the Pulsar NS400Z', 'English', '/uploads/cmsstream/5/5.jpg', 'Discover its features and performance', 'active', 0, '2026-06-29 07:11:58', '2026-07-21 07:31:39');
 
 -- Dumping structure for table insta_style_lms.comments
 CREATE TABLE IF NOT EXISTS `comments` (
@@ -407,7 +407,7 @@ CREATE TABLE IF NOT EXISTS `curriculums` (
   CONSTRAINT `curriculums_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table insta_style_lms.curriculums: ~0 rows (approximately)
+-- Dumping data for table insta_style_lms.curriculums: ~1 rows (approximately)
 INSERT INTO `curriculums` (`id`, `title`, `description`, `role_id`, `status`, `created_at`, `updated_at`) VALUES
 	(1, 'Sample Curriculum', 'This is a sample curriculum with three levels.', 1, 'active', '2026-07-06 09:22:00', '2026-07-06 09:22:00');
 
@@ -683,7 +683,7 @@ CREATE TABLE IF NOT EXISTS `post_media_views` (
   CONSTRAINT `post_media_views_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table insta_style_lms.post_media_views: ~0 rows (approximately)
+-- Dumping data for table insta_style_lms.post_media_views: ~1 rows (approximately)
 INSERT INTO `post_media_views` (`id`, `post_id`, `media_id`, `user_id`, `viewed_at`) VALUES
 	(1, 10, 16, 12, '2026-06-17 10:19:47');
 
@@ -1102,7 +1102,7 @@ CREATE TABLE IF NOT EXISTS `roles` (
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table insta_style_lms.roles: ~4 rows (approximately)
+-- Dumping data for table insta_style_lms.roles: ~5 rows (approximately)
 INSERT INTO `roles` (`id`, `name`, `status`, `created_at`, `updated_at`) VALUES
 	(1, 'DSE', 'active', '2026-05-05 06:39:59', '2026-06-08 09:49:10'),
 	(2, 'TL', 'active', '2026-05-05 06:39:59', '2026-06-08 09:49:15'),
@@ -1312,7 +1312,7 @@ CREATE TABLE IF NOT EXISTS `user_media_tracking` (
   KEY `idx_post_id` (`post_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table insta_style_lms.user_media_tracking: ~0 rows (approximately)
+-- Dumping data for table insta_style_lms.user_media_tracking: ~1 rows (approximately)
 INSERT INTO `user_media_tracking` (`id`, `user_id`, `media_id`, `post_id`, `media_type`, `viewed_at`, `total_minutes`, `viewed_minutes`, `total_slides`, `viewed_slides`, `wbt_json`, `percentage`, `completed`, `created_at`, `updated_at`) VALUES
 	(1, 12, 16, 10, 'wbt', NULL, NULL, NULL, 0, 0, '{"postId": 10, "mediaId": 16, "mediaUrl": "https://yourdomain.com/upload/wbt-file", "spentTime": "47s", "totalSlides": 10, "currentSlide": 10, "spentSeconds": 47, "completedSlides": 10}', 100.00, 1, '2026-06-17 10:19:32', '2026-06-17 10:19:47');
 
@@ -1599,7 +1599,7 @@ CREATE TABLE IF NOT EXISTS `video_analysis_assessments` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table insta_style_lms.video_analysis_assessments: ~0 rows (approximately)
+-- Dumping data for table insta_style_lms.video_analysis_assessments: ~1 rows (approximately)
 INSERT INTO `video_analysis_assessments` (`id`, `title`, `description`, `start_date`, `end_date`, `status`, `created_at`, `updated_at`) VALUES
 	(1, 'TVS Sales Assessment - July 2026', 'Assess sales representatives on TVS bike features and selling points.', '2026-07-01', '2026-07-31', 'active', '2026-07-10 09:33:06', '2026-07-10 09:33:06');
 
@@ -1617,7 +1617,7 @@ CREATE TABLE IF NOT EXISTS `video_analysis_overall_summary` (
   UNIQUE KEY `unique_user_assessment` (`userId`,`assessmentId`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table insta_style_lms.video_analysis_overall_summary: ~0 rows (approximately)
+-- Dumping data for table insta_style_lms.video_analysis_overall_summary: ~3 rows (approximately)
 INSERT INTO `video_analysis_overall_summary` (`id`, `userId`, `assessmentId`, `overall_face`, `overall_voice`, `overall_emotion`, `createdAt`, `updatedAt`) VALUES
 	(1, 1, 1, 82.73, 82.56, 48.22, '2026-07-15 14:55:25', '2026-07-20 10:50:16'),
 	(2, 4, 1, 82.73, 82.56, 48.22, '2026-07-21 12:01:12', NULL),
@@ -1652,7 +1652,7 @@ CREATE TABLE IF NOT EXISTS `video_analysis_question_answer_evaluation` (
   CONSTRAINT `fk_eval_user_video_analysis` FOREIGN KEY (`user_video_analysis_id`) REFERENCES `user_video_analysis` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table insta_style_lms.video_analysis_question_answer_evaluation: ~0 rows (approximately)
+-- Dumping data for table insta_style_lms.video_analysis_question_answer_evaluation: ~3 rows (approximately)
 INSERT INTO `video_analysis_question_answer_evaluation` (`id`, `user_video_analysis_id`, `user_id`, `question_id`, `transcript`, `score`, `score_percentage`, `grammar_mistakes`, `sentiment`, `emotion`, `correctness`, `understanding`, `depth_and_clarity`, `explanation`, `matched_keywords`, `missing_keywords`, `created_at`, `updated_at`) VALUES
 	(1, 1, 1, 1, 'Four value internals. Ride mode, sport, urban, rain, slipper clutch, dual channel ABS, SmartConnect Bluetooth, oiled, oil system, race tuned suspension, aggressive styling, value of money, brand availability.', 58, 83, 3, 'neutral', 'informative', 'mostly correct, though technical terminology is slightly mangled', 'The user demonstrates a strong grasp of the specific features associated with the motorcycle.', 'The response is a list-style summary. It lacks complete sentences and contains minor inaccuracies in terminology (e.g., \'Four value\' instead of \'4-valve\').', 'You correctly identified almost all the key technical features of the Apache RTR 200 4V. However, there are minor typos (\'Four value\' instead of \'4-valve\') and the exclusion of the specific power output figures (20.5 bhp/17 Nm). Your inclusion of \'brand availability\' is an extra point not found in the source text.', '["ride modes","slipper clutch","dual ABS","SmartXonnect","oil-cooled","aggressive styling","value for money"]', '["4-valve","20.5 bhp","USD forks"]', '2026-07-15 13:06:54', '2026-07-15 13:06:54'),
 	(2, 3, 4, 1, 'Four value internals, ride mode, sport urban, rain, slipper clutch, dual-channel ABS, smart connect Bluetooth, oil system, race tuned suspension, aggressive styling, value of money, brand reliability.', 58, 83, 2, 'neutral', 'informative', 'mostly correct', 'good', 'The user captured most key technical features but lacked specific performance metrics (bhp/torque) and made minor terminology errors.', 'You provided a solid list of features that distinguish the TVS Apache RTR 200 4V. You correctly identified the ride modes, safety features like the slipper clutch and ABS, and the connectivity options. However, you missed the specific engine performance figures (20.5 bhp/17 Nm) and used the phrase \'Four value internals\' instead of the standard \'4-valve engine\' terminology. Additionally, \'brand reliability\' was not in the reference answer as a specific selling point.', '["ride modes","slipper clutch","dual ABS","SmartXonnect","aggressive styling","value for money"]', '["4-valve","20.5 bhp","oil-cooled","USD forks"]', '2026-07-21 12:01:20', '2026-07-21 12:01:20'),
@@ -1689,7 +1689,7 @@ CREATE TABLE IF NOT EXISTS `video_analysis_question_summary` (
   KEY `idx_question` (`questionId`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table insta_style_lms.video_analysis_question_summary: ~0 rows (approximately)
+-- Dumping data for table insta_style_lms.video_analysis_question_summary: ~3 rows (approximately)
 INSERT INTO `video_analysis_question_summary` (`id`, `userId`, `assessmentId`, `questionId`, `face_interest`, `face_concentration`, `face_doubt`, `face_anxiety`, `face_confidence`, `face_attention`, `voice_interest`, `voice_concentration`, `voice_doubt`, `voice_anxiety`, `voice_confidence`, `voice_attention`, `emotion_joy`, `emotion_sadness`, `emotion_fear`, `emotion_confusion`, `emotion_happy`, `emotion_neutral`, `createdAt`, `updatedAt`) VALUES
 	(1, 1, 1, 1, 70.88, 11.85, 1.32, 15.95, 82.73, 11.85, 71.30, 11.26, 1.40, 16.04, 82.56, 11.26, 0.01, 48.21, 2.86, 48.92, 0.01, 48.22, '2026-07-15 12:37:39', '2026-07-15 14:57:25'),
 	(2, 4, 1, 1, 70.88, 11.85, 1.32, 15.95, 82.73, 11.85, 71.30, 11.26, 1.40, 16.04, 82.56, 11.26, 0.01, 48.21, 2.86, 48.92, 0.01, 48.22, '2026-07-21 12:01:12', NULL),
@@ -1714,7 +1714,7 @@ CREATE TABLE IF NOT EXISTS `video_assessment_questions` (
   CONSTRAINT `video_assessment_questions_ibfk_2` FOREIGN KEY (`language_id`) REFERENCES `languages` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table insta_style_lms.video_assessment_questions: ~0 rows (approximately)
+-- Dumping data for table insta_style_lms.video_assessment_questions: ~1 rows (approximately)
 INSERT INTO `video_assessment_questions` (`id`, `assessment_id`, `question_text`, `expected_answer`, `keywords`, `language_id`, `sort_order`, `status`, `created_at`, `updated_at`) VALUES
 	(1, 1, 'What are the key selling points of the TVS Apache RTR 200 4V compared to its competitors?', 'The TVS Apache RTR 200 4V offers a 4-valve engine with 20.5 bhp and 17 Nm torque, ride modes (Sport/Urban/Rain), slipper clutch, dual-channel ABS, SmartXonnect Bluetooth connectivity, oil-cooled system, race-tuned USD suspension, aggressive styling, and excellent value for money compared to competitors like Bajaj Pulsar NS200 and Honda CB200X.', '4-valve, 20.5 bhp, ride modes, slipper clutch, dual ABS, SmartXonnect, oil-cooled, USD forks, aggressive styling, value for money', 1, 1, 'active', '2026-07-15 07:13:15', '2026-07-15 07:13:15');
 
