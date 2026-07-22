@@ -203,27 +203,6 @@ User Answer: ${userAnswer}
 }
 
 // ============================================================
-//  UPDATE USER SCORE (optional)
-// ============================================================
-async function updateUserScore(userId, assessmentId, score, scorePercentage) {
-  try {
-    const [result] = await pool.query(
-      `UPDATE users SET r2_score_ka = ? WHERE id = ?`,
-      [score, userId]
-    );
-    if (result.affectedRows === 0) {
-      console.warn(`User ${userId} not found for score update.`);
-      return false;
-    }
-    console.log(`✅ Updated user ${userId} score to ${score} (${scorePercentage}%)`);
-    return true;
-  } catch (err) {
-    console.error('Error updating user score:', err.message);
-    return false;
-  }
-}
-
-// ============================================================
 //  INSERT/UPDATE EVALUATION DATA
 // ============================================================
 async function insertOrUpdateEvaluation(evaluationData) {
@@ -406,9 +385,6 @@ async function generateGeminiReport() {
            WHERE id = ?`,
           [relativeReportPath, row.id]
         );
-
-        // 6. Update user score (optional)
-        await updateUserScore(row.user_id, row.assessment_id, score, scorePercentage);
 
         successCount++;
         console.log(`   ✅ Gemini report completed for video ${row.id}`);
