@@ -2,11 +2,12 @@ const { pool } = require('../../config/db');
 const fs = require('fs');
 const path = require('path');
 
-
 // Temporary directory for chunks (under uploads/temp)
 const TEMP_CHUNK_DIR = path.join(process.cwd(), 'uploads', 'temp');
 
-// Helper: combine all chunks into final file
+// ======================================================
+// Helper: combine all chunks into final file (synchronous)
+// ======================================================
 const combineChunks = (fileId, totalChunks, finalPath) => {
   const chunkDir = path.join(TEMP_CHUNK_DIR, fileId);
   const writeStream = fs.createWriteStream(finalPath);
@@ -25,13 +26,16 @@ const combineChunks = (fileId, totalChunks, finalPath) => {
   fs.rmdirSync(chunkDir);
 };
 
+// ======================================================
+// 1. UPLOAD VIDEO CHUNK (automatic combine when complete)
+// ======================================================
 exports.uploadVideoChunk = async (req, res) => {
   try {
     const userId = req.user.userId;
     const { assessment_id, question_id, fileId, chunkIndex, totalChunks } = req.body;
     const chunkFile = req.file;
 
-    // 1. Validate required fields
+    // --- 1. Validate required fields ---
     if (!assessment_id || !question_id || !fileId || chunkIndex === undefined || totalChunks === undefined || !chunkFile) {
       return res.status(400).json({
         success: false,
@@ -39,32 +43,62 @@ exports.uploadVideoChunk = async (req, res) => {
       });
     }
 
-    // 2. (Optional) Verify assessment/question as in your existing code – keep it if needed
-    // ... (same validation queries as your uploadVideo function)
+    // --- 2. Verify assessment & question (same as uploadVideo) ---
+    const connection = await pool.getConnection();
+    try {
+      // 2a. Check assessment exists, is active, and within date range
+      const [assessmentRows] = await connection.query(
+        `SELECT id FROM video_analysis_assessments
+         WHERE id = ? AND status = 'active'
+         AND CURDATE() BETWEEN start_date AND end_date`,
+        [assessment_id]
+      );
+      if (!assessmentRows.length) {
+        return res.status(404).json({
+          success: false,
+          error: 'Assessment not available or inactive/out of date'
+        });
+      }
 
-    // 3. Ensure temp directory exists
+      // 2b. Check question exists, belongs to the assessment, and is active
+      const [questionRows] = await connection.query(
+        `SELECT id FROM video_assessment_questions
+         WHERE id = ? AND assessment_id = ? AND status = 'active'`,
+        [question_id, assessment_id]
+      );
+      if (!questionRows.length) {
+        return res.status(404).json({
+          success: false,
+          error: 'Question not available in this assessment or inactive'
+        });
+      }
+    } finally {
+      connection.release(); // release connection early – we don't need it for file operations
+    }
+
+    // --- 3. Ensure temp directory exists ---
     if (!fs.existsSync(TEMP_CHUNK_DIR)) {
       fs.mkdirSync(TEMP_CHUNK_DIR, { recursive: true });
     }
 
-    // 4. Create a subdirectory for this fileId (unique per upload session)
+    // --- 4. Create a subdirectory for this fileId ---
     const chunkDir = path.join(TEMP_CHUNK_DIR, fileId);
     if (!fs.existsSync(chunkDir)) {
       fs.mkdirSync(chunkDir, { recursive: true });
     }
 
-    // 5. Save the chunk with index in filename
+    // --- 5. Save the chunk ---
     const chunkPath = path.join(chunkDir, `chunk_${chunkIndex}`);
     fs.renameSync(chunkFile.path, chunkPath);
 
-    // 6. Check if all chunks have been received
+    // --- 6. Check if all chunks have been received ---
     const receivedChunks = fs.readdirSync(chunkDir).filter(f => f.startsWith('chunk_')).length;
     if (receivedChunks === parseInt(totalChunks, 10)) {
-      // All chunks are here – combine them
-      const ext = path.extname(chunkFile.originalname) || '.mp4'; // assume video
+      // ----- All chunks are here – combine them -----
+      const ext = path.extname(chunkFile.originalname) || '.mp4';
       const finalFilename = `video_${Date.now()}${ext}`;
 
-      // Build final storage path (same logic as original)
+      // Build storage path
       const relativeFolder = path.join(
         'uploads',
         'AssessmentUserVideo',
@@ -78,16 +112,15 @@ exports.uploadVideoChunk = async (req, res) => {
       }
 
       const finalAbsolutePath = path.join(absoluteFolder, finalFilename);
-      // Combine chunks into final file
       combineChunks(fileId, parseInt(totalChunks, 10), finalAbsolutePath);
 
-      // Relative path for DB
+      // Relative path for DB (forward slashes)
       const relativePath = path.join(relativeFolder, finalFilename).replace(/\\/g, '/');
 
-      // 7. Insert/update record in user_video_analysis (same as original)
-      const connection = await pool.getConnection();
+      // Insert/update record in user_video_analysis
+      const dbConnection = await pool.getConnection();
       try {
-        await connection.query(
+        await dbConnection.query(
           `INSERT INTO user_video_analysis
            (user_id, assessment_id, question_id, video_file_path, isAwsReportGenerated)
            VALUES (?, ?, ?, ?, 0)
@@ -98,19 +131,17 @@ exports.uploadVideoChunk = async (req, res) => {
           [userId, assessment_id, question_id, relativePath]
         );
       } finally {
-        connection.release();
+        dbConnection.release();
       }
 
-      const baseUrl = (process.env.BASE_URL || 'http://localhost:5000').replace(/\/+$/, '');
-      const videoUrl = `${baseUrl}/${relativePath}`;
-
+      // ✅ Return only the relative path – no base URL
       return res.status(201).json({
         success: true,
         message: 'Video uploaded successfully (all chunks combined)',
         data: {
           assessment_id: parseInt(assessment_id),
           question_id: parseInt(question_id),
-          video_url: videoUrl,
+          video_path: relativePath,
           fileId
         }
       });
@@ -131,6 +162,9 @@ exports.uploadVideoChunk = async (req, res) => {
   }
 };
 
+// ======================================================
+// 2. UPLOAD SINGLE VIDEO (non‑chunked)
+// ======================================================
 exports.uploadVideo = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -147,7 +181,7 @@ exports.uploadVideo = async (req, res) => {
 
     const connection = await pool.getConnection();
     try {
-      // 2. Verify that the assessment exists, is active, and within date range
+      // 2. Verify assessment
       const [assessmentRows] = await connection.query(
         `SELECT id FROM video_analysis_assessments
          WHERE id = ? AND status = 'active'
@@ -161,7 +195,7 @@ exports.uploadVideo = async (req, res) => {
         });
       }
 
-      // 3. Verify that the question exists, belongs to the assessment, and is active
+      // 3. Verify question
       const [questionRows] = await connection.query(
         `SELECT id FROM video_assessment_questions
          WHERE id = ? AND assessment_id = ? AND status = 'active'`,
@@ -174,7 +208,7 @@ exports.uploadVideo = async (req, res) => {
         });
       }
 
-      // 4. Build the storage path
+      // 4. Build storage path
       const relativeFolder = path.join(
         'uploads',
         'AssessmentUserVideo',
@@ -193,10 +227,10 @@ exports.uploadVideo = async (req, res) => {
       const absolutePath = path.join(absoluteFolder, filename);
       fs.renameSync(videoFile.path, absolutePath);
 
-      // 6. Store relative path (forward slashes, no leading slash)
+      // 6. Relative path (forward slashes)
       const relativePath = path.join(relativeFolder, filename).replace(/\\/g, '/');
 
-      // 7. Insert/update record in user_video_analysis
+      // 7. Insert/update record
       await connection.query(
         `INSERT INTO user_video_analysis
          (user_id, assessment_id, question_id, video_file_path, isAwsReportGenerated)
@@ -208,17 +242,14 @@ exports.uploadVideo = async (req, res) => {
         [userId, assessment_id, question_id, relativePath]
       );
 
-      // 8. Build full URL for response
-      const baseUrl = (process.env.BASE_URL || 'http://localhost:5000').replace(/\/+$/, '');
-      const videoUrl = `${baseUrl}/${relativePath}`;
-
-      res.status(201).json({
+      // ✅ Return only the relative path – no base URL
+      return res.status(201).json({
         success: true,
         message: 'Video uploaded successfully',
         data: {
           assessment_id: parseInt(assessment_id),
           question_id: parseInt(question_id),
-          video_url: videoUrl
+          video_path: relativePath
         }
       });
 
