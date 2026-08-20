@@ -55,13 +55,16 @@ const fileFilter = (req, file, cb) => {
     ];
     
     // Also allow common file extensions
-    const allowedExtensions = [
-        '.svg',                                      // SVG icons
-        '.zip', '.wbt', '.scorm', '.html', '.htm',  // WBT
-        '.pdf',                                       // PDF
-        '.ppt', '.pptx',                               // PowerPoint
-          '.xls', '.xlsx'  // Excel extensions
-    ];
+// Also allow common file extensions
+const allowedExtensions = [
+    '.svg',                                      // SVG icons
+    '.zip', '.wbt', '.scorm', '.html', '.htm',  // WBT
+    '.pdf',                                       // PDF
+    '.ppt', '.pptx',                               // PowerPoint
+    '.xls', '.xlsx',                               // Excel
+    // Video extensions (add these)
+    '.mp4', '.mov', '.avi', '.webm', '.mkv', '.flv', '.mpeg', '.mpg', '.3gp'
+];
     const ext = path.extname(file.originalname).toLowerCase();
     
     if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(ext)) {

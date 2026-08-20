@@ -208,7 +208,20 @@ exports.uploadVideo = async (req, res) => {
         });
       }
 
-      // 4. Build storage path
+      // 4. Check if video already submitted for this user, assessment, and question
+      const [existing] = await connection.query(
+        `SELECT id FROM user_video_analysis
+         WHERE user_id = ? AND assessment_id = ? AND question_id = ?`,
+        [userId, assessment_id, question_id]
+      );
+      if (existing.length > 0) {
+        return res.status(409).json({
+          success: false,
+          error: 'Video already submitted for this question'
+        });
+      }
+
+      // 5. Build storage path
       const relativeFolder = path.join(
         'uploads',
         'AssessmentUserVideo',
@@ -221,28 +234,23 @@ exports.uploadVideo = async (req, res) => {
         fs.mkdirSync(absoluteFolder, { recursive: true });
       }
 
-      // 5. Save the video file
+      // 6. Save the video file
       const ext = path.extname(videoFile.originalname);
       const filename = `video_${Date.now()}${ext}`;
       const absolutePath = path.join(absoluteFolder, filename);
       fs.renameSync(videoFile.path, absolutePath);
 
-      // 6. Relative path (forward slashes)
+      // 7. Relative path (forward slashes)
       const relativePath = path.join(relativeFolder, filename).replace(/\\/g, '/');
 
-      // 7. Insert/update record
+      // 8. Insert new record (no longer using ON DUPLICATE KEY UPDATE)
       await connection.query(
         `INSERT INTO user_video_analysis
          (user_id, assessment_id, question_id, video_file_path, isAwsReportGenerated)
-         VALUES (?, ?, ?, ?, 0)
-         ON DUPLICATE KEY UPDATE
-         video_file_path = VALUES(video_file_path),
-         isAwsReportGenerated = 0,
-         uploaded_at = CURRENT_TIMESTAMP`,
+         VALUES (?, ?, ?, ?, 0)`,
         [userId, assessment_id, question_id, relativePath]
       );
 
-      // ✅ Return only the relative path – no base URL
       return res.status(201).json({
         success: true,
         message: 'Video uploaded successfully',
