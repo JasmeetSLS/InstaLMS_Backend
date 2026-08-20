@@ -19,541 +19,6 @@
 CREATE DATABASE IF NOT EXISTS `insta_style_lms` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `insta_style_lms`;
 
--- Dumping structure for table insta_style_lms.admins
-CREATE TABLE IF NOT EXISTS `admins` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `username` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `role` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'admin',
-  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.categories
-CREATE TABLE IF NOT EXISTS `categories` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `icon_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `name` (`name`),
-  KEY `idx_status` (`status`),
-  KEY `idx_name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cities
-CREATE TABLE IF NOT EXISTS `cities` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `dealer_id` int NOT NULL,
-  `city_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `state` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_dealer_id` (`dealer_id`),
-  KEY `idx_status` (`status`),
-  CONSTRAINT `fk_cities_dealer_id` FOREIGN KEY (`dealer_id`) REFERENCES `dealers` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_categories
-CREATE TABLE IF NOT EXISTS `cms_categories` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL,
-  `icon_url` varchar(500) DEFAULT NULL,
-  `content` longtext,
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_content_images
-CREATE TABLE IF NOT EXISTS `cms_content_images` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `content_id` int NOT NULL,
-  `image_url` varchar(1000) NOT NULL,
-  `sort_order` int NOT NULL DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_content_id` (`content_id`),
-  KEY `idx_sort_order` (`sort_order`),
-  CONSTRAINT `fk_cms_content_images_content` FOREIGN KEY (`content_id`) REFERENCES `cms_contents` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_content_text
-CREATE TABLE IF NOT EXISTS `cms_content_text` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `content_id` int NOT NULL,
-  `text_content` longtext NOT NULL,
-  `sort_order` int NOT NULL DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_content_id` (`content_id`),
-  KEY `idx_sort_order` (`sort_order`),
-  CONSTRAINT `fk_cms_content_text_content` FOREIGN KEY (`content_id`) REFERENCES `cms_contents` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_contents
-CREATE TABLE IF NOT EXISTS `cms_contents` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `section_id` int NOT NULL,
-  `content_type` enum('video','pdf_extract','url_extract','multiple_image_text') NOT NULL,
-  `title` varchar(255) DEFAULT NULL,
-  `description` longtext,
-  `media_url` varchar(1000) DEFAULT NULL,
-  `thumbnail_url` varchar(1000) DEFAULT NULL,
-  `pdf_url` varchar(1000) DEFAULT NULL,
-  `pdf_text` longtext,
-  `source_url` varchar(1000) DEFAULT NULL,
-  `status` enum('active','inactive') DEFAULT 'active',
-  `sort_order` int DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fk_content_section` (`section_id`),
-  CONSTRAINT `fk_content_section` FOREIGN KEY (`section_id`) REFERENCES `cms_sections` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_fill_blanks
-CREATE TABLE IF NOT EXISTS `cms_fill_blanks` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `question_id` int NOT NULL,
-  `answer` varchar(500) NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fk_fill_blanks_question` (`question_id`),
-  CONSTRAINT `fk_fill_blanks_question` FOREIGN KEY (`question_id`) REFERENCES `cms_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_match_following
-CREATE TABLE IF NOT EXISTS `cms_match_following` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `question_id` int NOT NULL,
-  `left_text` varchar(500) NOT NULL,
-  `right_text` varchar(500) NOT NULL,
-  `sort_order` int DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fk_match_following_question` (`question_id`),
-  CONSTRAINT `fk_match_following_question` FOREIGN KEY (`question_id`) REFERENCES `cms_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_options
-CREATE TABLE IF NOT EXISTS `cms_options` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `question_id` int NOT NULL,
-  `option_text` varchar(1000) NOT NULL,
-  `is_correct` tinyint(1) DEFAULT '0',
-  `sort_order` int DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fk_option_question` (`question_id`),
-  CONSTRAINT `fk_option_question` FOREIGN KEY (`question_id`) REFERENCES `cms_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_order_following
-CREATE TABLE IF NOT EXISTS `cms_order_following` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `question_id` int NOT NULL,
-  `item_text` varchar(500) NOT NULL,
-  `correct_position` int NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fk_order_following_question` (`question_id`),
-  CONSTRAINT `fk_order_following_question` FOREIGN KEY (`question_id`) REFERENCES `cms_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_pages
-CREATE TABLE IF NOT EXISTS `cms_pages` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `slug` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `slug` (`slug`),
-  KEY `idx_status` (`status`),
-  KEY `idx_title` (`title`),
-  KEY `idx_image_url` (`image_url`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_questions
-CREATE TABLE IF NOT EXISTS `cms_questions` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `section_id` int NOT NULL,
-  `question_text` longtext NOT NULL,
-  `question_type` enum('mcq','match_following','fill_blank','order_following','true_false','this_or_that') NOT NULL,
-  `marks` int DEFAULT '1',
-  `sort_order` int DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fk_question_section` (`section_id`),
-  CONSTRAINT `fk_question_section` FOREIGN KEY (`section_id`) REFERENCES `cms_sections` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_sections
-CREATE TABLE IF NOT EXISTS `cms_sections` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `stream_id` int NOT NULL,
-  `title` varchar(255) NOT NULL,
-  `description` text,
-  `status` enum('active','inactive') DEFAULT 'active',
-  `sort_order` int DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fk_section_stream` (`stream_id`),
-  CONSTRAINT `fk_section_stream` FOREIGN KEY (`stream_id`) REFERENCES `cms_streams` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.cms_streams
-CREATE TABLE IF NOT EXISTS `cms_streams` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `category_id` int NOT NULL,
-  `title` varchar(255) NOT NULL,
-  `language` varchar(100) DEFAULT NULL,
-  `icon_url` varchar(500) DEFAULT NULL,
-  `content` longtext,
-  `status` enum('active','inactive') DEFAULT 'active',
-  `sort_order` int DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fk_stream_category` (`category_id`),
-  CONSTRAINT `fk_stream_category` FOREIGN KEY (`category_id`) REFERENCES `cms_categories` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.comments
-CREATE TABLE IF NOT EXISTS `comments` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `comment` text NOT NULL,
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.curriculum_posts
-CREATE TABLE IF NOT EXISTS `curriculum_posts` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `curriculum_id` int NOT NULL,
-  `post_id` int NOT NULL,
-  `level` enum('1','2','3') NOT NULL,
-  `sort_order` int DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `curriculum_id` (`curriculum_id`),
-  KEY `post_id` (`post_id`),
-  CONSTRAINT `curriculum_posts_ibfk_1` FOREIGN KEY (`curriculum_id`) REFERENCES `curriculums` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `curriculum_posts_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.curriculums
-CREATE TABLE IF NOT EXISTS `curriculums` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL,
-  `description` text,
-  `role_id` int NOT NULL,
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `role_id` (`role_id`),
-  CONSTRAINT `curriculums_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.dealers
-CREATE TABLE IF NOT EXISTS `dealers` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `dealer_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `dealer_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `dealer_location` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `zone` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `dealer_code` (`dealer_code`),
-  KEY `idx_dealer_code` (`dealer_code`),
-  KEY `idx_zone` (`zone`),
-  KEY `idx_status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.languages
-CREATE TABLE IF NOT EXISTS `languages` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) NOT NULL,
-  `code` varchar(10) NOT NULL,
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `code` (`code`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.notifications
-CREATE TABLE IF NOT EXISTS `notifications` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.post_bookmarks
-CREATE TABLE IF NOT EXISTS `post_bookmarks` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_bookmark` (`post_id`,`user_id`),
-  KEY `post_id` (`post_id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `post_bookmarks_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_bookmarks_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=44 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.post_comments
-CREATE TABLE IF NOT EXISTS `post_comments` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `comment_text` text NOT NULL,
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `post_id` (`post_id`),
-  KEY `user_id` (`user_id`),
-  KEY `idx_status` (`status`),
-  KEY `idx_created_at` (`created_at`),
-  CONSTRAINT `post_comments_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_comments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.post_likes
-CREATE TABLE IF NOT EXISTS `post_likes` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_like` (`post_id`,`user_id`),
-  KEY `post_id` (`post_id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `post_likes_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_likes_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.post_media
-CREATE TABLE IF NOT EXISTS `post_media` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `media_type` enum('image','video','gif','youtube','wbt','pdf','ppt') NOT NULL,
-  `media_url` varchar(500) NOT NULL,
-  `role_id` int NOT NULL DEFAULT '1',
-  `thumbnail_url` varchar(500) DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `post_id` (`post_id`),
-  KEY `fk_post_media_role_id` (`role_id`),
-  CONSTRAINT `fk_post_media_role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `post_media_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=92 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.post_media_views
-CREATE TABLE IF NOT EXISTS `post_media_views` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `media_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `viewed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_media_view` (`post_id`,`media_id`,`user_id`),
-  KEY `post_id` (`post_id`),
-  KEY `media_id` (`media_id`),
-  KEY `user_id` (`user_id`),
-  KEY `idx_viewed_at` (`viewed_at`),
-  CONSTRAINT `post_media_views_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_media_views_ibfk_2` FOREIGN KEY (`media_id`) REFERENCES `post_media` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_media_views_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.post_shares
-CREATE TABLE IF NOT EXISTS `post_shares` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `user_id` int NOT NULL COMMENT 'User who is sharing the post',
-  `share_id` int NOT NULL COMMENT 'User ID of the person the post is shared with',
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `post_id` (`post_id`),
-  KEY `user_id` (`user_id`),
-  KEY `share_id` (`share_id`),
-  KEY `idx_status` (`status`),
-  KEY `idx_created_at` (`created_at`),
-  CONSTRAINT `post_shares_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_shares_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_shares_ibfk_3` FOREIGN KEY (`share_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.post_views
-CREATE TABLE IF NOT EXISTS `post_views` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `viewed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_view` (`post_id`,`user_id`),
-  KEY `post_id` (`post_id`),
-  KEY `user_id` (`user_id`),
-  KEY `idx_viewed_at` (`viewed_at`),
-  CONSTRAINT `post_views_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `post_views_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=182 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.posts
-CREATE TABLE IF NOT EXISTS `posts` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `category_id` int NOT NULL,
-  `role_id` int NOT NULL DEFAULT '1',
-  `title` varchar(255) NOT NULL,
-  `content` text,
-  `hashtags` text,
-  `thumbnail_type` enum('portrait','landscape') DEFAULT 'landscape',
-  `likes_count` int NOT NULL DEFAULT '0',
-  `comments_count` int NOT NULL DEFAULT '0',
-  `views_count` int NOT NULL DEFAULT '0',
-  `shares_count` int NOT NULL DEFAULT '0',
-  `quiz_active` tinyint(1) NOT NULL DEFAULT '0',
-  `my_course` tinyint(1) NOT NULL DEFAULT '0',
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `category_id` (`category_id`),
-  KEY `idx_role_id` (`role_id`),
-  CONSTRAINT `fk_posts_role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `posts_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=56 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.quiz_categories
-CREATE TABLE IF NOT EXISTS `quiz_categories` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NOT NULL,
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.quiz_questions
-CREATE TABLE IF NOT EXISTS `quiz_questions` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `category_id` int DEFAULT NULL,
-  `question_text` text NOT NULL,
-  `question_media_url` varchar(500) DEFAULT NULL,
-  `option_a` varchar(500) NOT NULL,
-  `option_b` varchar(500) NOT NULL,
-  `option_c` varchar(500) DEFAULT NULL,
-  `option_d` varchar(500) DEFAULT NULL,
-  `correct_option` enum('A','B','C','D') NOT NULL,
-  `marks` int NOT NULL DEFAULT '1',
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `post_id` (`post_id`),
-  KEY `idx_category_id` (`category_id`),
-  CONSTRAINT `fk_quiz_questions_category` FOREIGN KEY (`category_id`) REFERENCES `quiz_categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `quiz_questions_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.roles
-CREATE TABLE IF NOT EXISTS `roles` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
 -- Dumping structure for table insta_style_lms.user_daily_activity
 CREATE TABLE IF NOT EXISTS `user_daily_activity` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -565,562 +30,151 @@ CREATE TABLE IF NOT EXISTS `user_daily_activity` (
   KEY `idx_start_time` (`start_time`)
 ) ENGINE=InnoDB AUTO_INCREMENT=144 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.user_media_progress
-CREATE TABLE IF NOT EXISTS `user_media_progress` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `post_id` int NOT NULL,
-  `total_media_count` int NOT NULL DEFAULT '0',
-  `view_percentage` decimal(5,2) NOT NULL DEFAULT '0.00',
-  `last_viewed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_user_post_progress` (`user_id`,`post_id`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_post_id` (`post_id`),
-  KEY `idx_view_percentage` (`view_percentage`),
-  CONSTRAINT `user_media_progress_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `user_media_progress_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.user_media_tracking
-CREATE TABLE IF NOT EXISTS `user_media_tracking` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `media_id` int NOT NULL,
-  `post_id` int NOT NULL,
-  `media_type` enum('image','video','pdf','wbt','youtube') NOT NULL,
-  `viewed_at` timestamp NULL DEFAULT NULL,
-  `total_minutes` varchar(10) DEFAULT NULL,
-  `viewed_minutes` varchar(10) DEFAULT NULL,
-  `total_slides` int DEFAULT '0',
-  `viewed_slides` int DEFAULT '0',
-  `wbt_json` json DEFAULT NULL,
-  `percentage` decimal(5,2) DEFAULT '0.00',
-  `completed` tinyint(1) DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_user_media` (`user_id`,`media_id`),
-  KEY `idx_media_id` (`media_id`),
-  KEY `idx_post_id` (`post_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.user_notification_reads
-CREATE TABLE IF NOT EXISTS `user_notification_reads` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `notification_id` int NOT NULL,
-  `is_read` tinyint(1) DEFAULT '0',
-  `read_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_user_notification` (`user_id`,`notification_id`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_notification_id` (`notification_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.user_quiz_answers
-CREATE TABLE IF NOT EXISTS `user_quiz_answers` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `post_id` int NOT NULL,
-  `question_id` int NOT NULL,
-  `selected_option` enum('A','B','C','D') NOT NULL,
-  `is_correct` tinyint(1) DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_answer` (`user_id`,`post_id`,`question_id`),
-  KEY `user_id` (`user_id`),
-  KEY `post_id` (`post_id`),
-  KEY `question_id` (`question_id`),
-  CONSTRAINT `user_quiz_answers_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `user_quiz_answers_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `user_quiz_answers_ibfk_3` FOREIGN KEY (`question_id`) REFERENCES `quiz_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=111 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.user_quiz_completion
-CREATE TABLE IF NOT EXISTS `user_quiz_completion` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `post_id` int NOT NULL,
-  `score` int DEFAULT '0',
-  `completed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_completion` (`user_id`,`post_id`),
-  KEY `user_id` (`user_id`),
-  KEY `post_id` (`post_id`),
-  CONSTRAINT `user_quiz_completion_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `user_quiz_completion_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.user_video_analysis
-CREATE TABLE IF NOT EXISTS `user_video_analysis` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `assessment_id` int NOT NULL,
-  `question_id` int NOT NULL,
-  `video_file_path` varchar(500) NOT NULL,
-  `audio_file_path` varchar(500) DEFAULT NULL,
-  `isAwsReportGenerated` tinyint(1) DEFAULT '0' COMMENT '0=pending, 1=processing, 2=completed',
-  `aws_file_path` varchar(500) DEFAULT NULL,
-  `isGeminiReportGenerated` tinyint(1) DEFAULT '0' COMMENT '0=pending, 1=processing, 2=completed',
-  `GeminiReportFilePath` varchar(500) DEFAULT NULL,
-  `uploaded_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_user_assessment_question` (`user_id`,`assessment_id`,`question_id`),
-  KEY `assessment_id` (`assessment_id`),
-  KEY `question_id` (`question_id`),
-  CONSTRAINT `user_video_analysis_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `user_video_analysis_ibfk_2` FOREIGN KEY (`assessment_id`) REFERENCES `video_analysis_assessments` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `user_video_analysis_ibfk_3` FOREIGN KEY (`question_id`) REFERENCES `video_assessment_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.users
-CREATE TABLE IF NOT EXISTS `users` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `employee_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `phone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `gender` enum('male','female') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `role_id` int NOT NULL,
-  `dealer_id` int DEFAULT NULL,
-  `city_id` int DEFAULT NULL,
-  `profile_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `fcm_token` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `device_type` enum('android','ios') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`),
-  UNIQUE KEY `employee_id` (`employee_id`),
-  KEY `idx_email` (`email`),
-  KEY `idx_employee_id` (`employee_id`),
-  KEY `idx_status` (`status`),
-  KEY `idx_role_id` (`role_id`),
-  KEY `idx_dealer_id` (`dealer_id`),
-  KEY `idx_city_id` (`city_id`),
-  CONSTRAINT `fk_users_city_id` FOREIGN KEY (`city_id`) REFERENCES `cities` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_users_dealer_id` FOREIGN KEY (`dealer_id`) REFERENCES `dealers` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `fk_users_role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.video_analysis_assessments
-CREATE TABLE IF NOT EXISTS `video_analysis_assessments` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL,
-  `description` text,
-  `start_date` date NOT NULL,
-  `end_date` date NOT NULL,
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.video_analysis_overall_summary
-CREATE TABLE IF NOT EXISTS `video_analysis_overall_summary` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `userId` bigint NOT NULL,
-  `assessmentId` bigint NOT NULL,
-  `overall_face` float(10,2) DEFAULT '0.00',
-  `overall_voice` float(10,2) DEFAULT '0.00',
-  `overall_emotion` float(10,2) DEFAULT '0.00',
-  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updatedAt` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_user_assessment` (`userId`,`assessmentId`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.video_analysis_question_answer_evaluation
-CREATE TABLE IF NOT EXISTS `video_analysis_question_answer_evaluation` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_video_analysis_id` int NOT NULL COMMENT 'Reference to user_video_analysis',
-  `user_id` int NOT NULL,
-  `question_id` int NOT NULL,
-  `transcript` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Transcribed user answer',
-  `score` int NOT NULL DEFAULT '0' COMMENT 'Score out of 70',
-  `score_percentage` int NOT NULL DEFAULT '0' COMMENT 'Percentage score (score/70 * 100)',
-  `grammar_mistakes` int NOT NULL DEFAULT '0' COMMENT 'Number of grammar mistakes found',
-  `sentiment` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'very positive, positive, slightly positive, neutral, slightly negative, very negative',
-  `emotion` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'joy, love, surprise, anger, sadness, fear, disgust, neutral',
-  `correctness` text COLLATE utf8mb4_unicode_ci COMMENT 'Correctness judgment and explanation',
-  `understanding` text COLLATE utf8mb4_unicode_ci COMMENT 'Understanding evaluation with reasoning',
-  `depth_and_clarity` text COLLATE utf8mb4_unicode_ci COMMENT 'Depth, clarity, and terminology usage',
-  `explanation` text COLLATE utf8mb4_unicode_ci COMMENT 'Brief summary of the evaluation',
-  `matched_keywords` longtext COLLATE utf8mb4_unicode_ci COMMENT 'List of keywords found in user answer',
-  `missing_keywords` longtext COLLATE utf8mb4_unicode_ci COMMENT 'List of keywords not found in user answer',
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_user_video_analysis` (`user_video_analysis_id`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_question_id` (`question_id`),
-  CONSTRAINT `fk_eval_question` FOREIGN KEY (`question_id`) REFERENCES `video_assessment_questions` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_eval_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_eval_user_video_analysis` FOREIGN KEY (`user_video_analysis_id`) REFERENCES `user_video_analysis` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.video_analysis_question_summary
-CREATE TABLE IF NOT EXISTS `video_analysis_question_summary` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `userId` bigint NOT NULL,
-  `assessmentId` bigint NOT NULL,
-  `questionId` bigint NOT NULL,
-  `face_interest` float(10,2) DEFAULT '0.00',
-  `face_concentration` float(10,2) DEFAULT '0.00',
-  `face_doubt` float(10,2) DEFAULT '0.00',
-  `face_anxiety` float(10,2) DEFAULT '0.00',
-  `face_confidence` float(10,2) DEFAULT '0.00',
-  `face_attention` float(10,2) DEFAULT '0.00',
-  `voice_interest` float(10,2) DEFAULT '0.00',
-  `voice_concentration` float(10,2) DEFAULT '0.00',
-  `voice_doubt` float(10,2) DEFAULT '0.00',
-  `voice_anxiety` float(10,2) DEFAULT '0.00',
-  `voice_confidence` float(10,2) DEFAULT '0.00',
-  `voice_attention` float(10,2) DEFAULT '0.00',
-  `emotion_joy` float(10,2) DEFAULT '0.00',
-  `emotion_sadness` float(10,2) DEFAULT '0.00',
-  `emotion_fear` float(10,2) DEFAULT '0.00',
-  `emotion_confusion` float(10,2) DEFAULT '0.00',
-  `emotion_happy` float(10,2) DEFAULT '0.00',
-  `emotion_neutral` float(10,2) DEFAULT '0.00',
-  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updatedAt` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_user_assessment` (`userId`,`assessmentId`),
-  KEY `idx_question` (`questionId`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for table insta_style_lms.video_assessment_questions
-CREATE TABLE IF NOT EXISTS `video_assessment_questions` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `assessment_id` int NOT NULL,
-  `question_text` text NOT NULL,
-  `expected_answer` text,
-  `keywords` text,
-  `language_id` int NOT NULL,
-  `sort_order` int DEFAULT '0',
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `assessment_id` (`assessment_id`),
-  KEY `language_id` (`language_id`),
-  CONSTRAINT `video_assessment_questions_ibfk_1` FOREIGN KEY (`assessment_id`) REFERENCES `video_analysis_assessments` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `video_assessment_questions_ibfk_2` FOREIGN KEY (`language_id`) REFERENCES `languages` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- Data exporting was unselected.
-
--- Dumping structure for trigger insta_style_lms.add_post_view_on_insert_progress
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='';
-DELIMITER //
-CREATE TRIGGER `add_post_view_on_insert_progress` AFTER INSERT ON `user_media_progress` FOR EACH ROW BEGIN
-    DECLARE view_exists INT DEFAULT 0;
-    
-    IF NEW.view_percentage = 100.00 THEN
-        
-        SELECT COUNT(*) INTO view_exists
-        FROM post_views
-        WHERE post_id = NEW.post_id AND user_id = NEW.user_id;
-        
-        IF view_exists = 0 THEN
-            INSERT INTO post_views (post_id, user_id, viewed_at)
-            VALUES (NEW.post_id, NEW.user_id, NOW());
-            
-            UPDATE posts 
-            SET views_count = views_count + 1 
-            WHERE id = NEW.post_id;
-        END IF;
-        
-    END IF;
-END//
-DELIMITER ;
-SET SQL_MODE=@OLDTMP_SQL_MODE;
-
--- Dumping structure for trigger insta_style_lms.add_post_view_on_update_progress
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='';
-DELIMITER //
-CREATE TRIGGER `add_post_view_on_update_progress` AFTER UPDATE ON `user_media_progress` FOR EACH ROW BEGIN
-    DECLARE view_exists INT DEFAULT 0;
-    
-    IF (OLD.view_percentage != 100.00 AND NEW.view_percentage = 100.00) OR 
-       (NEW.view_percentage = 100.00 AND OLD.view_percentage != 100.00) THEN
-        
-        SELECT COUNT(*) INTO view_exists
-        FROM post_views
-        WHERE post_id = NEW.post_id AND user_id = NEW.user_id;
-        
-        IF view_exists = 0 THEN
-            INSERT INTO post_views (post_id, user_id, viewed_at)
-            VALUES (NEW.post_id, NEW.user_id, NOW());
-            
-            UPDATE posts 
-            SET views_count = views_count + 1 
-            WHERE id = NEW.post_id;
-        END IF;
-        
-    END IF;
-END//
-DELIMITER ;
-SET SQL_MODE=@OLDTMP_SQL_MODE;
-
--- Dumping structure for trigger insta_style_lms.trg_overall_after_insert
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
-DELIMITER //
-CREATE TRIGGER `trg_overall_after_insert` AFTER INSERT ON `video_analysis_question_summary` FOR EACH ROW BEGIN
-  DECLARE avg_face FLOAT DEFAULT 0;
-  DECLARE avg_voice FLOAT DEFAULT 0;
-  DECLARE avg_emotion FLOAT DEFAULT 0;
-  DECLARE row_exists INT DEFAULT 0;
-
-  -- Calculate averages
-  SELECT 
-    IFNULL(AVG(face_confidence), 0),
-    IFNULL(AVG(voice_confidence), 0),
-    IFNULL(AVG(IFNULL(emotion_neutral, 0)), 0)
-  INTO avg_face, avg_voice, avg_emotion
-  FROM video_analysis_question_summary
-  WHERE userId = NEW.userId
-    AND assessmentId = NEW.assessmentId;
-
-  -- Check if row already exists
-  SELECT COUNT(*) INTO row_exists
-  FROM video_analysis_overall_summary
-  WHERE userId = NEW.userId
-    AND assessmentId = NEW.assessmentId;
-
-  IF row_exists = 0 THEN
-    -- Insert new row
-    INSERT INTO video_analysis_overall_summary (
-      userId,
-      assessmentId,
-      overall_face,
-      overall_voice,
-      overall_emotion
-    )
-    VALUES (
-      NEW.userId,
-      NEW.assessmentId,
-      avg_face,
-      avg_voice,
-      avg_emotion
-    );
-  ELSE
-    -- Update existing row
-    UPDATE video_analysis_overall_summary
-    SET 
-      overall_face = avg_face,
-      overall_voice = avg_voice,
-      overall_emotion = avg_emotion,
-      updatedAt = NOW()
-    WHERE userId = NEW.userId
-      AND assessmentId = NEW.assessmentId;
-  END IF;
-END//
-DELIMITER ;
-SET SQL_MODE=@OLDTMP_SQL_MODE;
-
--- Dumping structure for trigger insta_style_lms.trg_overall_after_update
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
-DELIMITER //
-CREATE TRIGGER `trg_overall_after_update` AFTER UPDATE ON `video_analysis_question_summary` FOR EACH ROW BEGIN
-  DECLARE avg_face FLOAT DEFAULT 0;
-  DECLARE avg_voice FLOAT DEFAULT 0;
-  DECLARE avg_emotion FLOAT DEFAULT 0;
-  DECLARE row_exists INT DEFAULT 0;
-
-  -- Calculate averages
-  SELECT 
-    IFNULL(AVG(face_confidence), 0),
-    IFNULL(AVG(voice_confidence), 0),
-    IFNULL(AVG(IFNULL(emotion_neutral, 0)), 0)
-  INTO avg_face, avg_voice, avg_emotion
-  FROM video_analysis_question_summary
-  WHERE userId = NEW.userId
-    AND assessmentId = NEW.assessmentId;
-
-  -- Check if row already exists
-  SELECT COUNT(*) INTO row_exists
-  FROM video_analysis_overall_summary
-  WHERE userId = NEW.userId
-    AND assessmentId = NEW.assessmentId;
-
-  IF row_exists = 0 THEN
-    -- Insert new row
-    INSERT INTO video_analysis_overall_summary (
-      userId,
-      assessmentId,
-      overall_face,
-      overall_voice,
-      overall_emotion
-    )
-    VALUES (
-      NEW.userId,
-      NEW.assessmentId,
-      avg_face,
-      avg_voice,
-      avg_emotion
-    );
-  ELSE
-    -- Update existing row
-    UPDATE video_analysis_overall_summary
-    SET 
-      overall_face = avg_face,
-      overall_voice = avg_voice,
-      overall_emotion = avg_emotion,
-      updatedAt = NOW()
-    WHERE userId = NEW.userId
-      AND assessmentId = NEW.assessmentId;
-  END IF;
-END//
-DELIMITER ;
-SET SQL_MODE=@OLDTMP_SQL_MODE;
-
--- Dumping structure for trigger insta_style_lms.update_user_media_progress_on_insert
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='';
-DELIMITER //
-CREATE TRIGGER `update_user_media_progress_on_insert` AFTER INSERT ON `user_media_tracking` FOR EACH ROW BEGIN
-    DECLARE total_media_count INT DEFAULT 0;
-    DECLARE total_percentage DECIMAL(10,2) DEFAULT 0.00;
-    DECLARE avg_percentage DECIMAL(5,2) DEFAULT 0.00;
-    DECLARE progress_exists INT DEFAULT 0;
-    
-    -- Get total media count for this post
-    SELECT COUNT(DISTINCT id) INTO total_media_count
-    FROM post_media
-    WHERE post_id = NEW.post_id;
-    
-    -- Calculate sum of all percentages for this user's media in this post
-    SELECT IFNULL(SUM(percentage), 0) INTO total_percentage
-    FROM user_media_tracking
-    WHERE post_id = NEW.post_id 
-      AND user_id = NEW.user_id;
-    
-    -- Calculate average percentage
-    IF total_media_count > 0 THEN
-        SET avg_percentage = total_percentage / total_media_count;
-    ELSE
-        SET avg_percentage = 100.00;
-    END IF;
-    
-    -- Check if progress record already exists
-    SELECT COUNT(*) INTO progress_exists
-    FROM user_media_progress
-    WHERE user_id = NEW.user_id AND post_id = NEW.post_id;
-    
-    -- Update existing or insert new record
-    IF progress_exists > 0 THEN
-        UPDATE user_media_progress 
-        SET 
-            total_media_count = total_media_count,
-            view_percentage = avg_percentage,
-            last_viewed_at = NOW()
-        WHERE user_id = NEW.user_id AND post_id = NEW.post_id;
-    ELSE
-        INSERT INTO user_media_progress (user_id, post_id, total_media_count, view_percentage, last_viewed_at)
-        VALUES (NEW.user_id, NEW.post_id, total_media_count, avg_percentage, NOW());
-    END IF;
-    
-    -- If media is 100% complete, add to post_media_views
-    IF NEW.percentage >= 100 OR NEW.completed = 1 THEN
-        INSERT INTO post_media_views (post_id, media_id, user_id, viewed_at)
-        VALUES (NEW.post_id, NEW.media_id, NEW.user_id, NOW());
-    END IF;
-    
-END//
-DELIMITER ;
-SET SQL_MODE=@OLDTMP_SQL_MODE;
-
--- Dumping structure for trigger insta_style_lms.update_user_media_progress_on_update
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='';
-DELIMITER //
-CREATE TRIGGER `update_user_media_progress_on_update` AFTER UPDATE ON `user_media_tracking` FOR EACH ROW BEGIN
-    DECLARE total_media_count INT DEFAULT 0;
-    DECLARE total_percentage DECIMAL(10,2) DEFAULT 0.00;
-    DECLARE avg_percentage DECIMAL(5,2) DEFAULT 0.00;
-    DECLARE progress_exists INT DEFAULT 0;
-    
-    -- Check if percentage or completed changed
-    IF (OLD.percentage != NEW.percentage) OR (OLD.completed != NEW.completed) THEN
-    
-        -- Get total media count for this post
-        SELECT COUNT(DISTINCT id) INTO total_media_count
-        FROM post_media
-        WHERE post_id = NEW.post_id;
-        
-        -- Calculate sum of all percentages for this user's media in this post
-        SELECT IFNULL(SUM(percentage), 0) INTO total_percentage
-        FROM user_media_tracking
-        WHERE post_id = NEW.post_id 
-          AND user_id = NEW.user_id;
-        
-        -- Calculate average percentage
-        IF total_media_count > 0 THEN
-            SET avg_percentage = total_percentage / total_media_count;
-        ELSE
-            SET avg_percentage = 100.00;
-        END IF;
-        
-        -- Check if progress record already exists
-        SELECT COUNT(*) INTO progress_exists
-        FROM user_media_progress
-        WHERE user_id = NEW.user_id AND post_id = NEW.post_id;
-        
-        -- Update existing or insert new record
-        IF progress_exists > 0 THEN
-            UPDATE user_media_progress 
-            SET 
-                total_media_count = total_media_count,
-                view_percentage = avg_percentage,
-                last_viewed_at = NOW()
-            WHERE user_id = NEW.user_id AND post_id = NEW.post_id;
-        ELSE
-            INSERT INTO user_media_progress (user_id, post_id, total_media_count, view_percentage, last_viewed_at)
-            VALUES (NEW.user_id, NEW.post_id, total_media_count, avg_percentage, NOW());
-        END IF;
-        
-        -- If media became 100% complete, add to post_media_views
-        IF (NEW.percentage >= 100 OR NEW.completed = 1) AND 
-           (OLD.percentage < 100 AND OLD.completed = 0) THEN
-            
-            INSERT INTO post_media_views (post_id, media_id, user_id, viewed_at)
-            VALUES (NEW.post_id, NEW.media_id, NEW.user_id, NOW());
-            
-        END IF;
-        
-    END IF;
-    
-END//
-DELIMITER ;
-SET SQL_MODE=@OLDTMP_SQL_MODE;
+-- Dumping data for table insta_style_lms.user_daily_activity: ~143 rows (approximately)
+INSERT INTO `user_daily_activity` (`id`, `user_id`, `start_time`, `end_time`) VALUES
+	(1, 2, '2026-06-16 09:22:00', '2026-06-16 18:21:00'),
+	(2, 3, '2026-06-16 08:18:00', '2026-06-16 17:26:00'),
+	(3, 4, '2026-06-16 08:27:00', '2026-06-16 17:52:00'),
+	(4, 6, '2026-06-16 08:15:00', '2026-06-16 18:07:00'),
+	(5, 7, '2026-06-16 09:46:00', '2026-06-16 18:11:00'),
+	(6, 8, '2026-06-16 10:09:00', '2026-06-16 17:57:00'),
+	(7, 9, '2026-06-16 09:55:00', '2026-06-16 17:18:00'),
+	(8, 10, '2026-06-16 08:29:00', '2026-06-16 18:30:00'),
+	(9, 11, '2026-06-16 09:11:00', '2026-06-16 17:44:00'),
+	(10, 12, '2026-06-16 10:38:00', '2026-06-16 18:02:00'),
+	(11, 14, '2026-06-16 10:45:00', '2026-06-16 18:41:00'),
+	(12, 15, '2026-06-16 09:16:00', '2026-06-16 18:32:00'),
+	(13, 17, '2026-06-16 09:41:00', '2026-06-16 18:59:00'),
+	(14, 18, '2026-06-16 09:29:00', '2026-06-16 18:38:00'),
+	(15, 19, '2026-06-16 08:54:00', '2026-06-16 18:27:00'),
+	(16, 20, '2026-06-16 09:42:00', '2026-06-16 18:40:00'),
+	(17, 21, '2026-06-16 10:49:00', '2026-06-16 18:39:00'),
+	(18, 22, '2026-06-16 08:00:00', '2026-06-16 17:21:00'),
+	(19, 1, '2026-06-15 09:46:00', '2026-06-15 18:23:00'),
+	(20, 2, '2026-06-15 09:15:00', '2026-06-15 17:58:00'),
+	(21, 3, '2026-06-15 10:30:00', '2026-06-15 18:27:00'),
+	(22, 4, '2026-06-15 10:52:00', '2026-06-15 17:57:00'),
+	(23, 5, '2026-06-15 09:12:00', '2026-06-15 18:51:00'),
+	(24, 6, '2026-06-15 08:23:00', '2026-06-15 17:31:00'),
+	(25, 7, '2026-06-15 10:33:00', '2026-06-15 17:31:00'),
+	(26, 8, '2026-06-15 10:59:00', '2026-06-15 18:35:00'),
+	(27, 10, '2026-06-15 10:51:00', '2026-06-15 17:51:00'),
+	(28, 11, '2026-06-15 08:46:00', '2026-06-15 17:42:00'),
+	(29, 12, '2026-06-15 09:22:00', '2026-06-15 17:55:00'),
+	(30, 13, '2026-06-15 09:22:00', '2026-06-15 18:00:00'),
+	(31, 14, '2026-06-15 09:30:00', '2026-06-15 17:30:00'),
+	(32, 15, '2026-06-15 10:01:00', '2026-06-15 18:02:00'),
+	(33, 16, '2026-06-15 10:35:00', '2026-06-15 18:09:00'),
+	(34, 17, '2026-06-15 10:08:00', '2026-06-15 17:39:00'),
+	(35, 19, '2026-06-15 08:12:00', '2026-06-15 18:53:00'),
+	(36, 20, '2026-06-15 08:04:00', '2026-06-15 18:25:00'),
+	(37, 21, '2026-06-15 10:34:00', '2026-06-15 17:24:00'),
+	(38, 22, '2026-06-15 08:54:00', '2026-06-15 18:34:00'),
+	(39, 23, '2026-06-15 09:29:00', '2026-06-15 17:46:00'),
+	(40, 1, '2026-06-14 09:19:00', '2026-06-14 17:22:00'),
+	(41, 2, '2026-06-14 10:06:00', '2026-06-14 18:30:00'),
+	(42, 3, '2026-06-14 10:06:00', '2026-06-14 18:40:00'),
+	(43, 4, '2026-06-14 08:21:00', '2026-06-14 17:08:00'),
+	(44, 5, '2026-06-14 08:10:00', '2026-06-14 18:57:00'),
+	(45, 6, '2026-06-14 08:15:00', '2026-06-14 17:41:00'),
+	(46, 7, '2026-06-14 09:46:00', '2026-06-14 18:40:00'),
+	(47, 8, '2026-06-14 09:55:00', '2026-06-14 18:50:00'),
+	(48, 11, '2026-06-14 09:17:00', '2026-06-14 18:02:00'),
+	(49, 13, '2026-06-14 10:09:00', '2026-06-14 18:40:00'),
+	(50, 14, '2026-06-14 08:19:00', '2026-06-14 18:48:00'),
+	(51, 15, '2026-06-14 08:30:00', '2026-06-14 18:35:00'),
+	(52, 16, '2026-06-14 08:51:00', '2026-06-14 17:11:00'),
+	(53, 17, '2026-06-14 08:00:00', '2026-06-14 17:18:00'),
+	(54, 18, '2026-06-14 09:49:00', '2026-06-14 18:45:00'),
+	(55, 19, '2026-06-14 10:43:00', '2026-06-14 17:20:00'),
+	(56, 20, '2026-06-14 09:04:00', '2026-06-14 18:52:00'),
+	(57, 21, '2026-06-14 09:29:00', '2026-06-14 17:41:00'),
+	(58, 22, '2026-06-14 10:14:00', '2026-06-14 18:19:00'),
+	(59, 23, '2026-06-14 08:53:00', '2026-06-14 18:51:00'),
+	(60, 1, '2026-06-13 08:29:00', '2026-06-13 17:41:00'),
+	(61, 2, '2026-06-13 09:56:00', '2026-06-13 17:52:00'),
+	(62, 4, '2026-06-13 10:58:00', '2026-06-13 18:17:00'),
+	(63, 5, '2026-06-13 10:27:00', '2026-06-13 18:29:00'),
+	(64, 6, '2026-06-13 10:23:00', '2026-06-13 18:27:00'),
+	(65, 7, '2026-06-13 09:43:00', '2026-06-13 18:35:00'),
+	(66, 8, '2026-06-13 08:29:00', '2026-06-13 18:23:00'),
+	(67, 9, '2026-06-13 08:07:00', '2026-06-13 17:14:00'),
+	(68, 10, '2026-06-13 09:19:00', '2026-06-13 18:45:00'),
+	(69, 11, '2026-06-13 10:41:00', '2026-06-13 17:00:00'),
+	(70, 12, '2026-06-13 10:32:00', '2026-06-13 18:03:00'),
+	(71, 13, '2026-06-13 08:54:00', '2026-06-13 17:16:00'),
+	(72, 14, '2026-06-13 09:24:00', '2026-06-13 18:07:00'),
+	(73, 15, '2026-06-13 09:47:00', '2026-06-13 17:37:00'),
+	(74, 16, '2026-06-13 10:57:00', '2026-06-13 17:21:00'),
+	(75, 17, '2026-06-13 08:07:00', '2026-06-13 18:56:00'),
+	(76, 18, '2026-06-13 09:58:00', '2026-06-13 17:59:00'),
+	(77, 20, '2026-06-13 10:33:00', '2026-06-13 17:07:00'),
+	(78, 21, '2026-06-13 10:11:00', '2026-06-13 18:59:00'),
+	(79, 22, '2026-06-13 09:42:00', '2026-06-13 18:45:00'),
+	(80, 23, '2026-06-13 08:38:00', '2026-06-13 18:02:00'),
+	(81, 1, '2026-06-12 10:23:00', '2026-06-12 18:14:00'),
+	(82, 2, '2026-06-12 08:43:00', '2026-06-12 18:09:00'),
+	(83, 4, '2026-06-12 10:44:00', '2026-06-12 18:46:00'),
+	(84, 5, '2026-06-12 09:59:00', '2026-06-12 17:35:00'),
+	(85, 6, '2026-06-12 10:28:00', '2026-06-12 18:43:00'),
+	(86, 7, '2026-06-12 10:13:00', '2026-06-12 17:45:00'),
+	(87, 8, '2026-06-12 08:41:00', '2026-06-12 18:47:00'),
+	(88, 9, '2026-06-12 08:04:00', '2026-06-12 17:57:00'),
+	(89, 11, '2026-06-12 10:25:00', '2026-06-12 18:52:00'),
+	(90, 12, '2026-06-12 08:13:00', '2026-06-12 17:46:00'),
+	(91, 13, '2026-06-12 09:51:00', '2026-06-12 18:59:00'),
+	(92, 14, '2026-06-12 08:15:00', '2026-06-12 17:16:00'),
+	(93, 15, '2026-06-12 10:43:00', '2026-06-12 17:52:00'),
+	(94, 16, '2026-06-12 08:20:00', '2026-06-12 18:28:00'),
+	(95, 17, '2026-06-12 08:32:00', '2026-06-12 18:17:00'),
+	(96, 18, '2026-06-12 09:07:00', '2026-06-12 17:56:00'),
+	(97, 19, '2026-06-12 10:13:00', '2026-06-12 18:57:00'),
+	(98, 20, '2026-06-12 09:34:00', '2026-06-12 17:11:00'),
+	(99, 22, '2026-06-12 09:43:00', '2026-06-12 17:31:00'),
+	(100, 23, '2026-06-12 09:20:00', '2026-06-12 17:40:00'),
+	(101, 1, '2026-06-11 09:12:00', '2026-06-11 17:29:00'),
+	(102, 2, '2026-06-11 09:36:00', '2026-06-11 17:30:00'),
+	(103, 3, '2026-06-11 08:26:00', '2026-06-11 18:45:00'),
+	(104, 4, '2026-06-11 09:50:00', '2026-06-11 18:31:00'),
+	(105, 5, '2026-06-11 08:00:00', '2026-06-11 18:30:00'),
+	(106, 7, '2026-06-11 09:42:00', '2026-06-11 17:49:00'),
+	(107, 8, '2026-06-11 10:14:00', '2026-06-11 17:47:00'),
+	(108, 9, '2026-06-11 10:57:00', '2026-06-11 17:09:00'),
+	(109, 10, '2026-06-11 08:38:00', '2026-06-11 18:36:00'),
+	(110, 11, '2026-06-11 10:58:00', '2026-06-11 18:17:00'),
+	(111, 12, '2026-06-11 08:52:00', '2026-06-11 18:51:00'),
+	(112, 13, '2026-06-11 09:58:00', '2026-06-11 17:37:00'),
+	(113, 14, '2026-06-11 09:16:00', '2026-06-11 17:32:00'),
+	(114, 15, '2026-06-11 10:27:00', '2026-06-11 18:13:00'),
+	(115, 16, '2026-06-11 10:23:00', '2026-06-11 17:50:00'),
+	(116, 17, '2026-06-11 09:54:00', '2026-06-11 18:14:00'),
+	(117, 18, '2026-06-11 08:32:00', '2026-06-11 18:37:00'),
+	(118, 19, '2026-06-11 09:50:00', '2026-06-11 18:21:00'),
+	(119, 20, '2026-06-11 10:05:00', '2026-06-11 17:43:00'),
+	(120, 21, '2026-06-11 09:59:00', '2026-06-11 17:45:00'),
+	(121, 22, '2026-06-11 09:12:00', '2026-06-11 17:25:00'),
+	(122, 23, '2026-06-11 09:19:00', '2026-06-11 18:05:00'),
+	(123, 1, '2026-06-10 08:50:00', '2026-06-10 18:45:00'),
+	(124, 2, '2026-06-10 10:44:00', '2026-06-10 18:15:00'),
+	(125, 3, '2026-06-10 10:00:00', '2026-06-10 17:06:00'),
+	(126, 4, '2026-06-10 09:59:00', '2026-06-10 17:12:00'),
+	(127, 5, '2026-06-10 08:00:00', '2026-06-10 17:45:00'),
+	(128, 7, '2026-06-10 08:50:00', '2026-06-10 18:58:00'),
+	(129, 8, '2026-06-10 10:48:00', '2026-06-10 18:24:00'),
+	(130, 9, '2026-06-10 08:45:00', '2026-06-10 17:24:00'),
+	(131, 10, '2026-06-10 09:53:00', '2026-06-10 18:44:00'),
+	(132, 11, '2026-06-10 09:31:00', '2026-06-10 18:40:00'),
+	(133, 13, '2026-06-10 09:27:00', '2026-06-10 18:02:00'),
+	(134, 14, '2026-06-10 08:37:00', '2026-06-10 18:05:00'),
+	(135, 15, '2026-06-10 10:56:00', '2026-06-10 18:43:00'),
+	(136, 16, '2026-06-10 08:25:00', '2026-06-10 18:49:00'),
+	(137, 17, '2026-06-10 09:16:00', '2026-06-10 17:37:00'),
+	(138, 18, '2026-06-10 08:31:00', '2026-06-10 17:51:00'),
+	(139, 19, '2026-06-10 08:07:00', '2026-06-10 17:44:00'),
+	(140, 20, '2026-06-10 10:46:00', '2026-06-10 18:09:00'),
+	(141, 21, '2026-06-10 10:19:00', '2026-06-10 18:42:00'),
+	(142, 22, '2026-06-10 08:24:00', '2026-06-10 18:59:00'),
+	(143, 23, '2026-06-10 09:02:00', '2026-06-10 17:58:00');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

@@ -208,166 +208,74 @@ exports.getMyProfile = async (req, res) => {
 
 exports.getLeaderboard = async (req, res) => {
     try {
+        // Token already verified; userId is available (but we ignore it)
         const userId = req.user.userId;
-        const connection = await pool.getConnection();
 
-        try {
-            // Get all users with IDs 1-12
-            const [allUsers] = await connection.query(
-                `SELECT 
-                    u.id,
-                    u.name,
-                    u.profile_url,
-                    u.employee_id,
-                    u.email,
-                    d.dealer_name as dealership,
-                    d.dealer_location as city,
-                    r.name as role
-                FROM users u
-                LEFT JOIN dealers d ON u.dealer_id = d.id
-                LEFT JOIN roles r ON u.role_id = r.id
-                WHERE u.id BETWEEN 1 AND 12 AND u.status = 'active'
-                ORDER BY u.id ASC`,
-                []
-            );
+        // === STATIC DATA (exact copy from your staticLeaderboardData) ===
+        const staticData = {
+            fastest_course_completion: [
+                { rank: 1, user_id: 4, name: "Subhojit", photo: "/uploads/users/4/profile-1776246467383.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", completion_time: "5 days", points: 73, is_selected: false },
+                { rank: 2, user_id: 2, name: "Neeraj Jain", photo: "/uploads/users/2/profile-1775713867244.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", completion_time: "5 days", points: 92, is_selected: false },
+                { rank: 3, user_id: 7, name: "Dheeraj", photo: "/uploads/users/7/profile-1776246864430.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", completion_time: "3 days", points: 81, is_selected: false },
+                { rank: 4, user_id: 5, name: "Pradeep Kumar", photo: "/uploads/users/5/profile-1776246576012.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", completion_time: "9 days", points: 99, is_selected: false },
+                { rank: 5, user_id: 11, name: "Sudha Pawar", photo: "/uploads/users/11/profile-1778653157019.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", completion_time: "7 days", points: 92, is_selected: false },
+                { rank: 6, user_id: 12, name: "Nagnath Pise", photo: "/uploads/users/12/profile-1778653233079.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", completion_time: "11 days", points: 81, is_selected: false },
+                { rank: 7, user_id: 3, name: "Ravi Pandey", photo: "/uploads/users/3/profile-1775713939921.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", completion_time: "11 days", points: 100, is_selected: false },
+                { rank: 8, user_id: 1, name: "Keshav_Goyal", photo: "/uploads/users/1/profile-1775713806692.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", completion_time: "11 days", points: 90, is_selected: false },
+                { rank: 9, user_id: 10, name: "Vinaya Prasad", photo: "/uploads/users/10/profile-1778653116674.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", completion_time: "11 days", points: 73, is_selected: false },
+                { rank: 10, user_id: 6, name: "Anil Kumawat", photo: "/uploads/users/6/profile-1776246747079.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", completion_time: "7 days", points: 92, is_selected: false },
+                { rank: 11, user_id: 8, name: "Karthick", photo: "/uploads/users/8/profile-1778652931250.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", completion_time: "3 days", points: 70, is_selected: false },
+                { rank: 12, user_id: 9, name: "SOHAIL KHAN", photo: "/uploads/users/9/profile-1778653072931.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", completion_time: "2 days", points: 98, is_selected: false }
+            ],
+            highest_quiz_scores: [
+                { rank: 1, user_id: 9, name: "SOHAIL KHAN", photo: "/uploads/users/9/profile-1778653072931.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", score: 83, quizzes_taken: 14, is_selected: false },
+                { rank: 2, user_id: 3, name: "Ravi Pandey", photo: "/uploads/users/3/profile-1775713939921.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", score: 77, quizzes_taken: 30, is_selected: false },
+                { rank: 3, user_id: 7, name: "Dheeraj", photo: "/uploads/users/7/profile-1776246864430.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", score: 78, quizzes_taken: 12, is_selected: false },
+                { rank: 4, user_id: 4, name: "Subhojit", photo: "/uploads/users/4/profile-1776246467383.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", score: 98, quizzes_taken: 14, is_selected: false },
+                { rank: 5, user_id: 1, name: "Keshav_Goyal", photo: "/uploads/users/1/profile-1775713806692.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", score: 84, quizzes_taken: 13, is_selected: false },
+                { rank: 6, user_id: 11, name: "Sudha Pawar", photo: "/uploads/users/11/profile-1778653157019.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", score: 77, quizzes_taken: 23, is_selected: false },
+                { rank: 7, user_id: 8, name: "Karthick", photo: "/uploads/users/8/profile-1778652931250.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", score: 77, quizzes_taken: 30, is_selected: false },
+                { rank: 8, user_id: 5, name: "Pradeep Kumar", photo: "/uploads/users/5/profile-1776246576012.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", score: 87, quizzes_taken: 23, is_selected: false },
+                { rank: 9, user_id: 12, name: "Nagnath Pise", photo: "/uploads/users/12/profile-1778653233079.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", score: 96, quizzes_taken: 28, is_selected: false },
+                { rank: 10, user_id: 10, name: "Vinaya Prasad", photo: "/uploads/users/10/profile-1778653116674.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", score: 88, quizzes_taken: 22, is_selected: false },
+                { rank: 11, user_id: 2, name: "Neeraj Jain", photo: "/uploads/users/2/profile-1775713867244.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", score: 79, quizzes_taken: 23, is_selected: false },
+                { rank: 12, user_id: 6, name: "Anil Kumawat", photo: "/uploads/users/6/profile-1776246747079.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", score: 95, quizzes_taken: 29, is_selected: false }
+            ],
+            most_quizzes_completed: [
+                { rank: 1, user_id: 10, name: "Vinaya Prasad", photo: "/uploads/users/10/profile-1778653116674.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", certificates: 16, completion_rate: "94%", is_selected: false },
+                { rank: 2, user_id: 9, name: "SOHAIL KHAN", photo: "/uploads/users/9/profile-1778653072931.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", certificates: 18, completion_rate: "95%", is_selected: false },
+                { rank: 3, user_id: 6, name: "Anil Kumawat", photo: "/uploads/users/6/profile-1776246747079.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", certificates: 15, completion_rate: "84%", is_selected: false },
+                { rank: 4, user_id: 11, name: "Sudha Pawar", photo: "/uploads/users/11/profile-1778653157019.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", certificates: 8, completion_rate: "97%", is_selected: false },
+                { rank: 5, user_id: 12, name: "Nagnath Pise", photo: "/uploads/users/12/profile-1778653233079.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", certificates: 20, completion_rate: "73%", is_selected: false },
+                { rank: 6, user_id: 4, name: "Subhojit", photo: "/uploads/users/4/profile-1776246467383.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", certificates: 15, completion_rate: "73%", is_selected: false },
+                { rank: 7, user_id: 2, name: "Neeraj Jain", photo: "/uploads/users/2/profile-1775713867244.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", certificates: 12, completion_rate: "72%", is_selected: false },
+                { rank: 8, user_id: 3, name: "Ravi Pandey", photo: "/uploads/users/3/profile-1775713939921.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", certificates: 7, completion_rate: "75%", is_selected: false },
+                { rank: 9, user_id: 5, name: "Pradeep Kumar", photo: "/uploads/users/5/profile-1776246576012.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", certificates: 7, completion_rate: "86%", is_selected: false },
+                { rank: 10, user_id: 8, name: "Karthick", photo: "/uploads/users/8/profile-1778652931250.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", certificates: 8, completion_rate: "99%", is_selected: false },
+                { rank: 11, user_id: 7, name: "Dheeraj", photo: "/uploads/users/7/profile-1776246864430.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", certificates: 9, completion_rate: "77%", is_selected: false },
+                { rank: 12, user_id: 1, name: "Keshav_Goyal", photo: "/uploads/users/1/profile-1775713806692.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", certificates: 17, completion_rate: "100%", is_selected: false }
+            ],
+            highest_engagement: [
+                { rank: 1, user_id: 2, name: "Neeraj Jain", photo: "/uploads/users/2/profile-1775713867244.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", engagement_score: 97, hours_spent: 110, posts_completed: 42, is_selected: false },
+                { rank: 2, user_id: 9, name: "SOHAIL KHAN", photo: "/uploads/users/9/profile-1778653072931.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", engagement_score: 73, hours_spent: 97, posts_completed: 34, is_selected: false },
+                { rank: 3, user_id: 6, name: "Anil Kumawat", photo: "/uploads/users/6/profile-1776246747079.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", engagement_score: 78, hours_spent: 62, posts_completed: 37, is_selected: false },
+                { rank: 4, user_id: 12, name: "Nagnath Pise", photo: "/uploads/users/12/profile-1778653233079.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", engagement_score: 75, hours_spent: 119, posts_completed: 47, is_selected: false },
+                { rank: 5, user_id: 1, name: "Keshav_Goyal", photo: "/uploads/users/1/profile-1775713806692.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", engagement_score: 88, hours_spent: 103, posts_completed: 25, is_selected: false },
+                { rank: 6, user_id: 3, name: "Ravi Pandey", photo: "/uploads/users/3/profile-1775713939921.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", engagement_score: 99, hours_spent: 96, posts_completed: 26, is_selected: false },
+                { rank: 7, user_id: 7, name: "Dheeraj", photo: "/uploads/users/7/profile-1776246864430.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", engagement_score: 83, hours_spent: 98, posts_completed: 47, is_selected: false },
+                { rank: 8, user_id: 4, name: "Subhojit", photo: "/uploads/users/4/profile-1776246467383.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", engagement_score: 95, hours_spent: 119, posts_completed: 43, is_selected: false },
+                { rank: 9, user_id: 11, name: "Sudha Pawar", photo: "/uploads/users/11/profile-1778653157019.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", engagement_score: 84, hours_spent: 99, posts_completed: 46, is_selected: false },
+                { rank: 10, user_id: 8, name: "Karthick", photo: "/uploads/users/8/profile-1778652931250.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", engagement_score: 75, hours_spent: 65, posts_completed: 41, is_selected: false },
+                { rank: 11, user_id: 10, name: "Vinaya Prasad", photo: "/uploads/users/10/profile-1778653116674.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", engagement_score: 93, hours_spent: 116, posts_completed: 30, is_selected: false },
+                { rank: 12, user_id: 5, name: "Pradeep Kumar", photo: "/uploads/users/5/profile-1776246576012.jpg", city: "Mumbai, Maharashtra", dealership: "ABC Motors", role: "DSE", engagement_score: 80, hours_spent: 100, posts_completed: 47, is_selected: false }
+            ]
+        };
 
-            if (allUsers.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    error: 'No users found'
-                });
-            }
-
-            // Helper function to shuffle array
-            function shuffleArray(array) {
-                for (let i = array.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [array[i], array[j]] = [array[j], array[i]];
-                }
-                return array;
-            }
-
-            // Helper function to get random completion time
-            function getRandomCompletionTime() {
-                const days = Math.floor(Math.random() * (12 - 2 + 1) + 2); // Random between 2-12 days
-                return `${days} days`;
-            }
-
-            // Helper function to get random points
-            function getRandomPoints() {
-                return Math.floor(Math.random() * (100 - 70 + 1) + 70); // Random between 70-100
-            }
-
-            // Helper function to get random score
-            function getRandomScore() {
-                return Math.floor(Math.random() * (100 - 75 + 1) + 75); // Random between 75-100
-            }
-
-            // Helper function to get random quizzes taken
-            function getRandomQuizzesTaken() {
-                return Math.floor(Math.random() * (30 - 10 + 1) + 10); // Random between 10-30
-            }
-
-            // Helper function to get random certificates
-            function getRandomCertificates() {
-                return Math.floor(Math.random() * (20 - 5 + 1) + 5); // Random between 5-20
-            }
-
-            // Helper function to get random completion rate
-            function getRandomCompletionRate() {
-                const rate = Math.floor(Math.random() * (100 - 70 + 1) + 70); // Random between 70-100
-                return `${rate}%`;
-            }
-
-            // Helper function to get random engagement score
-            function getRandomEngagementScore() {
-                return Math.floor(Math.random() * (100 - 70 + 1) + 70); // Random between 70-100
-            }
-
-            // Helper function to get random hours spent
-            function getRandomHoursSpent() {
-                return Math.floor(Math.random() * (150 - 60 + 1) + 60); // Random between 60-150
-            }
-
-            // Helper function to get random posts completed
-            function getRandomPostsCompleted() {
-                return Math.floor(Math.random() * (50 - 20 + 1) + 20); // Random between 20-50
-            }
-
-            // Prepare fastest completion leaderboard (all 12 users shuffled)
-            let fastestCompletionUsers = [...allUsers];
-            fastestCompletionUsers = shuffleArray(fastestCompletionUsers);
-            const fastestCompletion = fastestCompletionUsers.map((user, index) => ({
-                rank: index + 1,
-                user_id: user.id,
-                name: user.name,
-                profile_url: user.profile_url || null,
-                city: user.city || 'Not specified',
-                dealership: user.dealership || 'Not assigned',
-                role: user.role || 'Employee',
-                completion_time: getRandomCompletionTime(),
-                points: getRandomPoints()
-            }));
-
-            // Prepare highest scores leaderboard (all 12 users shuffled)
-            let highestScoresUsers = [...allUsers];
-            highestScoresUsers = shuffleArray(highestScoresUsers);
-            const highestScores = highestScoresUsers.map((user, index) => ({
-                rank: index + 1,
-                user_id: user.id,
-                name: user.name,
-                profile_url: user.profile_url || null,
-                city: user.city || 'Not specified',
-                dealership: user.dealership || 'Not assigned',
-                role: user.role || 'Employee',
-                score: getRandomScore(),
-                quizzes_taken: getRandomQuizzesTaken()
-            }));
-
-            // Prepare max certificates leaderboard (all 12 users shuffled)
-            let maxCertificatesUsers = [...allUsers];
-            maxCertificatesUsers = shuffleArray(maxCertificatesUsers);
-            const maxCertificates = maxCertificatesUsers.map((user, index) => ({
-                rank: index + 1,
-                user_id: user.id,
-                name: user.name,
-                profile_url: user.profile_url || null,
-                city: user.city || 'Not specified',
-                dealership: user.dealership || 'Not assigned',
-                role: user.role || 'Employee',
-                certificates: getRandomCertificates(),
-                completion_rate: getRandomCompletionRate()
-            }));
-
-            // Prepare highest engagement leaderboard (all 12 users shuffled)
-            let highestEngagementUsers = [...allUsers];
-            highestEngagementUsers = shuffleArray(highestEngagementUsers);
-            const highestEngagement = highestEngagementUsers.map((user, index) => ({
-                rank: index + 1,
-                user_id: user.id,
-                name: user.name,
-                profile_url: user.profile_url || null,
-                city: user.city || 'Not specified',
-                dealership: user.dealership || 'Not assigned',
-                role: user.role || 'Employee',
-                engagement_score: getRandomEngagementScore(),
-                hours_spent: getRandomHoursSpent(),
-                posts_completed: getRandomPostsCompleted()
-            }));
-
-            res.status(200).json({
-                success: true,
-                data: {
-                    fastest_completion: fastestCompletion,
-                    highest_scores: highestScores,
-                    max_certificates: maxCertificates,
-                    highest_engagement: highestEngagement
-                }
-            });
-
-        } finally {
-            connection.release();
-        }
+        // Respond with static data (format matches frontend expectation)
+        res.status(200).json({
+            success: true,
+            data: staticData
+        });
 
     } catch (error) {
         console.error('Get leaderboard error:', error);
