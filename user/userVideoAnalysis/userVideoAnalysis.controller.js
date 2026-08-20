@@ -168,14 +168,15 @@ exports.uploadVideoChunk = async (req, res) => {
 exports.uploadVideo = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { assessment_id, question_id } = req.body;
+    // ✅ Read from query params
+    const { assessment_id, question_id } = req.query;
     const videoFile = req.file;
 
     // 1. Validate required fields
     if (!assessment_id || !question_id || !videoFile) {
       return res.status(400).json({
         success: false,
-        error: 'assessment_id, question_id and video file are required'
+        error: 'assessment_id, question_id (as query params) and video file are required'
       });
     }
 
@@ -186,7 +187,7 @@ exports.uploadVideo = async (req, res) => {
         `SELECT id FROM video_analysis_assessments
          WHERE id = ? AND status = 'active'
          AND CURDATE() BETWEEN start_date AND end_date`,
-        [assessment_id]
+        [assessment_id]           // query param is already a string; MySQL will cast
       );
       if (!assessmentRows.length) {
         return res.status(404).json({
@@ -208,7 +209,7 @@ exports.uploadVideo = async (req, res) => {
         });
       }
 
-      // 4. Check if video already submitted for this user, assessment, and question
+      // 4. Check if video already submitted
       const [existing] = await connection.query(
         `SELECT id FROM user_video_analysis
          WHERE user_id = ? AND assessment_id = ? AND question_id = ?`,
@@ -221,7 +222,7 @@ exports.uploadVideo = async (req, res) => {
         });
       }
 
-      // 5. Build storage path
+      // 5. Build storage path (use numbers for folder names)
       const relativeFolder = path.join(
         'uploads',
         'AssessmentUserVideo',
@@ -243,7 +244,7 @@ exports.uploadVideo = async (req, res) => {
       // 7. Relative path (forward slashes)
       const relativePath = path.join(relativeFolder, filename).replace(/\\/g, '/');
 
-      // 8. Insert new record (no longer using ON DUPLICATE KEY UPDATE)
+      // 8. Insert record
       await connection.query(
         `INSERT INTO user_video_analysis
          (user_id, assessment_id, question_id, video_file_path, isAwsReportGenerated)
@@ -255,8 +256,8 @@ exports.uploadVideo = async (req, res) => {
         success: true,
         message: 'Video uploaded successfully',
         data: {
-          assessment_id: parseInt(assessment_id),
-          question_id: parseInt(question_id),
+          assessment_id: parseInt(assessment_id, 10),
+          question_id: parseInt(question_id, 10),
           video_path: relativePath
         }
       });
