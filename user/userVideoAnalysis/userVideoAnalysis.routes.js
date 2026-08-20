@@ -9,4 +9,7 @@ router.post('/video-analysis/upload', upload.single('video'), videoAssessmentCon
 // NEW: chunked upload endpoint
 router.post('/video-analysis/upload-chunk', upload.single('chunk'), videoAssessmentController.uploadVideoChunk);
 
+router.get('/assessments', videoAssessmentController.getAssessments);
+
+
 module.exports = router;

@@ -273,3 +273,83 @@ exports.uploadVideo = async (req, res) => {
     });
   }
 };
+
+exports.getAssessments = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const connection = await pool.getConnection();
+    try {
+      // 1. Get all active assessments within date range
+      const [assessments] = await connection.query(
+        `SELECT id, title, description, start_date, end_date
+         FROM video_analysis_assessments
+         WHERE status = 'active'
+           AND CURDATE() BETWEEN start_date AND end_date
+         ORDER BY start_date ASC`
+      );
+
+      if (assessments.length === 0) {
+        return res.status(200).json({
+          success: true,
+          data: [],
+          message: 'No active assessments available'
+        });
+      }
+
+      const result = [];
+      for (const assessment of assessments) {
+        // ✅ Exclude expected_answer and keywords
+        const [questions] = await connection.query(
+          `SELECT q.id, q.question_text, q.sort_order, l.name AS language
+           FROM video_assessment_questions q
+           LEFT JOIN languages l ON q.language_id = l.id
+           WHERE q.assessment_id = ? AND q.status = 'active'
+           ORDER BY q.sort_order ASC`,
+          [assessment.id]
+        );
+
+        const questionsWithStatus = [];
+        for (const question of questions) {
+          const [submission] = await connection.query(
+            `SELECT video_file_path
+             FROM user_video_analysis
+             WHERE user_id = ? AND assessment_id = ? AND question_id = ?`,
+            [userId, assessment.id, question.id]
+          );
+
+          const submitted = submission.length > 0;
+          const video_path = submitted ? submission[0].video_file_path : null;
+
+          questionsWithStatus.push({
+            ...question,
+            submitted,
+            video_path
+          });
+        }
+
+        result.push({
+          id: assessment.id,
+          title: assessment.title,
+          description: assessment.description,
+          start_date: assessment.start_date,
+          end_date: assessment.end_date,
+          questions: questionsWithStatus
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        data: result
+      });
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error fetching assessments:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch assessments'
+    });
+  }
+};
