@@ -271,10 +271,59 @@ exports.getLeaderboard = async (req, res) => {
             ]
         };
 
-        // Respond with static data (format matches frontend expectation)
+        // Transform static data to match the expected response format
+        const responseData = {
+            fastest_completion: staticData.fastest_course_completion.map(item => ({
+                rank: item.rank,
+                user_id: item.user_id,
+                name: item.name,
+                profile_url: item.photo,
+                city: item.city,
+                dealership: item.dealership,
+                role: item.role,
+                completion_time: item.completion_time,
+                points: item.points
+            })),
+            highest_scores: staticData.highest_quiz_scores.map(item => ({
+                rank: item.rank,
+                user_id: item.user_id,
+                name: item.name,
+                profile_url: item.photo,
+                city: item.city,
+                dealership: item.dealership,
+                role: item.role,
+                score: item.score,
+                quizzes_taken: item.quizzes_taken
+            })),
+            max_certificates: staticData.most_quizzes_completed.map(item => ({
+                rank: item.rank,
+                user_id: item.user_id,
+                name: item.name,
+                profile_url: item.photo,
+                city: item.city,
+                dealership: item.dealership,
+                role: item.role,
+                certificates: item.certificates,
+                completion_rate: item.completion_rate
+            })),
+            highest_engagement: staticData.highest_engagement.map(item => ({
+                rank: item.rank,
+                user_id: item.user_id,
+                name: item.name,
+                profile_url: item.photo,
+                city: item.city,
+                dealership: item.dealership,
+                role: item.role,
+                engagement_score: item.engagement_score,
+                hours_spent: item.hours_spent,
+                posts_completed: item.posts_completed
+            }))
+        };
+
+        // Respond with transformed data
         res.status(200).json({
             success: true,
-            data: staticData
+            data: responseData
         });
 
     } catch (error) {
