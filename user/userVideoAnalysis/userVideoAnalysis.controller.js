@@ -298,9 +298,69 @@ exports.getAssessments = async (req, res) => {
         });
       }
 
+      const assessmentIds = assessments.map(a => a.id);
+
+      // 2. Fetch overall summaries for these assessments for this user
+      const [overallRows] = await connection.query(
+        `SELECT * FROM video_analysis_overall_summary
+         WHERE userId = ? AND assessmentId IN (${assessmentIds.map(() => '?').join(',')})`,
+        [userId, ...assessmentIds]
+      );
+      const overallMap = {};
+      overallRows.forEach(o => {
+        overallMap[o.assessmentId] = o;
+      });
+
+      // 3. Fetch all questions for these assessments (without expected_answer/keywords)
+      // We'll query per assessment as before, but we can also fetch all at once.
+      // We'll keep the per-assessment loop, but we need to accumulate submitted question info.
+      // Prepare maps for summaries and evaluations.
+      const summaryMap = {}; // key: questionId
+      const evalMap = {};    // key: user_video_analysis_id (or questionId if unique per user+assessment+question)
+
+      // We'll first collect all submitted video analysis records for the user across these assessments.
+      const [videoRecords] = await connection.query(
+        `SELECT id, assessment_id, question_id, video_file_path
+         FROM user_video_analysis
+         WHERE user_id = ? AND assessment_id IN (${assessmentIds.map(() => '?').join(',')})`,
+        [userId, ...assessmentIds]
+      );
+      // Map video record by (assessment_id, question_id) for quick lookup, and collect question ids
+      const videoMap = {};
+      const questionIds = [];
+      videoRecords.forEach(v => {
+        const key = `${v.assessment_id}_${v.question_id}`;
+        videoMap[key] = { id: v.id, video_file_path: v.video_file_path };
+        questionIds.push(v.question_id);
+      });
+
+      // 4. Fetch summaries for these question IDs
+      if (questionIds.length > 0) {
+        const [summaries] = await connection.query(
+          `SELECT * FROM video_analysis_question_summary
+           WHERE userId = ? AND questionId IN (${questionIds.map(() => '?').join(',')})`,
+          [userId, ...questionIds]
+        );
+        summaries.forEach(s => {
+          summaryMap[s.questionId] = s;
+        });
+
+        // 5. Fetch evaluations for these video records
+        const videoIds = videoRecords.map(v => v.id);
+        const [evaluations] = await connection.query(
+          `SELECT * FROM video_analysis_question_answer_evaluation
+           WHERE user_video_analysis_id IN (${videoIds.map(() => '?').join(',')})`,
+          videoIds
+        );
+        evaluations.forEach(e => {
+          evalMap[e.user_video_analysis_id] = e;
+        });
+      }
+
+      // 6. Build response
       const result = [];
       for (const assessment of assessments) {
-        // ✅ Exclude expected_answer and keywords
+        // Get questions for this assessment (excluding expected_answer and keywords)
         const [questions] = await connection.query(
           `SELECT q.id, q.question_text, q.sort_order, l.name AS language
            FROM video_assessment_questions q
@@ -310,23 +370,99 @@ exports.getAssessments = async (req, res) => {
           [assessment.id]
         );
 
-        const questionsWithStatus = [];
+        const questionsWithReport = [];
         for (const question of questions) {
-          const [submission] = await connection.query(
-            `SELECT video_file_path
-             FROM user_video_analysis
-             WHERE user_id = ? AND assessment_id = ? AND question_id = ?`,
-            [userId, assessment.id, question.id]
-          );
+          const key = `${assessment.id}_${question.id}`;
+          const videoInfo = videoMap[key];
+          const submitted = !!videoInfo;
+          const video_path = submitted ? videoInfo.video_file_path : null;
+          const videoAnalysisId = submitted ? videoInfo.id : null;
 
-          const submitted = submission.length > 0;
-          const video_path = submitted ? submission[0].video_file_path : null;
+          // Build report object if submitted
+          let report = null;
+          if (submitted) {
+            const summary = summaryMap[question.id] || {};
+            const evalData = evalMap[videoAnalysisId] || {};
 
-          questionsWithStatus.push({
-            ...question,
+            // Parse matched/missing keywords
+            let matchedKeywords = [];
+            let missingKeywords = [];
+            try {
+              matchedKeywords = evalData.matched_keywords ? JSON.parse(evalData.matched_keywords) : [];
+              missingKeywords = evalData.missing_keywords ? JSON.parse(evalData.missing_keywords) : [];
+            } catch (e) {
+              matchedKeywords = evalData.matched_keywords ? evalData.matched_keywords.split(',').map(k => k.trim()) : [];
+              missingKeywords = evalData.missing_keywords ? evalData.missing_keywords.split(',').map(k => k.trim()) : [];
+            }
+
+            // Word metrics
+            const keywordsList = question.keywords ? question.keywords.split(',').map(k => k.trim()).filter(Boolean) : [];
+            const totalKeywordCount = keywordsList.length;
+            const matchedCount = matchedKeywords.length;
+            const totalWords = evalData.transcript ? evalData.transcript.split(/\s+/).filter(Boolean).length : 0;
+
+            report = {
+              transcript: evalData.transcript || null,
+              face: {
+                Confidence: parseFloat(summary.face_interest) || 0,
+                Attention: parseFloat(summary.face_concentration) || 0,
+                Doubt: parseFloat(summary.face_doubt) || 0,
+                Anxiety: parseFloat(summary.face_anxiety) || 0
+              },
+              voice: {
+                Confidence: parseFloat(summary.voice_interest) || 0,
+                Attention: parseFloat(summary.voice_concentration) || 0,
+                Doubt: parseFloat(summary.voice_doubt) || 0,
+                Anxiety: parseFloat(summary.voice_anxiety) || 0
+              },
+              emotion: {
+                Happy: parseFloat(summary.emotion_happy) || 0,
+                Neutral: parseFloat(summary.emotion_sadness) || 0,
+                Fear: parseFloat(summary.emotion_fear) || 0,
+                Confusion: parseFloat(summary.emotion_confusion) || 0
+              },
+              score: parseFloat(evalData.score) || 0,
+              score_percentage: parseFloat(evalData.score_percentage) || 0,
+              grammar_mistakes: parseInt(evalData.grammar_mistakes) || 0,
+              sentiment: evalData.sentiment || 'neutral',
+              emotion_analysis: evalData.emotion || 'neutral',
+              word: {
+                total_words: totalWords,
+                keyword_count: matchedCount,
+                matched_keywords: JSON.stringify(matchedKeywords),
+                missing_keywords: JSON.stringify(missingKeywords)
+              },
+              correctness: {
+                Correctness: evalData.correctness || 'Not evaluated',
+                Understanding: evalData.understanding || 'Not evaluated',
+                'Depth and Clarity': evalData.depth_and_clarity || 'Not evaluated',
+                Explanation: evalData.explanation || 'Not evaluated'
+              }
+            };
+          }
+
+          questionsWithReport.push({
+            id: question.id,
+            question_text: question.question_text,
+            sort_order: question.sort_order,
+            language: question.language,
             submitted,
-            video_path
+            video_path,
+            report // will be null if not submitted
           });
+        }
+
+        // Build overall for this assessment
+        let overall = {
+          face: 0,
+          voice: 0,
+          emotion: 0
+        };
+        if (overallMap[assessment.id]) {
+          const ov = overallMap[assessment.id];
+          overall.face = parseFloat(ov.overall_face) || 0;
+          overall.voice = parseFloat(ov.overall_voice) || 0;
+          overall.emotion = parseFloat(ov.overall_emotion) || 0;
         }
 
         result.push({
@@ -335,7 +471,8 @@ exports.getAssessments = async (req, res) => {
           description: assessment.description,
           start_date: assessment.start_date,
           end_date: assessment.end_date,
-          questions: questionsWithStatus
+          overall, // newly added overall report
+          questions: questionsWithReport
         });
       }
 
