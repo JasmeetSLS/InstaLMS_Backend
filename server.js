@@ -78,7 +78,6 @@ app.use('/api/user', authenticateToken, requireUser, userMyCourseRoutes);
 app.use('/api/user', authenticateToken, requireUser, userProfileRoutes);
 app.use('/api/user', authenticateToken, requireUser, userTrackingRoutes);
 app.use('/api/user', authenticateToken, requireUser, userNotificationRoutes);
-app.use('/api/user', authenticateToken, requireUser, userVideoAnalysisRoutes);
 
 
 app.use('/api/admin', authenticateToken, requireAdmin, adminUserRoutes);
@@ -91,12 +90,15 @@ app.use('/api/admin', authenticateToken, requireAdmin, adminRoleRoutes);
 app.use('/api/admin', authenticateToken, requireAdmin, adminDashboardRoutes);
 
 //Admin CMS Routes
-app.use('/api/admin', authenticateToken, requireAdmin, adminCmsCategoryRoutes);
-app.use('/api/admin', authenticateToken, requireAdmin, adminCmsStreamRoutes );
-app.use('/api/admin', authenticateToken, requireAdmin, adminCmsSectionRoutes );
-app.use('/api/admin', authenticateToken, requireAdmin, adminCmsContentRoutes );
-app.use('/api/admin', authenticateToken, requireAdmin, adminCmsQuestionRoutes );
-app.use('/api/admin', authenticateToken, requireAdmin, adminVideoAnalysisRoutes);
+app.use('/api', adminCmsCategoryRoutes);
+app.use('/api', adminCmsStreamRoutes );
+app.use('/api',  adminCmsSectionRoutes );
+app.use('/api', adminCmsContentRoutes );
+app.use('/api', adminCmsQuestionRoutes );
+app.use('/api',  adminVideoAnalysisRoutes);
+
+
+app.use('/api',userVideoAnalysisRoutes);
 
 // Test route
 app.get('/api', (req, res) => {
