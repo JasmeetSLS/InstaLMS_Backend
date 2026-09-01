@@ -98,7 +98,7 @@ app.use('/api', adminCmsQuestionRoutes );
 app.use('/api',  adminVideoAnalysisRoutes);
 
 
-app.use('/api',userVideoAnalysisRoutes);
+app.use('/api/user',userVideoAnalysisRoutes);
 
 // Test route
 app.get('/api', (req, res) => {
