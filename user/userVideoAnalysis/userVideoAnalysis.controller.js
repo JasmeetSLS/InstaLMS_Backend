@@ -363,7 +363,7 @@ exports.getAssessments = async (req, res) => {
 
       const assessmentIds = assessments.map(a => a.id);
 
-      // 2. Fetch overall summaries for these assessments for this user
+      // 2. Fetch overall summaries for these assessments
       const [overallRows] = await connection.query(
         `SELECT * FROM video_analysis_overall_summary
          WHERE userId = ? AND assessmentId IN (${assessmentIds.map(() => '?').join(',')})`,
@@ -374,9 +374,9 @@ exports.getAssessments = async (req, res) => {
         overallMap[o.assessmentId] = o;
       });
 
-      // 3. Fetch user video records and related summaries/evaluations
+      // 3. Fetch user video records – include final_submit
       const [videoRecords] = await connection.query(
-        `SELECT id, assessment_id, question_id, video_file_path
+        `SELECT id, assessment_id, question_id, video_file_path, final_submit
          FROM user_video_analysis
          WHERE user_id = ? AND assessment_id IN (${assessmentIds.map(() => '?').join(',')})`,
         [userId, ...assessmentIds]
@@ -385,10 +385,15 @@ exports.getAssessments = async (req, res) => {
       const questionIds = [];
       videoRecords.forEach(v => {
         const key = `${v.assessment_id}_${v.question_id}`;
-        videoMap[key] = { id: v.id, video_file_path: v.video_file_path };
+        videoMap[key] = {
+          id: v.id,
+          video_file_path: v.video_file_path,
+          final_submit: v.final_submit
+        };
         questionIds.push(v.question_id);
       });
 
+      // Fetch summaries and evaluations (unchanged)
       const summaryMap = {};
       const evalMap = {};
       if (questionIds.length > 0) {
@@ -431,32 +436,26 @@ exports.getAssessments = async (req, res) => {
           const submitted = !!videoInfo;
           const video_path = submitted ? videoInfo.video_file_path : null;
           const videoAnalysisId = submitted ? videoInfo.id : null;
+          // final_submit from video record (default 0)
+          const final_submit = submitted ? videoInfo.final_submit : 0;
 
           let report = null;
           if (submitted) {
             const summary = summaryMap[question.id] || {};
             const evalData = evalMap[videoAnalysisId] || {};
 
-            // ---- NEW: compute combined score ----
-            // Get overall face/voice/emotion for this assessment (from overallMap)
+            // Compute combined score (as before)
             const overallFace = overallMap[assessment.id]?.overall_face || 0;
             const overallVoice = overallMap[assessment.id]?.overall_voice || 0;
             const overallEmotion = overallMap[assessment.id]?.overall_emotion || 0;
-
-            // Original evaluation score (out of 70)
             const evalScore = parseFloat(evalData.score) || 0;
-
-            // Convert overall percentages (out of 100) to 0‑10 scale
             const faceScore = overallFace / 10;
             const voiceScore = overallVoice / 10;
             const emotionScore = overallEmotion / 10;
-
-            // Combined score (out of 100)
             const combinedScore = evalScore + faceScore + voiceScore + emotionScore;
-            const combinedRounded = Math.round(combinedScore * 100) / 100; // 2 decimal places
-            // --------------------------------------------------------
+            const combinedRounded = Math.round(combinedScore * 100) / 100;
 
-            // Parse keywords (unchanged)
+            // Parse keywords
             let matchedKeywords = [];
             let missingKeywords = [];
             try {
@@ -466,10 +465,8 @@ exports.getAssessments = async (req, res) => {
               matchedKeywords = evalData.matched_keywords ? evalData.matched_keywords.split(',').map(k => k.trim()) : [];
               missingKeywords = evalData.missing_keywords ? evalData.missing_keywords.split(',').map(k => k.trim()) : [];
             }
-
             const totalWords = evalData.transcript ? evalData.transcript.split(/\s+/).filter(Boolean).length : 0;
 
-            // Build the report object – note: score and score_percentage now use the combined value
             report = {
               transcript: evalData.transcript || null,
               face: {
@@ -490,10 +487,8 @@ exports.getAssessments = async (req, res) => {
                 Fear: parseFloat(summary.emotion_fear) || 0,
                 Confusion: parseFloat(summary.emotion_confusion) || 0
               },
-              // ---- UPDATED: score and score_percentage now reflect combined value ----
-              score: combinedRounded,               // out of 100
-              score_percentage: combinedRounded,    // out of 100 (same as score)
-              // ---------------------------------------------------------------------
+              score: combinedRounded,
+              score_percentage: combinedRounded,
               grammar_mistakes: parseInt(evalData.grammar_mistakes) || 0,
               sentiment: evalData.sentiment || 'neutral',
               emotion_analysis: evalData.emotion || 'neutral',
@@ -519,12 +514,12 @@ exports.getAssessments = async (req, res) => {
             language: question.language,
             submitted,
             video_path,
-            final_submit: 0, // kept as per your existing field
+            final_submit,               // <-- added here
             report
           });
         }
 
-        // Overall assessment-level summary (unchanged)
+        // Assessment-level overall (unchanged)
         let overall = { face: 0, voice: 0, emotion: 0 };
         if (overallMap[assessment.id]) {
           const ov = overallMap[assessment.id];
@@ -539,8 +534,8 @@ exports.getAssessments = async (req, res) => {
           description: assessment.description,
           start_date: assessment.start_date,
           end_date: assessment.end_date,
-          expected_score: 60,     // if needed – keep as is
-          total_score: 100,       // if needed – keep as is
+          expected_score: assessment.expected_score || 60, // if you store it
+          total_score: assessment.total_score || 100,
           overall,
           questions: questionsWithReport
         });
@@ -561,7 +556,6 @@ exports.getAssessments = async (req, res) => {
     });
   }
 };
-
 
 // ======================================================
 // FINAL SUBMIT (assessment_id & question_id as query params)

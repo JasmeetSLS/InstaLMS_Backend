@@ -1,7 +1,7 @@
 -- --------------------------------------------------------
--- Host:                         127.0.0.1
+-- Host:                         192.168.10.72
 -- Server version:               8.0.43 - MySQL Community Server - GPL
--- Server OS:                    Win64
+-- Server OS:                    Linux
 -- HeidiSQL Version:             12.15.0.7171
 -- --------------------------------------------------------
 
@@ -362,7 +362,7 @@ CREATE TABLE IF NOT EXISTS `post_bookmarks` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `post_bookmarks_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
   CONSTRAINT `post_bookmarks_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=44 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -398,7 +398,7 @@ CREATE TABLE IF NOT EXISTS `post_likes` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `post_likes_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
   CONSTRAINT `post_likes_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -436,7 +436,7 @@ CREATE TABLE IF NOT EXISTS `post_media_views` (
   CONSTRAINT `post_media_views_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
   CONSTRAINT `post_media_views_ibfk_2` FOREIGN KEY (`media_id`) REFERENCES `post_media` (`id`) ON DELETE CASCADE,
   CONSTRAINT `post_media_views_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -474,7 +474,7 @@ CREATE TABLE IF NOT EXISTS `post_views` (
   KEY `idx_viewed_at` (`viewed_at`),
   CONSTRAINT `post_views_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
   CONSTRAINT `post_views_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=182 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=195 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -563,7 +563,7 @@ CREATE TABLE IF NOT EXISTS `user_daily_activity` (
   PRIMARY KEY (`id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_start_time` (`start_time`)
-) ENGINE=InnoDB AUTO_INCREMENT=161 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=144 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Data exporting was unselected.
 
@@ -583,7 +583,7 @@ CREATE TABLE IF NOT EXISTS `user_media_progress` (
   KEY `idx_view_percentage` (`view_percentage`),
   CONSTRAINT `user_media_progress_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_media_progress_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -608,7 +608,7 @@ CREATE TABLE IF NOT EXISTS `user_media_tracking` (
   UNIQUE KEY `unique_user_media` (`user_id`,`media_id`),
   KEY `idx_media_id` (`media_id`),
   KEY `idx_post_id` (`post_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -644,7 +644,7 @@ CREATE TABLE IF NOT EXISTS `user_quiz_answers` (
   CONSTRAINT `user_quiz_answers_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_quiz_answers_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_quiz_answers_ibfk_3` FOREIGN KEY (`question_id`) REFERENCES `quiz_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=111 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=116 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -661,7 +661,7 @@ CREATE TABLE IF NOT EXISTS `user_quiz_completion` (
   KEY `post_id` (`post_id`),
   CONSTRAINT `user_quiz_completion_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_quiz_completion_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -677,6 +677,7 @@ CREATE TABLE IF NOT EXISTS `user_video_analysis` (
   `aws_file_path` varchar(500) DEFAULT NULL,
   `isGeminiReportGenerated` tinyint(1) DEFAULT '0' COMMENT '0=pending, 1=processing, 2=completed',
   `GeminiReportFilePath` varchar(500) DEFAULT NULL,
+  `final_submit` tinyint(1) NOT NULL DEFAULT '0',
   `uploaded_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_user_assessment_question` (`user_id`,`assessment_id`,`question_id`),
@@ -685,7 +686,7 @@ CREATE TABLE IF NOT EXISTS `user_video_analysis` (
   CONSTRAINT `user_video_analysis_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_video_analysis_ibfk_2` FOREIGN KEY (`assessment_id`) REFERENCES `video_analysis_assessments` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_video_analysis_ibfk_3` FOREIGN KEY (`question_id`) REFERENCES `video_assessment_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -729,6 +730,8 @@ CREATE TABLE IF NOT EXISTS `video_analysis_assessments` (
   `title` varchar(255) NOT NULL,
   `description` text,
   `start_date` date NOT NULL,
+  `expected_score` int DEFAULT NULL,
+  `total_score` int DEFAULT NULL,
   `end_date` date NOT NULL,
   `status` enum('active','inactive') DEFAULT 'active',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
@@ -760,18 +763,18 @@ CREATE TABLE IF NOT EXISTS `video_analysis_question_answer_evaluation` (
   `user_video_analysis_id` int NOT NULL COMMENT 'Reference to user_video_analysis',
   `user_id` int NOT NULL,
   `question_id` int NOT NULL,
-  `transcript` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Transcribed user answer',
+  `transcript` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Transcribed user answer',
   `score` int NOT NULL DEFAULT '0' COMMENT 'Score out of 70',
   `score_percentage` int NOT NULL DEFAULT '0' COMMENT 'Percentage score (score/70 * 100)',
   `grammar_mistakes` int NOT NULL DEFAULT '0' COMMENT 'Number of grammar mistakes found',
-  `sentiment` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'very positive, positive, slightly positive, neutral, slightly negative, very negative',
-  `emotion` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'joy, love, surprise, anger, sadness, fear, disgust, neutral',
-  `correctness` text COLLATE utf8mb4_unicode_ci COMMENT 'Correctness judgment and explanation',
-  `understanding` text COLLATE utf8mb4_unicode_ci COMMENT 'Understanding evaluation with reasoning',
-  `depth_and_clarity` text COLLATE utf8mb4_unicode_ci COMMENT 'Depth, clarity, and terminology usage',
-  `explanation` text COLLATE utf8mb4_unicode_ci COMMENT 'Brief summary of the evaluation',
-  `matched_keywords` longtext COLLATE utf8mb4_unicode_ci COMMENT 'List of keywords found in user answer',
-  `missing_keywords` longtext COLLATE utf8mb4_unicode_ci COMMENT 'List of keywords not found in user answer',
+  `sentiment` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'very positive, positive, slightly positive, neutral, slightly negative, very negative',
+  `emotion` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'joy, love, surprise, anger, sadness, fear, disgust, neutral',
+  `correctness` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Correctness judgment and explanation',
+  `understanding` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Understanding evaluation with reasoning',
+  `depth_and_clarity` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Depth, clarity, and terminology usage',
+  `explanation` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Brief summary of the evaluation',
+  `matched_keywords` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'List of keywords found in user answer',
+  `missing_keywords` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'List of keywords not found in user answer',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -781,7 +784,7 @@ CREATE TABLE IF NOT EXISTS `video_analysis_question_answer_evaluation` (
   CONSTRAINT `fk_eval_question` FOREIGN KEY (`question_id`) REFERENCES `video_assessment_questions` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_eval_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_eval_user_video_analysis` FOREIGN KEY (`user_video_analysis_id`) REFERENCES `user_video_analysis` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Data exporting was unselected.
 
@@ -814,7 +817,7 @@ CREATE TABLE IF NOT EXISTS `video_analysis_question_summary` (
   PRIMARY KEY (`id`),
   KEY `idx_user_assessment` (`userId`,`assessmentId`),
   KEY `idx_question` (`questionId`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
