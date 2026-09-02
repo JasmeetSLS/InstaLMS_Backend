@@ -27,6 +27,22 @@ const combineChunks = (fileId, totalChunks, finalPath) => {
 };
 
 // ======================================================
+// Helper: delete old files (optional but recommended)
+// ======================================================
+const safeDeleteFile = (filePath) => {
+  if (!filePath) return;
+  const absolutePath = path.join(process.cwd(), filePath);
+  try {
+    if (fs.existsSync(absolutePath)) {
+      fs.unlinkSync(absolutePath);
+      console.log(`🗑️ Deleted old file: ${absolutePath}`);
+    }
+  } catch (err) {
+    console.error(`Failed to delete ${absolutePath}:`, err.message);
+  }
+};
+
+// ======================================================
 // 1. UPLOAD VIDEO CHUNK (automatic combine when complete)
 // ======================================================
 exports.uploadVideoChunk = async (req, res) => {
@@ -117,19 +133,47 @@ exports.uploadVideoChunk = async (req, res) => {
       // Relative path for DB (forward slashes)
       const relativePath = path.join(relativeFolder, finalFilename).replace(/\\/g, '/');
 
-      // Insert/update record in user_video_analysis
+      // Insert/update record in user_video_analysis using SELECT + INSERT/UPDATE
       const dbConnection = await pool.getConnection();
       try {
-        await dbConnection.query(
-          `INSERT INTO user_video_analysis
-           (user_id, assessment_id, question_id, video_file_path, isAwsReportGenerated)
-           VALUES (?, ?, ?, ?, 0)
-           ON DUPLICATE KEY UPDATE
-           video_file_path = VALUES(video_file_path),
-           isAwsReportGenerated = 0,
-           uploaded_at = CURRENT_TIMESTAMP`,
-          [userId, assessment_id, question_id, relativePath]
+        // Check if a record already exists for this user, assessment, question
+        const [existing] = await dbConnection.query(
+          `SELECT id, video_file_path, aws_file_path, audio_file_path, GeminiReportFilePath
+           FROM user_video_analysis
+           WHERE user_id = ? AND assessment_id = ? AND question_id = ?`,
+          [userId, assessment_id, question_id]
         );
+
+        if (existing.length > 0) {
+          // --- Delete old files (optional) ---
+          const old = existing[0];
+          safeDeleteFile(old.video_file_path);
+          safeDeleteFile(old.aws_file_path);
+          safeDeleteFile(old.audio_file_path);
+          safeDeleteFile(old.GeminiReportFilePath);
+
+          // --- UPDATE existing record ---
+          await dbConnection.query(
+            `UPDATE user_video_analysis
+             SET video_file_path = ?,
+                 isAwsReportGenerated = 0,
+                 isGeminiReportGenerated = 0,
+                 aws_file_path = NULL,
+                 GeminiReportFilePath = NULL,
+                 audio_file_path = NULL,
+                 uploaded_at = CURRENT_TIMESTAMP
+             WHERE id = ?`,
+            [relativePath, existing[0].id]
+          );
+        } else {
+          // --- INSERT new record ---
+          await dbConnection.query(
+            `INSERT INTO user_video_analysis
+             (user_id, assessment_id, question_id, video_file_path, isAwsReportGenerated, isGeminiReportGenerated)
+             VALUES (?, ?, ?, ?, 0, 0)`,
+            [userId, assessment_id, question_id, relativePath]
+          );
+        }
       } finally {
         dbConnection.release();
       }
@@ -168,7 +212,6 @@ exports.uploadVideoChunk = async (req, res) => {
 exports.uploadVideo = async (req, res) => {
   try {
     const userId = req.user.userId;
-    // ✅ Read from query params
     const { assessment_id, question_id } = req.query;
     const videoFile = req.file;
 
@@ -187,7 +230,7 @@ exports.uploadVideo = async (req, res) => {
         `SELECT id FROM video_analysis_assessments
          WHERE id = ? AND status = 'active'
          AND CURDATE() BETWEEN start_date AND end_date`,
-        [assessment_id]           // query param is already a string; MySQL will cast
+        [assessment_id]
       );
       if (!assessmentRows.length) {
         return res.status(404).json({
@@ -209,20 +252,7 @@ exports.uploadVideo = async (req, res) => {
         });
       }
 
-      // 4. Check if video already submitted
-      const [existing] = await connection.query(
-        `SELECT id FROM user_video_analysis
-         WHERE user_id = ? AND assessment_id = ? AND question_id = ?`,
-        [userId, assessment_id, question_id]
-      );
-      if (existing.length > 0) {
-        return res.status(409).json({
-          success: false,
-          error: 'Video already submitted for this question'
-        });
-      }
-
-      // 5. Build storage path (use numbers for folder names)
+      // 4. Build storage path
       const relativeFolder = path.join(
         'uploads',
         'AssessmentUserVideo',
@@ -235,22 +265,53 @@ exports.uploadVideo = async (req, res) => {
         fs.mkdirSync(absoluteFolder, { recursive: true });
       }
 
-      // 6. Save the video file
+      // 5. Save the video file
       const ext = path.extname(videoFile.originalname);
       const filename = `video_${Date.now()}${ext}`;
       const absolutePath = path.join(absoluteFolder, filename);
       fs.renameSync(videoFile.path, absolutePath);
 
-      // 7. Relative path (forward slashes)
+      // 6. Relative path (forward slashes)
       const relativePath = path.join(relativeFolder, filename).replace(/\\/g, '/');
 
-      // 8. Insert record
-      await connection.query(
-        `INSERT INTO user_video_analysis
-         (user_id, assessment_id, question_id, video_file_path, isAwsReportGenerated)
-         VALUES (?, ?, ?, ?, 0)`,
-        [userId, assessment_id, question_id, relativePath]
+      // 7. Check if a record already exists for this user, assessment, question
+      const [existing] = await connection.query(
+        `SELECT id, video_file_path, aws_file_path, audio_file_path, GeminiReportFilePath
+         FROM user_video_analysis
+         WHERE user_id = ? AND assessment_id = ? AND question_id = ?`,
+        [userId, assessment_id, question_id]
       );
+
+      if (existing.length > 0) {
+        // --- Delete old files (optional) ---
+        const old = existing[0];
+        safeDeleteFile(old.video_file_path);
+        safeDeleteFile(old.aws_file_path);
+        safeDeleteFile(old.audio_file_path);
+        safeDeleteFile(old.GeminiReportFilePath);
+
+        // --- UPDATE existing record ---
+        await connection.query(
+          `UPDATE user_video_analysis
+           SET video_file_path = ?,
+               isAwsReportGenerated = 0,
+               isGeminiReportGenerated = 0,
+               aws_file_path = NULL,
+               GeminiReportFilePath = NULL,
+               audio_file_path = NULL,
+               uploaded_at = CURRENT_TIMESTAMP
+           WHERE id = ?`,
+          [relativePath, existing[0].id]
+        );
+      } else {
+        // --- INSERT new record ---
+        await connection.query(
+          `INSERT INTO user_video_analysis
+           (user_id, assessment_id, question_id, video_file_path, isAwsReportGenerated, isGeminiReportGenerated)
+           VALUES (?, ?, ?, ?, 0, 0)`,
+          [userId, assessment_id, question_id, relativePath]
+        );
+      }
 
       return res.status(201).json({
         success: true,
@@ -265,7 +326,6 @@ exports.uploadVideo = async (req, res) => {
     } finally {
       connection.release();
     }
-
   } catch (error) {
     console.error('Upload video error:', error);
     res.status(500).json({
@@ -275,15 +335,19 @@ exports.uploadVideo = async (req, res) => {
   }
 };
 
+// ======================================================
+// 3. GET ASSESSMENTS (unchanged, included for completeness)
+// ======================================================
 exports.getAssessments = async (req, res) => {
   try {
     const userId = req.user.userId;
 
     const connection = await pool.getConnection();
     try {
-      // 1. Get all active assessments within date range
+      // 1. Get all active assessments with expected_score and total_score
       const [assessments] = await connection.query(
-        `SELECT id, title, description, start_date, end_date
+        `SELECT id, title, description, start_date, end_date,
+                expected_score, total_score
          FROM video_analysis_assessments
          WHERE status = 'active'
            AND CURDATE() BETWEEN start_date AND end_date
@@ -311,30 +375,28 @@ exports.getAssessments = async (req, res) => {
         overallMap[o.assessmentId] = o;
       });
 
-      // 3. Fetch all questions for these assessments (without expected_answer/keywords)
-      // We'll query per assessment as before, but we can also fetch all at once.
-      // We'll keep the per-assessment loop, but we need to accumulate submitted question info.
-      // Prepare maps for summaries and evaluations.
-      const summaryMap = {}; // key: questionId
-      const evalMap = {};    // key: user_video_analysis_id (or questionId if unique per user+assessment+question)
-
-      // We'll first collect all submitted video analysis records for the user across these assessments.
+      // 3. Fetch video records with final_submit
       const [videoRecords] = await connection.query(
-        `SELECT id, assessment_id, question_id, video_file_path
+        `SELECT id, assessment_id, question_id, video_file_path, final_submit
          FROM user_video_analysis
          WHERE user_id = ? AND assessment_id IN (${assessmentIds.map(() => '?').join(',')})`,
         [userId, ...assessmentIds]
       );
-      // Map video record by (assessment_id, question_id) for quick lookup, and collect question ids
       const videoMap = {};
       const questionIds = [];
       videoRecords.forEach(v => {
         const key = `${v.assessment_id}_${v.question_id}`;
-        videoMap[key] = { id: v.id, video_file_path: v.video_file_path };
+        videoMap[key] = {
+          id: v.id,
+          video_file_path: v.video_file_path,
+          final_submit: v.final_submit
+        };
         questionIds.push(v.question_id);
       });
 
-      // 4. Fetch summaries for these question IDs
+      // 4. Fetch question summaries and evaluations (only if there are records)
+      const summaryMap = {};
+      const evalMap = {};
       if (questionIds.length > 0) {
         const [summaries] = await connection.query(
           `SELECT * FROM video_analysis_question_summary
@@ -345,7 +407,6 @@ exports.getAssessments = async (req, res) => {
           summaryMap[s.questionId] = s;
         });
 
-        // 5. Fetch evaluations for these video records
         const videoIds = videoRecords.map(v => v.id);
         const [evaluations] = await connection.query(
           `SELECT * FROM video_analysis_question_answer_evaluation
@@ -357,10 +418,10 @@ exports.getAssessments = async (req, res) => {
         });
       }
 
-      // 6. Build response
+      // 5. Build response
       const result = [];
       for (const assessment of assessments) {
-        // Get questions for this assessment (excluding expected_answer and keywords)
+        // Fetch questions for this assessment
         const [questions] = await connection.query(
           `SELECT q.id, q.question_text, q.sort_order, l.name AS language
            FROM video_assessment_questions q
@@ -376,9 +437,9 @@ exports.getAssessments = async (req, res) => {
           const videoInfo = videoMap[key];
           const submitted = !!videoInfo;
           const video_path = submitted ? videoInfo.video_file_path : null;
+          const final_submit = submitted ? videoInfo.final_submit : 0;
           const videoAnalysisId = submitted ? videoInfo.id : null;
 
-          // Build report object if submitted
           let report = null;
           if (submitted) {
             const summary = summaryMap[question.id] || {};
@@ -395,11 +456,10 @@ exports.getAssessments = async (req, res) => {
               missingKeywords = evalData.missing_keywords ? evalData.missing_keywords.split(',').map(k => k.trim()) : [];
             }
 
-            // Word metrics
-            const keywordsList = question.keywords ? question.keywords.split(',').map(k => k.trim()).filter(Boolean) : [];
-            const totalKeywordCount = keywordsList.length;
-            const matchedCount = matchedKeywords.length;
+            // Word metrics (keywords are not fetched for security, but we can compute if needed)
+            // We won't expose keywords here; just use matched/missing from evaluation.
             const totalWords = evalData.transcript ? evalData.transcript.split(/\s+/).filter(Boolean).length : 0;
+            const matchedCount = matchedKeywords.length;
 
             report = {
               transcript: evalData.transcript || null,
@@ -448,16 +508,13 @@ exports.getAssessments = async (req, res) => {
             language: question.language,
             submitted,
             video_path,
-            report // will be null if not submitted
+            final_submit,          // <-- new
+            report
           });
         }
 
-        // Build overall for this assessment
-        let overall = {
-          face: 0,
-          voice: 0,
-          emotion: 0
-        };
+        // Build overall summary for this assessment
+        let overall = { face: 0, voice: 0, emotion: 0 };
         if (overallMap[assessment.id]) {
           const ov = overallMap[assessment.id];
           overall.face = parseFloat(ov.overall_face) || 0;
@@ -471,7 +528,9 @@ exports.getAssessments = async (req, res) => {
           description: assessment.description,
           start_date: assessment.start_date,
           end_date: assessment.end_date,
-          overall, // newly added overall report
+          expected_score: assessment.expected_score,   // new
+          total_score: assessment.total_score,         // new
+          overall,
           questions: questionsWithReport
         });
       }
@@ -488,6 +547,71 @@ exports.getAssessments = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch assessments'
+    });
+  }
+};
+
+
+// ======================================================
+// FINAL SUBMIT (assessment_id & question_id as query params)
+// ======================================================
+exports.finalSubmit = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { assessment_id, question_id } = req.query;
+
+    // Validate required query params
+    if (!assessment_id || !question_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'assessment_id and question_id are required as query params'
+      });
+    }
+
+    const connection = await pool.getConnection();
+    try {
+      // Fetch the record
+      const [rows] = await connection.query(
+        `SELECT id, final_submit
+         FROM user_video_analysis
+         WHERE user_id = ? AND assessment_id = ? AND question_id = ?`,
+        [userId, assessment_id, question_id]
+      );
+
+      if (rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Record not found for this user, assessment, and question'
+        });
+      }
+
+      // Check if already final submitted
+      if (rows[0].final_submit === 1) {
+        return res.status(400).json({
+          success: false,
+          error: 'Already final submitted'
+        });
+      }
+
+      // Update to 1
+      await connection.query(
+        `UPDATE user_video_analysis SET final_submit = 1 WHERE id = ?`,
+        [rows[0].id]
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: 'Final submission successful'
+      });
+
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Final submit error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to final submit'
     });
   }
 };

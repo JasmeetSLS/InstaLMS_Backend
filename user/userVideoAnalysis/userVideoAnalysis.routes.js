@@ -11,5 +11,7 @@ router.post('/video-analysis/upload-chunk', upload.single('chunk'), videoAssessm
 
 router.get('/assessments', videoAssessmentController.getAssessments);
 
+router.post('/final-submit', videoAssessmentController.finalSubmit);
+
 
 module.exports = router;

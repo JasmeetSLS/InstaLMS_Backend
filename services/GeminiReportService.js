@@ -15,7 +15,7 @@ if (!GEMINI_API_KEY) {
 const fileManager = new GoogleAIFileManager(GEMINI_API_KEY);
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-const GEMINI_MODEL = "gemini-3.1-flash-lite";
+const GEMINI_MODEL = "gemini-3.5-flash-lite";
 const GEMINI_FALLBACK_MODEL = "gemini-3.5-flash";
 
 // Configuration from environment (with defaults)
@@ -203,7 +203,7 @@ User Answer: ${userAnswer}
 }
 
 // ============================================================
-//  INSERT/UPDATE EVALUATION DATA
+//  INSERT/UPDATE EVALUATION DATA (SELECT, INSERT, UPDATE only)
 // ============================================================
 async function insertOrUpdateEvaluation(evaluationData) {
   const {
@@ -222,50 +222,71 @@ async function insertOrUpdateEvaluation(evaluationData) {
     const matchedKeywords = evaluation.matched_keywords || [];
     const missingKeywords = evaluation.missing_keywords || [];
 
-    const query = `
-      INSERT INTO video_analysis_question_answer_evaluation (
-        user_video_analysis_id, user_id, question_id,
-        transcript, score, score_percentage, grammar_mistakes,
-        sentiment, emotion, correctness, understanding,
-        depth_and_clarity, explanation, matched_keywords, missing_keywords
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE
-        user_id = VALUES(user_id),
-        question_id = VALUES(question_id),
-        transcript = VALUES(transcript),
-        score = VALUES(score),
-        score_percentage = VALUES(score_percentage),
-        grammar_mistakes = VALUES(grammar_mistakes),
-        sentiment = VALUES(sentiment),
-        emotion = VALUES(emotion),
-        correctness = VALUES(correctness),
-        understanding = VALUES(understanding),
-        depth_and_clarity = VALUES(depth_and_clarity),
-        explanation = VALUES(explanation),
-        matched_keywords = VALUES(matched_keywords),
-        missing_keywords = VALUES(missing_keywords),
-        updated_at = CURRENT_TIMESTAMP
-    `;
+    // Check if evaluation already exists for this user_video_analysis_id
+    const [existing] = await connection.query(
+      `SELECT id FROM video_analysis_question_answer_evaluation
+       WHERE user_video_analysis_id = ?`,
+      [user_video_analysis_id]
+    );
 
-    const params = [
-      user_video_analysis_id,
-      user_id,
-      question_id,
-      transcript,
-      score,
-      score_percentage,
-      evaluation.grammar_mistakes || 0,
-      evaluation.sentiment || 'neutral',
-      evaluation.emotion || 'neutral',
-      evaluation.correctness || '',
-      evaluation.understanding || '',
-      evaluation.depth_and_clarity || '',
-      evaluation.explanation || '',
-      JSON.stringify(matchedKeywords),
-      JSON.stringify(missingKeywords),
-    ];
+    if (existing.length > 0) {
+      // UPDATE
+      await connection.query(
+        `UPDATE video_analysis_question_answer_evaluation
+         SET user_id = ?, question_id = ?, transcript = ?,
+             score = ?, score_percentage = ?, grammar_mistakes = ?,
+             sentiment = ?, emotion = ?, correctness = ?,
+             understanding = ?, depth_and_clarity = ?, explanation = ?,
+             matched_keywords = ?, missing_keywords = ?,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE user_video_analysis_id = ?`,
+        [
+          user_id,
+          question_id,
+          transcript,
+          score,
+          score_percentage,
+          evaluation.grammar_mistakes || 0,
+          evaluation.sentiment || 'neutral',
+          evaluation.emotion || 'neutral',
+          evaluation.correctness || '',
+          evaluation.understanding || '',
+          evaluation.depth_and_clarity || '',
+          evaluation.explanation || '',
+          JSON.stringify(matchedKeywords),
+          JSON.stringify(missingKeywords),
+          user_video_analysis_id
+        ]
+      );
+    } else {
+      // INSERT
+      await connection.query(
+        `INSERT INTO video_analysis_question_answer_evaluation (
+          user_video_analysis_id, user_id, question_id,
+          transcript, score, score_percentage, grammar_mistakes,
+          sentiment, emotion, correctness, understanding,
+          depth_and_clarity, explanation, matched_keywords, missing_keywords
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          user_video_analysis_id,
+          user_id,
+          question_id,
+          transcript,
+          score,
+          score_percentage,
+          evaluation.grammar_mistakes || 0,
+          evaluation.sentiment || 'neutral',
+          evaluation.emotion || 'neutral',
+          evaluation.correctness || '',
+          evaluation.understanding || '',
+          evaluation.depth_and_clarity || '',
+          evaluation.explanation || '',
+          JSON.stringify(matchedKeywords),
+          JSON.stringify(missingKeywords)
+        ]
+      );
+    }
 
-    await connection.query(query, params);
     console.log(`✅ Evaluation data inserted/updated for video ${user_video_analysis_id}`);
   } finally {
     connection.release();
@@ -280,11 +301,11 @@ async function generateGeminiReport() {
   console.log(`🤖 Gemini Report Service Started: ${new Date().toLocaleString()}`);
   console.log('='.repeat(60));
 
-  const isAvailable = await checkGeminiAvailability();
-  if (!isAvailable) {
-    console.warn('Gemini API unavailable. Skipping this run.');
-    return { success: false, error: 'Gemini unavailable' };
-  }
+  // const isAvailable = await checkGeminiAvailability();
+  // if (!isAvailable) {
+  //   console.warn('Gemini API unavailable. Skipping this run.');
+  //   return { success: false, error: 'Gemini unavailable' };
+  // }
 
   const connection = await pool.getConnection();
   try {
@@ -365,7 +386,7 @@ async function generateGeminiReport() {
           reportFileName
         ).replace(/\\/g, '/');
 
-        // 4. Insert evaluation
+        // 4. Insert/update evaluation
         await insertOrUpdateEvaluation({
           user_video_analysis_id: row.id,
           user_id: row.user_id,

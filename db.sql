@@ -685,7 +685,7 @@ CREATE TABLE IF NOT EXISTS `user_video_analysis` (
   CONSTRAINT `user_video_analysis_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_video_analysis_ibfk_2` FOREIGN KEY (`assessment_id`) REFERENCES `video_analysis_assessments` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_video_analysis_ibfk_3` FOREIGN KEY (`question_id`) REFERENCES `video_assessment_questions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -750,7 +750,7 @@ CREATE TABLE IF NOT EXISTS `video_analysis_overall_summary` (
   `updatedAt` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_user_assessment` (`userId`,`assessmentId`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 
@@ -781,7 +781,7 @@ CREATE TABLE IF NOT EXISTS `video_analysis_question_answer_evaluation` (
   CONSTRAINT `fk_eval_question` FOREIGN KEY (`question_id`) REFERENCES `video_assessment_questions` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_eval_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_eval_user_video_analysis` FOREIGN KEY (`user_video_analysis_id`) REFERENCES `user_video_analysis` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Data exporting was unselected.
 
@@ -814,7 +814,7 @@ CREATE TABLE IF NOT EXISTS `video_analysis_question_summary` (
   PRIMARY KEY (`id`),
   KEY `idx_user_assessment` (`userId`,`assessmentId`),
   KEY `idx_question` (`questionId`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Data exporting was unselected.
 

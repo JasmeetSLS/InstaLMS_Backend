@@ -115,45 +115,87 @@ async function processVideoEmotions() {
           [relativeResultPath, relativeAudioPath, id]
         );
 
-        // Insert into video_analysis_question_summary
+        // Insert/update into video_analysis_question_summary
         const face = result.scores.FACE_Expression.details;
         const voice = result.scores.VOICE_Expression.details;
         const emotion = result.scores.EMOTION_Expression.details;
 
-        await connection.query(
-          `INSERT INTO video_analysis_question_summary (
-            userId, assessmentId, questionId,
-            face_interest, face_concentration, face_doubt, face_anxiety, face_confidence, face_attention,
-            voice_interest, voice_concentration, voice_doubt, voice_anxiety, voice_confidence, voice_attention,
-            emotion_joy, emotion_sadness, emotion_fear, emotion_confusion, emotion_happy, emotion_neutral
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            user_id, assessment_id, question_id,
-            face.Confidence || 0,
-            face.Attention || 0,
-            face.Doubt || 0,
-            face.Anxiety || 0,
-            (face.Confidence || 0) + (face.Attention || 0),
-            face.Attention || 0,
-            voice.Confidence || 0,
-            voice.Attention || 0,
-            voice.Doubt || 0,
-            voice.Anxiety || 0,
-            (voice.Confidence || 0) + (voice.Attention || 0),
-            voice.Attention || 0,
-            emotion.Happy || 0,
-            emotion.Neutral || 0,
-            emotion.Fear || 0,
-            emotion.Confusion || 0,
-            emotion.Happy || 0,
-            (emotion.Neutral || 0) + (emotion.Happy || 0),
-          ]
+        // Check if summary already exists
+        const [existingSummary] = await connection.query(
+          `SELECT id FROM video_analysis_question_summary
+           WHERE userId = ? AND assessmentId = ? AND questionId = ?`,
+          [user_id, assessment_id, question_id]
         );
+
+        if (existingSummary.length > 0) {
+          // UPDATE
+          await connection.query(
+            `UPDATE video_analysis_question_summary
+             SET face_interest = ?, face_concentration = ?, face_doubt = ?, face_anxiety = ?,
+                 face_confidence = ?, face_attention = ?,
+                 voice_interest = ?, voice_concentration = ?, voice_doubt = ?, voice_anxiety = ?,
+                 voice_confidence = ?, voice_attention = ?,
+                 emotion_joy = ?, emotion_sadness = ?, emotion_fear = ?, emotion_confusion = ?,
+                 emotion_happy = ?, emotion_neutral = ?,
+                 updatedAt = CURRENT_TIMESTAMP
+             WHERE userId = ? AND assessmentId = ? AND questionId = ?`,
+            [
+              face.Confidence || 0,
+              face.Attention || 0,
+              face.Doubt || 0,
+              face.Anxiety || 0,
+              (face.Confidence || 0) + (face.Attention || 0),
+              face.Attention || 0,
+              voice.Confidence || 0,
+              voice.Attention || 0,
+              voice.Doubt || 0,
+              voice.Anxiety || 0,
+              (voice.Confidence || 0) + (voice.Attention || 0),
+              voice.Attention || 0,
+              emotion.Happy || 0,
+              emotion.Neutral || 0,
+              emotion.Fear || 0,
+              emotion.Confusion || 0,
+              emotion.Happy || 0,
+              (emotion.Neutral || 0) + (emotion.Happy || 0),
+              user_id, assessment_id, question_id
+            ]
+          );
+        } else {
+          // INSERT
+          await connection.query(
+            `INSERT INTO video_analysis_question_summary (
+              userId, assessmentId, questionId,
+              face_interest, face_concentration, face_doubt, face_anxiety, face_confidence, face_attention,
+              voice_interest, voice_concentration, voice_doubt, voice_anxiety, voice_confidence, voice_attention,
+              emotion_joy, emotion_sadness, emotion_fear, emotion_confusion, emotion_happy, emotion_neutral
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              user_id, assessment_id, question_id,
+              face.Confidence || 0,
+              face.Attention || 0,
+              face.Doubt || 0,
+              face.Anxiety || 0,
+              (face.Confidence || 0) + (face.Attention || 0),
+              face.Attention || 0,
+              voice.Confidence || 0,
+              voice.Attention || 0,
+              voice.Doubt || 0,
+              voice.Anxiety || 0,
+              (voice.Confidence || 0) + (voice.Attention || 0),
+              voice.Attention || 0,
+              emotion.Happy || 0,
+              emotion.Neutral || 0,
+              emotion.Fear || 0,
+              emotion.Confusion || 0,
+              emotion.Happy || 0,
+              (emotion.Neutral || 0) + (emotion.Happy || 0)
+            ]
+          );
+        }
 
         successCount++;
         results.push({ videoId: id, success: true });
-
-        // (Optional) Clean up video file? No – it's the original user video; keep it.
 
       } catch (err) {
         console.error(`❌ Error processing video ${id}:`, err.message);
