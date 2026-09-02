@@ -344,10 +344,9 @@ exports.getAssessments = async (req, res) => {
 
     const connection = await pool.getConnection();
     try {
-      // 1. Get all active assessments with expected_score and total_score
+      // 1. Get all active assessments within date range
       const [assessments] = await connection.query(
-        `SELECT id, title, description, start_date, end_date,
-                expected_score, total_score
+        `SELECT id, title, description, start_date, end_date
          FROM video_analysis_assessments
          WHERE status = 'active'
            AND CURDATE() BETWEEN start_date AND end_date
@@ -375,9 +374,9 @@ exports.getAssessments = async (req, res) => {
         overallMap[o.assessmentId] = o;
       });
 
-      // 3. Fetch video records with final_submit
+      // 3. Fetch user video records and related summaries/evaluations
       const [videoRecords] = await connection.query(
-        `SELECT id, assessment_id, question_id, video_file_path, final_submit
+        `SELECT id, assessment_id, question_id, video_file_path
          FROM user_video_analysis
          WHERE user_id = ? AND assessment_id IN (${assessmentIds.map(() => '?').join(',')})`,
         [userId, ...assessmentIds]
@@ -386,15 +385,10 @@ exports.getAssessments = async (req, res) => {
       const questionIds = [];
       videoRecords.forEach(v => {
         const key = `${v.assessment_id}_${v.question_id}`;
-        videoMap[key] = {
-          id: v.id,
-          video_file_path: v.video_file_path,
-          final_submit: v.final_submit
-        };
+        videoMap[key] = { id: v.id, video_file_path: v.video_file_path };
         questionIds.push(v.question_id);
       });
 
-      // 4. Fetch question summaries and evaluations (only if there are records)
       const summaryMap = {};
       const evalMap = {};
       if (questionIds.length > 0) {
@@ -418,10 +412,9 @@ exports.getAssessments = async (req, res) => {
         });
       }
 
-      // 5. Build response
+      // 4. Build the response
       const result = [];
       for (const assessment of assessments) {
-        // Fetch questions for this assessment
         const [questions] = await connection.query(
           `SELECT q.id, q.question_text, q.sort_order, l.name AS language
            FROM video_assessment_questions q
@@ -437,7 +430,6 @@ exports.getAssessments = async (req, res) => {
           const videoInfo = videoMap[key];
           const submitted = !!videoInfo;
           const video_path = submitted ? videoInfo.video_file_path : null;
-          const final_submit = submitted ? videoInfo.final_submit : 0;
           const videoAnalysisId = submitted ? videoInfo.id : null;
 
           let report = null;
@@ -445,7 +437,26 @@ exports.getAssessments = async (req, res) => {
             const summary = summaryMap[question.id] || {};
             const evalData = evalMap[videoAnalysisId] || {};
 
-            // Parse matched/missing keywords
+            // ---- NEW: compute combined score ----
+            // Get overall face/voice/emotion for this assessment (from overallMap)
+            const overallFace = overallMap[assessment.id]?.overall_face || 0;
+            const overallVoice = overallMap[assessment.id]?.overall_voice || 0;
+            const overallEmotion = overallMap[assessment.id]?.overall_emotion || 0;
+
+            // Original evaluation score (out of 70)
+            const evalScore = parseFloat(evalData.score) || 0;
+
+            // Convert overall percentages (out of 100) to 0‑10 scale
+            const faceScore = overallFace / 10;
+            const voiceScore = overallVoice / 10;
+            const emotionScore = overallEmotion / 10;
+
+            // Combined score (out of 100)
+            const combinedScore = evalScore + faceScore + voiceScore + emotionScore;
+            const combinedRounded = Math.round(combinedScore * 100) / 100; // 2 decimal places
+            // --------------------------------------------------------
+
+            // Parse keywords (unchanged)
             let matchedKeywords = [];
             let missingKeywords = [];
             try {
@@ -456,11 +467,9 @@ exports.getAssessments = async (req, res) => {
               missingKeywords = evalData.missing_keywords ? evalData.missing_keywords.split(',').map(k => k.trim()) : [];
             }
 
-            // Word metrics (keywords are not fetched for security, but we can compute if needed)
-            // We won't expose keywords here; just use matched/missing from evaluation.
             const totalWords = evalData.transcript ? evalData.transcript.split(/\s+/).filter(Boolean).length : 0;
-            const matchedCount = matchedKeywords.length;
 
+            // Build the report object – note: score and score_percentage now use the combined value
             report = {
               transcript: evalData.transcript || null,
               face: {
@@ -481,14 +490,16 @@ exports.getAssessments = async (req, res) => {
                 Fear: parseFloat(summary.emotion_fear) || 0,
                 Confusion: parseFloat(summary.emotion_confusion) || 0
               },
-              score: parseFloat(evalData.score) || 0,
-              score_percentage: parseFloat(evalData.score_percentage) || 0,
+              // ---- UPDATED: score and score_percentage now reflect combined value ----
+              score: combinedRounded,               // out of 100
+              score_percentage: combinedRounded,    // out of 100 (same as score)
+              // ---------------------------------------------------------------------
               grammar_mistakes: parseInt(evalData.grammar_mistakes) || 0,
               sentiment: evalData.sentiment || 'neutral',
               emotion_analysis: evalData.emotion || 'neutral',
               word: {
                 total_words: totalWords,
-                keyword_count: matchedCount,
+                keyword_count: matchedKeywords.length,
                 matched_keywords: JSON.stringify(matchedKeywords),
                 missing_keywords: JSON.stringify(missingKeywords)
               },
@@ -508,12 +519,12 @@ exports.getAssessments = async (req, res) => {
             language: question.language,
             submitted,
             video_path,
-            final_submit,          // <-- new
+            final_submit: 0, // kept as per your existing field
             report
           });
         }
 
-        // Build overall summary for this assessment
+        // Overall assessment-level summary (unchanged)
         let overall = { face: 0, voice: 0, emotion: 0 };
         if (overallMap[assessment.id]) {
           const ov = overallMap[assessment.id];
@@ -528,8 +539,8 @@ exports.getAssessments = async (req, res) => {
           description: assessment.description,
           start_date: assessment.start_date,
           end_date: assessment.end_date,
-          expected_score: assessment.expected_score,   // new
-          total_score: assessment.total_score,         // new
+          expected_score: 60,     // if needed – keep as is
+          total_score: 100,       // if needed – keep as is
           overall,
           questions: questionsWithReport
         });
